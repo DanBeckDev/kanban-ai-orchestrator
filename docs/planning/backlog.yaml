@@ -50,13 +50,14 @@ tasks:
   - id: CORE-001
     epic: CORE
     title: Define executable domain schemas and state-machine transitions
-    status: ready
+    status: done
     priority: P0
     depends_on: [FDN-002]
     acceptance_criteria:
       - Project, board, work item, execution, evidence, policy decision, and external-link schemas are versioned.
       - Allowed and disallowed state transitions are unit tested.
       - Done, failed, interrupted, cancelled, and blocked remain distinct states.
+    notes: Versioned Rust domain records and the guarded work-item transition state machine were implemented and verified on 2026-08-08. Done requires completion evidence and configured human-review acceptance.
 
   - id: CORE-002
     epic: CORE

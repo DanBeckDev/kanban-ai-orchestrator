@@ -1,0 +1,44 @@
+work_item: CORE-001
+scope:
+  - src-tauri/Cargo.toml
+  - src-tauri/src/domain/
+  - src-tauri/src/lib.rs
+  - scripts/verify-quality-receipt.test.mjs
+review:
+  skill: clean-code-review
+  reviewer: Codex
+  reviewed_at: 2026-08-08T12:40:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The first ExternalLink draft named Linear inside the core domain.
+    change: Replaced it with a generic connector_id and connector-neutral provenance value.
+  - finding: The first entity records omitted accepted audit, budget, and execution-checkpoint fields.
+    change: Added project policy identity, work-item budgets, execution usage/checkpoint, policy audit details, and external-link provenance.
+  - finding: Rust compilation and strict lint found non-Copy state values and a manually derivable default implementation.
+    change: Made WorkItemState a Copy value type and derived WorkItemBudget Default.
+  - finding: The receipt-validation test assumed the repository had exactly one review receipt.
+    change: Asserted the validator's success contract without coupling the test to an incidental receipt count.
+  - finding: The lifecycle test claimed to enumerate every legal transition but omitted several blocking and recovery paths.
+    change: Added an explicit assertion for every non-cancellation transition, while the separate cancellation test covers every cancellable state.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 100
+      statements: 100
+      functions: 100
+      branches: 100
+    rust_core:
+      lines: 100
+      statements: 100
+      functions: 100
+      branches: 100
+    threshold_met: true
+exceptions: []

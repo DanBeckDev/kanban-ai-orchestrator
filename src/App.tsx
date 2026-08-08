@@ -1,22 +1,32 @@
-import { foundationMessage, productMetadata } from "./lib/productMetadata";
+import { BoardWorkspace } from "./board/BoardWorkspace";
+import type { BoardGateway } from "./board/types";
+import { productMetadata } from "./lib/productMetadata";
 
-export function App() {
+type AppProps = Readonly<{
+  gateway?: BoardGateway;
+}>;
+
+export function App({ gateway }: AppProps) {
   return (
     <main className="app-shell">
-      <section aria-labelledby="product-title" className="foundation-card">
-        <p className="eyebrow">Local-first agent coordination</p>
-        <h1 id="product-title">{productMetadata.name}</h1>
-        <p>{foundationMessage(productMetadata)}</p>
-        <dl>
+      <section aria-labelledby="product-title" className="application-frame">
+        <header className="application-header">
           <div>
-            <dt>Execution authority</dt>
-            <dd>Rust local core</dd>
+            <p className="eyebrow">Local-first agent coordination</p>
+            <h1 id="product-title">{productMetadata.name}</h1>
           </div>
-          <div>
-            <dt>Current milestone</dt>
-            <dd>{productMetadata.milestone}</dd>
-          </div>
-        </dl>
+          <dl>
+            <div>
+              <dt>Execution authority</dt>
+              <dd>Rust local core</dd>
+            </div>
+            <div>
+              <dt>Current milestone</dt>
+              <dd>{productMetadata.milestone}</dd>
+            </div>
+          </dl>
+        </header>
+        <BoardWorkspace gateway={gateway} />
       </section>
     </main>
   );

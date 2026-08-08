@@ -37,9 +37,7 @@ Rules:
 
 ## Source structure policy
 
-Every changed production and test source file must stay within the repository's 400-meaningful-line limit. The gate applies to Rust, TypeScript/TSX, JavaScript/MJS, and quality scripts under the product source roots. It is intentionally stricter than a subjective review because a long file hides unrelated responsibilities and makes review ineffective.
-
-An exception is only a time-bounded migration record for a pre-existing oversized file. It must identify an owner work item, expiry date, and fixed maximum meaningful-line count in `docs/quality/code-structure-exceptions.json`; no new exception is allowed without product-owner approval and an ADR. Once the ledger exists, its owner, expiry, and ceiling may not be relaxed. See [source-structure gate](code-structure.md).
+Every production and test source file must stay within the repository's 400-meaningful-line limit. The gate applies to Rust, TypeScript/TSX, JavaScript/MJS, and quality scripts under the product source roots. It is intentionally stricter than a subjective review because a long file hides unrelated responsibilities and makes review ineffective. Source-structure exceptions are prohibited: a non-empty `docs/quality/code-structure-exceptions.json` fails the quality gate. See [source-structure gate](code-structure.md).
 
 ## Required verification layers
 

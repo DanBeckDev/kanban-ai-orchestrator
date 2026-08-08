@@ -16,6 +16,8 @@ epics:
     title: Safe Git workspaces and agent execution
   - id: ORCH
     title: Orchestration, policy, and review
+  - id: APP
+    title: Local desktop board experience
   - id: LIN
     title: Linear first-class integration
   - id: REL
@@ -154,6 +156,32 @@ tasks:
       - Failure and interruption present retry, inspect, recover, and cancel actions.
       - A task cannot reach done without the configured evidence and approval.
 
+  - id: APP-001
+    epic: APP
+    title: Expose durable local projects, boards, and dependencies through the desktop command boundary
+    status: done
+    priority: P0
+    depends_on: [CORE-001, CORE-002, CORE-003]
+    acceptance_criteria:
+      - Projects, boards, work items, and typed dependencies persist locally and survive reopening the same database.
+      - Project and board creation, board snapshots, work-item creation, state transitions, and dependency insertion are exposed through typed Tauri commands.
+      - The command boundary cannot bypass the daemon state machine, board ownership checks, dependency-cycle validation, or evidence requirements.
+      - Command and persistence tests cover valid behavior, duplicate identifiers, missing ownership, invalid dependencies, and a reopen scenario.
+    notes: Added on 2026-08-08 after the product audit found that the desktop rendered only a foundation card despite the existing domain core. Completed on 2026-08-08 with durable SQLite project, board, work-item, and dependency storage plus typed Tauri commands that remain behind the domain state-machine and validation boundary.
+
+  - id: APP-002
+    epic: APP
+    title: Build the interactive dependency-aware desktop board
+    status: done
+    priority: P0
+    depends_on: [APP-001]
+    acceptance_criteria:
+      - A user can create a project, board, and work items; see their states, criteria, budgets, blockers, and typed dependencies after restart.
+      - The board clearly separates Ready, active, Review, Done, and recovery work and explains every blocker with reason, owner, and next action.
+      - The UI sends commands to the local daemon and never derives authoritative scheduling or state transitions itself.
+      - Accessible component tests cover task creation, state-transition feedback, dependency visibility, and error presentation.
+    notes: Completed on 2026-08-08 with a Tauri-command-backed React board. Users can create or reopen local boards, create budgeted tasks, submit guarded transitions with completion evidence, manage typed dependencies, see dependency responsibility, and distinguish plan, ready, active, review, done, and recovery work. The board only presents daemon responses; it does not own persistence or state-machine authority.
+
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage
@@ -258,11 +286,11 @@ tasks:
   - id: QUAL-004
     epic: QUAL
     title: Remove all temporary oversized-source exceptions
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [QUAL-002]
     acceptance_criteria:
       - Every file listed in docs/quality/code-structure-exceptions.json is split into cohesive production or focused test modules with no behavior change.
-      - npm run structure:check and CI reject an oversized changed source file without a valid, unexpired exception.
+      - npm run structure:verify and CI reject any oversized source file and any non-empty exception ledger.
       - The exceptions list is empty when QUAL-004 is complete, and the full quality gate passes after each refactor.
-    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. The P0 task removes the temporary migration records rather than normalizing them. The domain model record was split into focused modules on 2026-08-08, removing its first exception.
+    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. Completed on 2026-08-08: every listed module was split into focused source and test modules, the exception ledger is empty, and the full-repository gate now rejects any future exception.

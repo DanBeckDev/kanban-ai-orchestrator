@@ -1,0 +1,42 @@
+work_item: APP-001
+scope:
+  - src-tauri/src/application/
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/persistence/board_repository.rs
+  - src-tauri/src/persistence/board_store.rs
+  - src-tauri/src/persistence/board_store_error.rs
+  - src-tauri/src/persistence/board_store_tests.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+  - src-tauri/src/domain/events.rs
+  - src-tauri/src/lib.rs
+  - docs/decisions/0012-local-board-command-boundary.md
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T17:24:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The desktop rendered static metadata and had no durable command boundary for product work.
+    change: Added a focused board application service, SQLite board repository, migration, typed Tauri commands, and reopen coverage while preserving the domain state machine as the only transition authority.
+  - finding: The desktop state mutex could become an accidental external-I/O lock.
+    change: Restricted command handlers to synchronous local SQLite use cases; the architecture decision explicitly prohibits holding the lock around agents or network requests.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml --lib
+      result: passed (106 tests)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: Rust core
+    lines: 90.96
+    statements: 86.49
+    functions: 89.81
+    branches: 91.60
+    threshold_met: true
+exceptions: []

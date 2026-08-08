@@ -61,6 +61,10 @@ Adapter events are sequenced and deduplicated before they are offered to the dae
 
 The daemon persists append-only domain events and materialized state transactionally. On launch it reconciles recorded state against Git worktrees and live agent processes, then marks uncertain runs as `Interrupted` with recovery options. It must not move cards to a terminal state simply because the desktop UI or terminal stream disconnected.
 
+## Local board command boundary
+
+The desktop initializes one local SQLite-backed board service in the application data directory. Typed Tauri commands create projects, boards, and work items; add validated dependencies; transition work items through the authoritative state machine; and return a board snapshot. The React client can render this snapshot and request a command, but cannot write SQLite directly, bypass ownership checks, create a hard-dependency cycle, or mark a task done without the required evidence. The service lock only protects synchronous local state work and never surrounds external network or agent I/O. See [ADR 0012](../decisions/0012-local-board-command-boundary.md).
+
 ## Policy enforcement and audit
 
 Before a scheduler or worker boundary performs a side effect, the daemon sends a typed action and current usage through the policy gate. The gate limits tool scopes, new-execution concurrency, agent turns, duration, and cost; it uses the stricter project or work-item budget. An allow result carries the capability required by the execution boundary. A denied or approval-required request has no such capability, regardless of the agent's prompt text.

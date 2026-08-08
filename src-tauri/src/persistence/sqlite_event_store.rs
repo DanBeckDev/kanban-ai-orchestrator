@@ -1,21 +1,30 @@
-use std::{error::Error, fmt, path::Path};
+use std::path::Path;
 
-use rusqlite::{Connection, OptionalExtension, Transaction, params};
+use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::domain::{
-    CreateWorkItemCommand, EventSequence, MaterializedWorkItem, PolicyDecision, PolicyDecisionId,
-    PolicyDecisionKind, ProjectId, RecordedWorkItemEvent, RestartReconciliationCommand,
-    SchemaMetadata, TransitionWorkItemCommand, WorkItem, WorkItemEvent, WorkItemEventId,
-    WorkItemEventKind, WorkItemId, WorkItemState, transition_work_item,
+    CreateWorkItemCommand, MaterializedWorkItem, PolicyDecision, PolicyDecisionId, ProjectId,
+    RecordedWorkItemEvent, SchemaMetadata, TransitionWorkItemCommand, WorkItem, WorkItemEvent,
+    WorkItemEventId, WorkItemEventKind, WorkItemId, transition_work_item,
 };
 use crate::policy::ProtectedGitApproval;
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 3;
-const RESTART_UNCERTAINTY_REASON: &str =
-    "The daemon restarted before a live execution could be confirmed.";
+use super::{
+    EventStoreError,
+    event_store_policy::{
+        idempotent_policy_decision, idempotent_protected_git_approval,
+        policy_decision_matches_protected_git_approval,
+    },
+    event_store_schema::{create_initial_schema, create_policy_audit_schema},
+    event_store_support::{
+        deserialize_materialized_work_item, deserialize_recorded_event, event_sequence,
+        idempotent_creation, idempotent_transition,
+    },
+};
 
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 4;
 pub struct SqliteEventStore {
-    connection: Connection,
+    pub(crate) connection: Connection,
 }
 
 impl SqliteEventStore {
@@ -104,55 +113,6 @@ impl SqliteEventStore {
         };
 
         self.persist_event(event, updated_work_item)
-    }
-
-    pub fn reconcile_after_restart(
-        &mut self,
-        command: RestartReconciliationCommand,
-    ) -> Result<Vec<RecordedWorkItemEvent>, EventStoreError> {
-        let uncertain_work_items = self
-            .all_materialized_work_items()?
-            .into_iter()
-            .filter(|materialized_work_item| {
-                is_uncertain_after_restart(materialized_work_item.work_item.state)
-                    && !command
-                        .confirmed_active_work_item_ids
-                        .contains(&materialized_work_item.work_item.id)
-            })
-            .collect::<Vec<_>>();
-
-        for materialized_work_item in &uncertain_work_items {
-            if !command
-                .recovery_event_ids
-                .contains_key(&materialized_work_item.work_item.id)
-            {
-                return Err(EventStoreError::MissingRecoveryEventId {
-                    work_item_id: materialized_work_item.work_item.id.clone(),
-                });
-            }
-        }
-
-        uncertain_work_items
-            .into_iter()
-            .map(|materialized_work_item| {
-                let event_id = command
-                    .recovery_event_ids
-                    .get(&materialized_work_item.work_item.id)
-                    .cloned()
-                    .ok_or_else(|| EventStoreError::MissingRecoveryEventId {
-                        work_item_id: materialized_work_item.work_item.id.clone(),
-                    })?;
-                self.transition_work_item(TransitionWorkItemCommand {
-                    event_id,
-                    work_item_id: materialized_work_item.work_item.id,
-                    next_state: WorkItemState::Interrupted,
-                    config: Default::default(),
-                    evidence: None,
-                    reason: RESTART_UNCERTAINTY_REASON.to_owned(),
-                    recorded_at: command.recorded_at.clone(),
-                })
-            })
-            .collect()
     }
 
     pub fn materialized_work_item(
@@ -337,8 +297,13 @@ impl SqliteEventStore {
         }
 
         if current_version < 3 {
-            create_protected_git_approval_schema(&transaction)?;
+            crate::persistence::board_store::create_protected_git_approval_schema(&transaction)?;
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [3])?;
+        }
+
+        if current_version < 4 {
+            crate::persistence::board_store::create_board_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [4])?;
         }
 
         transaction.commit()?;
@@ -410,7 +375,9 @@ impl SqliteEventStore {
         })
     }
 
-    fn all_materialized_work_items(&self) -> Result<Vec<MaterializedWorkItem>, EventStoreError> {
+    pub(crate) fn all_materialized_work_items(
+        &self,
+    ) -> Result<Vec<MaterializedWorkItem>, EventStoreError> {
         let mut statement = self.connection.prepare(
             "SELECT work_item_json, last_event_sequence
              FROM materialized_work_items
@@ -459,308 +426,9 @@ impl SqliteEventStore {
     }
 }
 
-fn create_initial_schema(transaction: &Transaction<'_>) -> Result<(), rusqlite::Error> {
-    transaction.execute_batch(
-        "CREATE TABLE IF NOT EXISTS work_item_events (
-            sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_id TEXT NOT NULL UNIQUE,
-            work_item_id TEXT NOT NULL,
-            event_json TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS work_item_events_by_work_item
-            ON work_item_events (work_item_id, sequence);
-        CREATE TABLE IF NOT EXISTS materialized_work_items (
-            work_item_id TEXT PRIMARY KEY,
-            work_item_json TEXT NOT NULL,
-            last_event_sequence INTEGER NOT NULL
-        );",
-    )
-}
-
-fn create_policy_audit_schema(transaction: &Transaction<'_>) -> Result<(), rusqlite::Error> {
-    transaction.execute_batch(
-        "CREATE TABLE IF NOT EXISTS policy_decisions (
-            decision_id TEXT PRIMARY KEY,
-            project_id TEXT NOT NULL,
-            work_item_id TEXT,
-            decided_at TEXT NOT NULL,
-            decision_json TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS policy_decisions_by_project
-            ON policy_decisions (project_id, decided_at, decision_id);",
-    )
-}
-
-fn create_protected_git_approval_schema(
-    transaction: &Transaction<'_>,
-) -> Result<(), rusqlite::Error> {
-    transaction.execute_batch(
-        "CREATE TABLE IF NOT EXISTS protected_git_approvals (
-            approval_decision_id TEXT PRIMARY KEY,
-            project_id TEXT NOT NULL,
-            work_item_id TEXT,
-            git_action TEXT NOT NULL,
-            approved_at TEXT NOT NULL,
-            approval_json TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS protected_git_approvals_by_project
-            ON protected_git_approvals (project_id, approved_at, approval_decision_id);",
-    )
-}
-
-fn idempotent_creation(
-    recorded_event: RecordedWorkItemEvent,
-    command: &CreateWorkItemCommand,
-) -> Result<RecordedWorkItemEvent, EventStoreError> {
-    match &recorded_event.event.kind {
-        WorkItemEventKind::Created { work_item }
-            if recorded_event.event.work_item_id == command.work_item.id
-                && work_item == &command.work_item =>
-        {
-            Ok(recorded_event)
-        }
-        _ => Err(EventStoreError::EventIdConflict {
-            event_id: command.event_id.clone(),
-        }),
-    }
-}
-
-fn idempotent_transition(
-    recorded_event: RecordedWorkItemEvent,
-    command: &TransitionWorkItemCommand,
-) -> Result<RecordedWorkItemEvent, EventStoreError> {
-    match &recorded_event.event.kind {
-        WorkItemEventKind::StateTransitioned {
-            to,
-            config,
-            evidence,
-            reason,
-            ..
-        } if recorded_event.event.work_item_id == command.work_item_id
-            && *to == command.next_state
-            && *config == command.config
-            && *evidence == command.evidence
-            && reason == &command.reason =>
-        {
-            Ok(recorded_event)
-        }
-        _ => Err(EventStoreError::EventIdConflict {
-            event_id: command.event_id.clone(),
-        }),
-    }
-}
-
-fn idempotent_policy_decision(
-    recorded_decision: PolicyDecision,
-    decision: &PolicyDecision,
-) -> Result<PolicyDecision, EventStoreError> {
-    if recorded_decision == *decision {
-        Ok(recorded_decision)
-    } else {
-        Err(EventStoreError::PolicyDecisionIdConflict {
-            decision_id: decision.id.clone(),
-        })
-    }
-}
-
-fn idempotent_protected_git_approval(
-    recorded_approval: ProtectedGitApproval,
-    approval: &ProtectedGitApproval,
-) -> Result<ProtectedGitApproval, EventStoreError> {
-    if recorded_approval == *approval {
-        Ok(recorded_approval)
-    } else {
-        Err(EventStoreError::ProtectedGitApprovalIdConflict {
-            decision_id: approval.decision_id.clone(),
-        })
-    }
-}
-
-fn policy_decision_matches_protected_git_approval(
-    decision: &PolicyDecision,
-    approval: &ProtectedGitApproval,
-) -> bool {
-    decision.id == approval.decision_id
-        && decision.project_id == approval.project_id
-        && decision.work_item_id == approval.work_item_id
-        && decision.action
-            == Some(crate::domain::PolicyAction::ProtectedGit {
-                action: approval.action,
-            })
-        && decision.decision == PolicyDecisionKind::Allow
-        && decision.actor == approval.approved_by
-}
-
-fn is_uncertain_after_restart(state: WorkItemState) -> bool {
-    matches!(state, WorkItemState::Running | WorkItemState::AwaitingInput)
-}
-
-fn deserialize_materialized_work_item(
-    work_item_json: &str,
-    last_event_sequence: i64,
-) -> Result<MaterializedWorkItem, EventStoreError> {
-    Ok(MaterializedWorkItem {
-        work_item: serde_json::from_str(work_item_json)?,
-        last_event_sequence: event_sequence(last_event_sequence)?,
-    })
-}
-
-fn deserialize_recorded_event(
-    event_json: &str,
-    sequence: i64,
-) -> Result<RecordedWorkItemEvent, EventStoreError> {
-    Ok(RecordedWorkItemEvent {
-        sequence: event_sequence(sequence)?,
-        event: serde_json::from_str(event_json)?,
-    })
-}
-
-fn event_sequence(value: i64) -> Result<EventSequence, EventStoreError> {
-    u64::try_from(value).map_err(|_| EventStoreError::InvalidEventSequence { value })
-}
-
-#[derive(Debug)]
-pub enum EventStoreError {
-    Database(rusqlite::Error),
-    Serialization(serde_json::Error),
-    StateTransition(crate::domain::TransitionError),
-    WorkItemAlreadyExists { work_item_id: WorkItemId },
-    WorkItemNotFound { work_item_id: WorkItemId },
-    EventIdConflict { event_id: WorkItemEventId },
-    PolicyDecisionIdConflict { decision_id: PolicyDecisionId },
-    ProtectedGitApprovalIdConflict { decision_id: PolicyDecisionId },
-    PolicyApprovalDecisionNotFound { decision_id: PolicyDecisionId },
-    PolicyApprovalDecisionMismatch { decision_id: PolicyDecisionId },
-    MissingTransitionReason { event_id: WorkItemEventId },
-    MissingRecoveryEventId { work_item_id: WorkItemId },
-    InvalidEventSequence { value: i64 },
-    UnsupportedDatabaseSchemaVersion { current: i64, supported: i64 },
-}
-
-impl fmt::Display for EventStoreError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Database(error) => write!(formatter, "SQLite event-store error: {error}"),
-            Self::Serialization(error) => {
-                write!(formatter, "event-store serialization error: {error}")
-            }
-            Self::StateTransition(error) => write!(formatter, "state transition rejected: {error}"),
-            Self::WorkItemAlreadyExists { work_item_id } => {
-                write!(formatter, "work item {} already exists", work_item_id.0)
-            }
-            Self::WorkItemNotFound { work_item_id } => {
-                write!(formatter, "work item {} was not found", work_item_id.0)
-            }
-            Self::EventIdConflict { event_id } => {
-                write!(
-                    formatter,
-                    "event id {} conflicts with a recorded event",
-                    event_id.0
-                )
-            }
-            Self::PolicyDecisionIdConflict { decision_id } => write!(
-                formatter,
-                "policy decision id {} conflicts with a recorded decision",
-                decision_id.0
-            ),
-            Self::ProtectedGitApprovalIdConflict { decision_id } => write!(
-                formatter,
-                "protected Git approval id {} conflicts with a recorded approval",
-                decision_id.0
-            ),
-            Self::PolicyApprovalDecisionNotFound { decision_id } => write!(
-                formatter,
-                "protected Git approval requires recorded policy decision {}",
-                decision_id.0
-            ),
-            Self::PolicyApprovalDecisionMismatch { decision_id } => write!(
-                formatter,
-                "policy decision {} does not authorize the protected Git approval",
-                decision_id.0
-            ),
-            Self::MissingTransitionReason { event_id } => {
-                write!(
-                    formatter,
-                    "state-transition event {} requires a reason",
-                    event_id.0
-                )
-            }
-            Self::MissingRecoveryEventId { work_item_id } => write!(
-                formatter,
-                "restart reconciliation requires an event id for uncertain work item {}",
-                work_item_id.0
-            ),
-            Self::InvalidEventSequence { value } => {
-                write!(
-                    formatter,
-                    "event sequence {value} is outside the supported range"
-                )
-            }
-            Self::UnsupportedDatabaseSchemaVersion { current, supported } => write!(
-                formatter,
-                "database schema version {current} is newer than the supported version {supported}"
-            ),
-        }
-    }
-}
-
-impl Error for EventStoreError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Database(error) => Some(error),
-            Self::Serialization(error) => Some(error),
-            Self::StateTransition(error) => Some(error),
-            Self::WorkItemAlreadyExists { .. }
-            | Self::WorkItemNotFound { .. }
-            | Self::EventIdConflict { .. }
-            | Self::PolicyDecisionIdConflict { .. }
-            | Self::ProtectedGitApprovalIdConflict { .. }
-            | Self::PolicyApprovalDecisionNotFound { .. }
-            | Self::PolicyApprovalDecisionMismatch { .. }
-            | Self::MissingTransitionReason { .. }
-            | Self::MissingRecoveryEventId { .. }
-            | Self::InvalidEventSequence { .. }
-            | Self::UnsupportedDatabaseSchemaVersion { .. } => None,
-        }
-    }
-}
-
-impl From<rusqlite::Error> for EventStoreError {
-    fn from(error: rusqlite::Error) -> Self {
-        Self::Database(error)
-    }
-}
-
-impl From<serde_json::Error> for EventStoreError {
-    fn from(error: serde_json::Error) -> Self {
-        Self::Serialization(error)
-    }
-}
-
-impl From<crate::domain::TransitionError> for EventStoreError {
-    fn from(error: crate::domain::TransitionError) -> Self {
-        Self::StateTransition(error)
-    }
-}
-
-impl crate::policy::PolicyAuditStore for SqliteEventStore {
-    type Error = EventStoreError;
-
-    fn record_policy_decision(&mut self, decision: PolicyDecision) -> Result<(), Self::Error> {
-        SqliteEventStore::record_policy_decision(self, decision).map(|_| ())
-    }
-
-    fn has_recorded_protected_git_approval(
-        &self,
-        approval: &ProtectedGitApproval,
-    ) -> Result<bool, Self::Error> {
-        SqliteEventStore::has_recorded_protected_git_approval(self, approval)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::event_sequence;
+    use crate::persistence::event_store_support::event_sequence;
 
     #[test]
     fn rejects_negative_database_sequences() {

@@ -40,13 +40,15 @@ pub enum WorkItemEventKind {
     },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RecordedWorkItemEvent {
     pub sequence: EventSequence,
     pub event: WorkItemEvent,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MaterializedWorkItem {
     pub work_item: WorkItem,
     pub last_event_sequence: EventSequence,

@@ -22,7 +22,7 @@ This repository is being developed incrementally by people and AI agents. Preser
 For every change to executable code, tests, configuration that changes runtime behavior, or build/CI logic:
 
 1. Use the installed `clean-code-review` skill to review the completed diff and the code it plausibly touches. Load the concurrency reference whenever the change contains async work, shared state, queues, workers, locking, process management, or request handling.
-2. Inspect every changed source file for vertical density and responsibility boundaries. The source-structure gate limits production and test files to 400 meaningful lines; split distinct responsibilities before the quality review rather than treating a large file as presumptively cohesive.
+2. Inspect every changed source file for vertical density and responsibility boundaries. The source-structure gate limits every production and test file to 400 meaningful lines, with no exceptions; split distinct responsibilities before the quality review rather than treating a large file as presumptively cohesive.
 3. Fix every actionable finding before handoff: every `Must Fix`, `Should Fix`, and concrete finding outside the Clean Code rubric, including apparently small defects. Do not defer or suppress one merely to keep a task small.
 4. Record every genuine `Consider` trade-off in a review receipt with a decision. A `Consider` is not a defect, but it must not disappear without an explicit resolution.
 5. Run the repository's full quality command. It must pass linting, formatting, source-structure checks, type checks, security/static analysis where configured, tests, and coverage.

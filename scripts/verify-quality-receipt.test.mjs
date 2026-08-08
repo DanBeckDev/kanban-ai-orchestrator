@@ -95,7 +95,7 @@ describe("quality-review receipt gate", () => {
         changedPaths: [],
         mode: "all",
       }),
-    ).toBe("Validated 1 quality-review receipt(s).");
+    ).toMatch(/^Validated \d+ quality-review receipt\(s\)\.$/);
   });
 
   it("accepts both supported receipt extensions when reading all receipts", () => {

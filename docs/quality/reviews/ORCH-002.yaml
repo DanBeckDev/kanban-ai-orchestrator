@@ -25,7 +25,7 @@ scope:
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T16:02:00Z
+  reviewed_at: 2026-08-08T16:05:00Z
   findings:
     must_fix: []
     should_fix: []
@@ -54,7 +54,7 @@ remediation:
   - finding: The source-structure gate attempted to read a source file that was deleted in the current working tree during a base-branch comparison.
     change: Made deletion an explicit no-op and added a regression test alongside validation of exception ownership and expiry.
   - finding: A temporary legacy-file exception could have allowed its file to grow before expiry.
-    change: Added a fixed meaningful-line ceiling to every exception and made the gate reject any growth above that ceiling.
+    change: Added a fixed meaningful-line ceiling to every exception, then made the local hook and CI reject any later exception, owner change, expiry extension, or ceiling increase relative to the base branch.
 verification:
   commands:
     - command: cargo test --manifest-path src-tauri/Cargo.toml orchestration

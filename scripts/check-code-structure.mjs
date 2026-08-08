@@ -84,7 +84,12 @@ export function changedPathsFor(options, execute = execFileSync) {
 }
 
 export function loadExceptions(readFile = readFileSync) {
-  const content = readFile(resolve(projectRoot, exceptionsPath), "utf8");
+  return parseExceptions(
+    readFile(resolve(projectRoot, exceptionsPath), "utf8"),
+  );
+}
+
+export function parseExceptions(content) {
   const parsed = JSON.parse(content);
 
   if (
@@ -103,6 +108,11 @@ export function loadExceptions(readFile = readFileSync) {
     );
   }
 
+  const paths = new Set(parsed.exceptions.map((exception) => exception.path));
+  if (paths.size !== parsed.exceptions.length) {
+    throw new Error(`${exceptionsPath} must not duplicate an exception path.`);
+  }
+
   return parsed.exceptions;
 }
 
@@ -111,6 +121,69 @@ function activeException(path, exceptions, currentDate) {
     (exception) =>
       exception.path === path && exception.expires_on >= currentDate,
   );
+}
+
+export function baselineExceptionsFor(options, execute = execFileSync) {
+  const baseRef =
+    options.mode === "base-ref"
+      ? options.baseRef
+      : options.mode === "all"
+        ? undefined
+        : "HEAD";
+  if (baseRef === undefined) {
+    return undefined;
+  }
+
+  try {
+    return parseExceptions(
+      execute("git", ["show", `${baseRef}:${exceptionsPath}`], {
+        cwd: projectRoot,
+        encoding: "utf8",
+      }),
+    );
+  } catch (error) {
+    if (error.status === 128) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+export function validateExceptionLedger({ exceptions, baselineExceptions }) {
+  if (baselineExceptions === undefined) {
+    return [];
+  }
+
+  const baselineByPath = new Map(
+    baselineExceptions.map((exception) => [exception.path, exception]),
+  );
+  return exceptions.flatMap((exception) => {
+    const baseline = baselineByPath.get(exception.path);
+    if (baseline === undefined) {
+      return [
+        `${exception.path} is a new source-structure exception. New exceptions require product-owner approval and an ADR.`,
+      ];
+    }
+    if (baseline.work_item !== exception.work_item) {
+      return [
+        `${exception.path} cannot change its source-structure exception owner from ${baseline.work_item} to ${exception.work_item}.`,
+      ];
+    }
+    if (baseline.expires_on < exception.expires_on) {
+      return [
+        `${exception.path} cannot extend its source-structure exception expiry beyond ${baseline.expires_on}.`,
+      ];
+    }
+    if (
+      baseline.maximum_meaningful_lines < exception.maximum_meaningful_lines
+    ) {
+      return [
+        `${exception.path} cannot raise its source-structure exception ceiling above ${baseline.maximum_meaningful_lines}.`,
+      ];
+    }
+
+    return [];
+  });
 }
 
 export function validateSourceStructure({
@@ -157,18 +230,26 @@ export function runStructureCheck({
   args = process.argv.slice(2),
   currentDate,
   execute = execFileSync,
+  loadBaselineExceptions = baselineExceptionsFor,
   loadAllowedExceptions = loadExceptions,
   log = console.log,
   readFile = readFileSync,
 } = {}) {
   const options = parseOptions(args);
   const paths = changedPathsFor(options, execute);
+  const exceptions = loadAllowedExceptions(readFile);
   const violations = validateSourceStructure({
     paths,
     readFile,
-    exceptions: loadAllowedExceptions(readFile),
+    exceptions,
     currentDate,
   });
+  violations.push(
+    ...validateExceptionLedger({
+      exceptions,
+      baselineExceptions: loadBaselineExceptions(options, execute),
+    }),
+  );
 
   if (violations.length > 0) {
     throw new Error(violations.join("\n"));

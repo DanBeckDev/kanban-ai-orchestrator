@@ -99,13 +99,14 @@ tasks:
   - id: EXEC-002
     epic: EXEC
     title: Define and test the agent adapter contract
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, CORE-003]
     acceptance_criteria:
       - Capability discovery and normalized lifecycle events are specified.
       - A deterministic fake adapter covers completion, error, approval, interruption, duplicate event, and resume cases.
       - Adapter event input cannot produce an illegal task transition.
+    notes: Completed on 2026-08-08 with a provider-neutral Rust lifecycle contract, deterministic fake adapter, ordered event ingestor, and tests proving completion stops at review while errors, interruption, approvals, duplicates, resume, and illegal transitions remain explicit.
 
   - id: EXEC-003
     epic: EXEC

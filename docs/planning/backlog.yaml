@@ -74,13 +74,14 @@ tasks:
   - id: CORE-003
     epic: CORE
     title: Build durable event persistence and restart reconciliation
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001]
     acceptance_criteria:
       - Events and materialized state are persisted transactionally.
       - Simulated daemon interruption preserves task history and marks uncertain runs as interrupted.
       - UI reconnect cannot change task state by itself.
+    notes: SQLite migrations, append-only versioned events, transactional materialized snapshots, idempotent command handling, and restart reconciliation were implemented and verified on 2026-08-08. Unconfirmed running or awaiting-input work becomes interrupted only through an explicit daemon recovery command; opening the store for a UI reconnect has no task-state side effect. Newer database schemas fail closed to prevent an older app from writing incompatible data.
 
   - id: EXEC-001
     epic: EXEC

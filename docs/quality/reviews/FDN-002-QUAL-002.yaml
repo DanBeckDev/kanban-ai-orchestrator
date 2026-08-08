@@ -11,7 +11,7 @@ scope:
 review:
   skill: clean-code-review
   reviewer: Codex
-  reviewed_at: 2026-08-08T12:00:00+01:00
+  reviewed_at: 2026-08-08T12:15:00+01:00
   findings:
     must_fix: []
     should_fix: []
@@ -27,6 +27,8 @@ remediation:
     change: Classified the complete src-tauri tree, index.html, and .nvmrc as code-bearing and added focused tests.
   - finding: Direct pushes only revalidated existing receipts instead of validating the push's code changes.
     change: Added base-revision receipt validation for non-initial pushes, with safe initial-push and manual-run handling.
+  - finding: GitHub Actions reported that the v4 action runners target deprecated Node 20.
+    change: Updated checkout and setup-node to the current supported v7 action majors.
 verification:
   commands:
     - command: npm run quality:verify

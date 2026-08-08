@@ -45,6 +45,18 @@ jobs:
       - name: Verify quality and coverage
         run: npm run quality:verify
 
+      - name: Verify source structure
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-code-structure.mjs --base-ref origin/${{ github.base_ref }}
+
+      - name: Verify source structure for a non-initial push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: node scripts/check-code-structure.mjs --base-ref ${{ github.event.before }}
+
+      - name: Verify all source structure for an initial push or manual run
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000')
+        run: node scripts/check-code-structure.mjs --all
+
       - name: Verify quality-review receipt
         if: github.event_name == 'pull_request'
         run: node scripts/verify-quality-receipt.mjs --base-ref origin/${{ github.base_ref }}

@@ -14,7 +14,7 @@ pub use events::{
 pub use model::{
     Board, BoardId, CURRENT_SCHEMA_VERSION, Dependency, DependencyId, DependencyKind,
     DependencySource, Evidence, EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId,
-    ExecutionStatus, ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance,
+    ExecutionStatus, ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PlanId,
     PolicyAction, PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId,
     ProtectedGitAction, SchemaMetadata, SchemaVersion, ToolScope, VersionedSchema, WorkItem,
     WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,

@@ -2,6 +2,7 @@
 
 pub mod agent;
 pub mod domain;
+pub mod orchestration;
 pub mod persistence;
 pub mod policy;
 pub mod workspace;

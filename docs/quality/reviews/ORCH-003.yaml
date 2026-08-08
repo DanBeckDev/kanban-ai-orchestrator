@@ -4,7 +4,9 @@ scope:
   - src-tauri/src/application/board_service_tests.rs
   - src-tauri/src/application/completion_evidence_service.rs
   - src-tauri/src/application/review_check_request.rs
+  - src-tauri/src/application/review_decision_request.rs
   - src-tauri/src/application/review_service.rs
+  - src-tauri/src/application/board_service_tests/review.rs
   - src-tauri/src/application/mod.rs
   - src-tauri/src/desktop.rs
   - src-tauri/src/desktop_execution_runtime.rs
@@ -26,6 +28,7 @@ scope:
   - src/board/ExecutionControl.tsx
   - src/board/RecoveryActions.tsx
   - src/board/ReviewCheckForm.tsx
+  - src/board/ReviewDecisionForm.tsx
   - src/board/WorkItemCard.tsx
   - src/board/gateway.ts
   - src/board/presentation.ts
@@ -34,7 +37,7 @@ scope:
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T18:35:34Z
+  reviewed_at: 2026-08-08T20:09:20Z
   findings:
     must_fix: []
     should_fix: []
@@ -52,6 +55,10 @@ remediation:
     change: Extracted cohesive board fixtures and review-artifact scenarios into dedicated test modules. The whole-repository structural scan now passes with no exceptions.
   - finding: The asynchronous worker review test used a fixed one-second polling window and failed under coverage instrumentation despite the worker eventually completing.
     change: Replaced the attempt-count timeout with a monotonic five-second deadline, retaining fast polling while making the assertion reliable under the slower coverage build.
+  - finding: A human-review checkbox on the Done transition was not a durable reviewer decision and could not prove who made the decision or why.
+    change: Added a typed review-decision command and form that persist reviewer, summary, and accepted/rejected result as ReviewDecision evidence. Done now requires a recorded passing decision whenever human review is required.
+  - finding: Adding completion-review tests grew the broad board-service test module to 474 meaningful lines.
+    change: The zero-exception structure gate stopped the change; review and completion cases now live in a dedicated focused submodule that shares only explicit fixtures.
 verification:
   commands:
     - command: cargo test --manifest-path src-tauri/Cargo.toml --lib
@@ -60,11 +67,13 @@ verification:
       result: passed (39 tests)
     - command: npm run quality:verify
       result: passed
+    - command: npm run structure:verify
+      result: passed (140 source paths; 0 over-limit files)
   coverage:
     package_or_crate: minimum across React frontend and Rust core
-    lines: 86.68
-    statements: 82.24
-    functions: 86.22
-    branches: 82.17
+    lines: 84.81
+    statements: 80.47
+    functions: 83.57
+    branches: 80.69
     threshold_met: true
 exceptions: []

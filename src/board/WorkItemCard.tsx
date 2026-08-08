@@ -12,6 +12,7 @@ import {
   timestamp,
 } from "./presentation";
 import { ReviewCheckForm } from "./ReviewCheckForm";
+import { ReviewDecisionForm } from "./ReviewDecisionForm";
 import { ExecutionControl } from "./ExecutionControl";
 import { ExternalLinks } from "./ExternalLinks";
 import { RecoveryActions } from "./RecoveryActions";
@@ -22,6 +23,7 @@ import type {
   TransitionWorkItemRequest,
   StartExecutionRequest,
   RecordReviewCheckRequest,
+  RecordReviewDecisionRequest,
   WorkItem,
   WorkItemState,
 } from "./types";
@@ -35,6 +37,9 @@ type WorkItemCardProps = Readonly<{
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
+  onRecordReviewDecision: (
+    request: RecordReviewDecisionRequest,
+  ) => Promise<void>;
 }>;
 
 const emptyEvidence: CompletionEvidence = {
@@ -52,6 +57,7 @@ export function WorkItemCard({
   onStartExecution,
   onStopExecution,
   onRecordReviewCheck,
+  onRecordReviewDecision,
 }: WorkItemCardProps) {
   const [nextState, setNextState] = useState<WorkItemState | "">("");
   const [reason, setReason] = useState("");
@@ -126,11 +132,18 @@ export function WorkItemCard({
         onStop={onStopExecution}
       />
       {workItem.state === "review" && (
-        <ReviewCheckForm
-          busy={busy}
-          workItem={workItem}
-          onRecord={onRecordReviewCheck}
-        />
+        <>
+          <ReviewCheckForm
+            busy={busy}
+            workItem={workItem}
+            onRecord={onRecordReviewCheck}
+          />
+          <ReviewDecisionForm
+            busy={busy}
+            workItem={workItem}
+            onRecord={onRecordReviewDecision}
+          />
+        </>
       )}
       {isRecoveryState(workItem.state) && (
         <RecoveryActions
@@ -172,7 +185,11 @@ export function WorkItemCard({
             />
           </label>
           {nextState === "done" && (
-            <EvidenceFields evidence={evidence} onChange={setEvidence} />
+            <EvidenceFields
+              evidence={evidence}
+              requiresHumanReview={workItem.requiresHumanReview}
+              onChange={setEvidence}
+            />
           )}
           <button disabled={busy} type="submit">
             Request transition
@@ -340,9 +357,11 @@ function DecisionHistory({
 
 function EvidenceFields({
   evidence,
+  requiresHumanReview,
   onChange,
 }: Readonly<{
   evidence: CompletionEvidence;
+  requiresHumanReview: boolean;
   onChange: (evidence: CompletionEvidence) => void;
 }>) {
   return (
@@ -360,11 +379,15 @@ function EvidenceFields({
           onChange({ ...evidence, completionReportPresent })
         }
       />
-      <EvidenceCheckbox
-        checked={evidence.reviewAccepted}
-        label="Review accepted"
-        onChange={(reviewAccepted) => onChange({ ...evidence, reviewAccepted })}
-      />
+      {requiresHumanReview && (
+        <EvidenceCheckbox
+          checked={evidence.reviewAccepted}
+          label="Recorded review accepted"
+          onChange={(reviewAccepted) =>
+            onChange({ ...evidence, reviewAccepted })
+          }
+        />
+      )}
     </fieldset>
   );
 }

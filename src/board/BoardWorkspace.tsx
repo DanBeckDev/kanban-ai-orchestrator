@@ -14,6 +14,7 @@ import type {
   LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
+  RecordReviewDecisionRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -122,6 +123,10 @@ export function BoardWorkspace({
     await run(() => gateway.recordReviewCheck(request));
   }
 
+  async function recordReviewDecision(request: RecordReviewDecisionRequest) {
+    await run(() => gateway.recordReviewDecision(request));
+  }
+
   async function importLinearIssue(request: ImportLinearIssueRequest) {
     await run(() => gateway.importLinearIssue(request));
   }
@@ -211,6 +216,7 @@ export function BoardWorkspace({
           onStartExecution={startExecution}
           onStopExecution={stopExecution}
           onRecordReviewCheck={recordReviewCheck}
+          onRecordReviewDecision={recordReviewDecision}
           onTransition={transitionWorkItem}
           snapshot={snapshot}
         />

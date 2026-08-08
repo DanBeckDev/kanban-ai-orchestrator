@@ -13,6 +13,7 @@ import type {
   LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
+  RecordReviewDecisionRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -49,6 +50,11 @@ export const tauriBoardGateway: BoardGateway = {
   },
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot> {
     return invoke("record_review_check", { request });
+  },
+  recordReviewDecision(
+    request: RecordReviewDecisionRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("record_review_decision", { request });
   },
   beginLinearOAuth(
     configuration: LinearOAuthConfiguration,

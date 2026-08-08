@@ -223,6 +223,15 @@ export type RecordReviewCheckRequest = Readonly<{
   recordedAt: string;
 }>;
 
+export type RecordReviewDecisionRequest = Readonly<{
+  evidenceId: string;
+  workItemId: string;
+  reviewer: string;
+  summary: string;
+  accepted: boolean;
+  recordedAt: string;
+}>;
+
 export type ImportLinearIssueRequest = Readonly<{
   externalLinkId: string;
   workItemId: string;
@@ -255,6 +264,9 @@ export interface BoardGateway {
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
+  recordReviewDecision(
+    request: RecordReviewDecisionRequest,
+  ): Promise<BoardSnapshot>;
   beginLinearOAuth(
     configuration: LinearOAuthConfiguration,
   ): Promise<LinearConnectionStatus>;

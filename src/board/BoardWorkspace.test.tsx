@@ -149,7 +149,7 @@ describe("board workspace", () => {
     for (const label of [
       "Checks passed",
       "Completion report present",
-      "Review accepted",
+      "Recorded review accepted",
     ]) {
       fireEvent.click(within(transitionForm).getByLabelText(label));
     }
@@ -201,6 +201,37 @@ describe("board workspace", () => {
         workItemId: "review-task",
         passed: true,
         summary: "Unit tests passed.",
+      }),
+    );
+  });
+
+  it("records the human reviewer decision before a task can be marked done", async () => {
+    const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
+
+    await createBoard(boardGateway);
+    const form = screen.getByRole("form", {
+      name: "Record review decision for Task review-task",
+    });
+    fireEvent.change(within(form).getByLabelText("Reviewer"), {
+      target: { value: "Daniel" },
+    });
+    fireEvent.change(within(form).getByLabelText("Decision summary"), {
+      target: { value: "Acceptance criteria verified." },
+    });
+    fireEvent.click(within(form).getByLabelText("Accept review"));
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Record decision" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.recordReviewDecision).toHaveBeenCalledOnce(),
+    );
+    expect(boardGateway.recordReviewDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workItemId: "review-task",
+        reviewer: "Daniel",
+        summary: "Acceptance criteria verified.",
+        accepted: false,
       }),
     );
   });

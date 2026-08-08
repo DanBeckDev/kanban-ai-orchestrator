@@ -37,6 +37,14 @@ where
                 EvidenceResult::Recorded,
             )?;
         }
+        if completion.review_accepted {
+            require_evidence(
+                &evidence,
+                work_item_id,
+                EvidenceKind::ReviewDecision,
+                EvidenceResult::Passed,
+            )?;
+        }
         Ok(())
     }
 }

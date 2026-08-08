@@ -159,6 +159,23 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
       };
       return current;
     }),
+    recordReviewDecision: vi.fn().mockImplementation(async (request) => {
+      current = {
+        ...current,
+        evidence: [
+          ...current.evidence,
+          {
+            id: request.evidenceId,
+            workItemId: request.workItemId,
+            kind: "review_decision",
+            result: request.accepted ? "passed" : "failed",
+            summary: `${request.reviewer}: ${request.summary}`,
+            recordedAt: request.recordedAt,
+          },
+        ],
+      };
+      return current;
+    }),
     beginLinearOAuth: vi
       .fn()
       .mockImplementation(async (_configuration: LinearOAuthConfiguration) => {

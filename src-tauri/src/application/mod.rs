@@ -11,6 +11,7 @@ mod execution_start_request;
 mod linear_import_request;
 mod linear_import_service;
 mod review_check_request;
+mod review_decision_request;
 mod review_service;
 
 pub use agent_profile_service::AgentProfileServiceError;
@@ -28,6 +29,7 @@ pub use execution_launch::{
 pub use execution_start_request::StartExecutionRequest;
 pub use linear_import_request::{ImportLinearBlockerRequest, ImportLinearIssueRequest};
 pub use review_check_request::RecordReviewCheckRequest;
+pub use review_decision_request::RecordReviewDecisionRequest;
 
 #[cfg(test)]
 mod board_service_tests;

@@ -16,6 +16,7 @@ import type {
   LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
+  RecordReviewDecisionRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -36,6 +37,9 @@ type BoardViewProps = Readonly<{
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
+  onRecordReviewDecision: (
+    request: RecordReviewDecisionRequest,
+  ) => Promise<void>;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
 }>;
 
@@ -55,6 +59,7 @@ export function BoardView({
   onStartExecution,
   onStopExecution,
   onRecordReviewCheck,
+  onRecordReviewDecision,
   onTransition,
 }: BoardViewProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -93,6 +98,7 @@ export function BoardView({
                     onStartExecution={onStartExecution}
                     onStopExecution={onStopExecution}
                     onRecordReviewCheck={onRecordReviewCheck}
+                    onRecordReviewDecision={onRecordReviewDecision}
                   />
                 ))}
               </div>

@@ -149,14 +149,14 @@ tasks:
   - id: ORCH-003
     epic: ORCH
     title: Build evidence-first review and recovery flows
-    status: in_progress
+    status: done
     priority: P1
     depends_on: [CORE-003, EXEC-001, EXEC-002, ORCH-001]
     acceptance_criteria:
       - Review shows task criteria, diff/commit, checks, agent summary, and decision history.
       - Failure and interruption present retry, inspect, recover, and cancel actions.
       - A task cannot reach done without the configured evidence and approval.
-    notes: In progress on 2026-08-08. Board snapshots now carry a compact ordered trail of the most recent 20 durable task creation and state-decision events per task, plus bounded recent execution attempts and evidence records. Cards preserve and render agent/session/workspace/usage context and review evidence after reopening. The execution-event controller activates a pending attempt atomically with its session and `Running` task transition, rejects unstarted or out-of-order events, checkpoints usage/status monotonically, and persists input/failure/interruption/completion reports as evidence. The desktop now persists structured direct-program profiles and monitors one verified, policy-authorized process per execution independently of the UI; completion moves only to `Review`. Diff/commit collection, review decisions, and actionable retry/inspect/recover/cancel controls remain.
+    notes: Completed on 2026-08-08. Board snapshots carry a compact ordered trail of the most recent 20 durable task creation and state-decision events per task, plus bounded recent execution attempts and evidence records. Cards preserve and render agent/session/workspace/usage context, diff/commit evidence, checks, completion reports, and reviewer decisions after reopening. The execution-event controller activates a pending attempt atomically with its session and `Running` task transition, rejects unstarted or out-of-order events, checkpoints usage/status monotonically, and persists input/failure/interruption/completion reports as evidence. The desktop monitors one verified, policy-authorized process per execution independently of the UI; completion moves only to `Review`. Recovery offers attempt inspection, recover-to-Ready/retry, and cancellation. A human-reviewed task cannot reach Done until passing checks, completion report, and a durable accepted review decision all exist.
 
   - id: APP-001
     epic: APP

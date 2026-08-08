@@ -1,7 +1,7 @@
 use super::{
     AddDependencyRequest, BoardService, BoardServiceError, CreateBoardRequest,
     CreateProjectRequest, CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
-    RecordReviewCheckRequest, TransitionWorkItemRequest, UpdateExecutionRequest,
+    TransitionWorkItemRequest, UpdateExecutionRequest,
 };
 use crate::domain::{
     CompletionEvidence, DependencyKind, EvidenceKind, EvidenceResult, ExecutionStatus,
@@ -45,7 +45,7 @@ pub(super) fn create_work_item_request(id: &str) -> CreateWorkItemRequest {
     }
 }
 
-fn transition_request(
+pub(super) fn transition_request(
     event_id: &str,
     work_item_id: &str,
     next_state: WorkItemState,
@@ -89,6 +89,8 @@ pub(super) fn create_board(service: &mut BoardService<SqliteEventStore>) {
         .create_board(create_board_request())
         .expect("board should be created");
 }
+
+mod review;
 
 #[test]
 fn creates_a_durable_board_task_and_guarded_transition_through_the_use_case() {
@@ -229,7 +231,7 @@ fn preserves_done_evidence_requirements_at_the_command_use_case() {
     let completion = CompletionEvidence {
         checks_passed: true,
         completion_report_present: true,
-        review_accepted: true,
+        review_accepted: false,
     };
     assert!(matches!(
         service.transition_work_item(transition_request(
@@ -297,47 +299,6 @@ fn preserves_done_evidence_requirements_at_the_command_use_case() {
             .completion_evidence,
         Some(completion)
     );
-}
-
-#[test]
-fn records_review_checks_only_after_a_task_reaches_review() {
-    let mut service = service();
-    create_board(&mut service);
-    service
-        .create_work_item(create_work_item_request("task-1"))
-        .expect("work item should be created");
-
-    let request = RecordReviewCheckRequest {
-        evidence_id: "review-check-1".to_owned(),
-        work_item_id: "task-1".to_owned(),
-        summary: "Unit tests passed.".to_owned(),
-        passed: true,
-        recorded_at: "2026-08-08T00:03:00Z".to_owned(),
-    };
-    assert!(matches!(
-        service.record_review_check(request.clone()),
-        Err(BoardServiceError::WorkItemNotInReview {
-            work_item_id,
-            state: WorkItemState::Inbox,
-        }) if work_item_id == WorkItemId::from("task-1")
-    ));
-    for (event_id, next_state) in [
-        ("plan-task-1", WorkItemState::Planned),
-        ("ready-task-1", WorkItemState::Ready),
-        ("run-task-1", WorkItemState::Running),
-        ("review-task-1", WorkItemState::Review),
-    ] {
-        service
-            .transition_work_item(transition_request(event_id, "task-1", next_state, None))
-            .expect("task should reach review");
-    }
-
-    let snapshot = service
-        .record_review_check(request)
-        .expect("review check should persist");
-    assert_eq!(snapshot.evidence.len(), 1);
-    assert_eq!(snapshot.evidence[0].kind, EvidenceKind::Check);
-    assert_eq!(snapshot.evidence[0].result, EvidenceResult::Passed);
 }
 
 #[test]

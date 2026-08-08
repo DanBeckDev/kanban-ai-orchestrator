@@ -4,8 +4,8 @@ use tempfile::TempDir;
 
 use crate::{
     domain::{
-        PolicyAction, PolicyDecisionId, PolicyDecisionKind, ProjectId, WorkItem, WorkItemEventId,
-        WorkItemId,
+        EvidenceId, ExecutionId, PolicyAction, PolicyDecisionId, PolicyDecisionKind, ProjectId,
+        WorkItem, WorkItemEventId, WorkItemId,
     },
     persistence::{EventStoreError, SqliteEventStore},
     policy::{PolicyGate, PolicyLimits, PolicyRequest, PolicySet, PolicyUsage, ProtectedGitAction},
@@ -154,6 +154,23 @@ fn event_store_errors_are_actionable_and_preserve_wrapped_sources() {
             work_item_id: WorkItemId::from("task-1"),
         }
         .to_string(),
+        EventStoreError::ExecutionAlreadyExists {
+            execution_id: ExecutionId::from("execution-1"),
+        }
+        .to_string(),
+        EventStoreError::ExecutionNotFound {
+            execution_id: ExecutionId::from("execution-1"),
+        }
+        .to_string(),
+        EventStoreError::InvalidExecutionUpdate {
+            execution_id: ExecutionId::from("execution-1"),
+            reason: "usage cannot decrease",
+        }
+        .to_string(),
+        EventStoreError::EvidenceAlreadyExists {
+            evidence_id: EvidenceId::from("evidence-1"),
+        }
+        .to_string(),
         EventStoreError::EventIdConflict {
             event_id: WorkItemEventId::from("event-1"),
         }
@@ -184,8 +201,8 @@ fn event_store_errors_are_actionable_and_preserve_wrapped_sources() {
         .to_string(),
         EventStoreError::InvalidEventSequence { value: -1 }.to_string(),
         EventStoreError::UnsupportedDatabaseSchemaVersion {
-            current: 5,
-            supported: 4,
+            current: 6,
+            supported: 5,
         }
         .to_string(),
     ];

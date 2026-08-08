@@ -65,11 +65,56 @@ export type BoardActivity = Readonly<{
   completionEvidence?: CompletionEvidence;
 }>;
 
+export type ExecutionStatus =
+  | "pending"
+  | "running"
+  | "awaiting_input"
+  | "awaiting_review"
+  | "completed"
+  | "failed"
+  | "interrupted"
+  | "cancelled";
+
+export type Execution = Readonly<{
+  id: string;
+  workItemId: string;
+  adapterName: string;
+  status: ExecutionStatus;
+  sessionId?: string;
+  workspacePath: string;
+  usage: Readonly<{
+    inputTokens: number;
+    outputTokens: number;
+    costMicros?: number;
+  }>;
+  lastEventSequence: number;
+}>;
+
+export type EvidenceKind =
+  | "check"
+  | "commit"
+  | "pull_request"
+  | "completion_report"
+  | "review_decision";
+
+export type EvidenceResult = "recorded" | "passed" | "failed";
+
+export type Evidence = Readonly<{
+  id: string;
+  workItemId: string;
+  kind: EvidenceKind;
+  result: EvidenceResult;
+  summary: string;
+  recordedAt: string;
+}>;
+
 export type BoardSnapshot = Readonly<{
   board: Board;
   workItems: readonly MaterializedWorkItem[];
   dependencies: readonly Dependency[];
   activity: readonly BoardActivity[];
+  executions: readonly Execution[];
+  evidence: readonly Evidence[];
 }>;
 
 export type CreateProjectRequest = Readonly<{
@@ -119,6 +164,30 @@ export type TransitionWorkItemRequest = Readonly<{
   recordedAt: string;
 }>;
 
+export type RecordExecutionRequest = Readonly<{
+  executionId: string;
+  workItemId: string;
+  adapterName: string;
+  workspacePath: string;
+}>;
+
+export type RecordEvidenceRequest = Readonly<{
+  evidenceId: string;
+  workItemId: string;
+  kind: EvidenceKind;
+  result: EvidenceResult;
+  summary: string;
+  recordedAt: string;
+}>;
+
+export type UpdateExecutionRequest = Readonly<{
+  executionId: string;
+  status: ExecutionStatus;
+  sessionId?: string;
+  usage: Execution["usage"];
+  lastEventSequence: number;
+}>;
+
 export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
@@ -127,5 +196,8 @@ export interface BoardGateway {
   transitionWorkItem(
     request: TransitionWorkItemRequest,
   ): Promise<BoardSnapshot>;
+  recordExecution(request: RecordExecutionRequest): Promise<BoardSnapshot>;
+  recordEvidence(request: RecordEvidenceRequest): Promise<BoardSnapshot>;
+  updateExecution(request: UpdateExecutionRequest): Promise<BoardSnapshot>;
   boardSnapshot(boardId: string): Promise<BoardSnapshot>;
 }

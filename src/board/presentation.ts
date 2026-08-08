@@ -2,6 +2,8 @@ import type {
   BoardActivity,
   BoardSnapshot,
   Dependency,
+  Evidence,
+  Execution,
   WorkItem,
   WorkItemState,
 } from "./types";
@@ -55,6 +57,24 @@ export function activityFor(
 ): readonly BoardActivity[] {
   return snapshot.activity.filter(
     (activity) => activity.workItemId === workItemId,
+  );
+}
+
+export function executionsFor(
+  snapshot: BoardSnapshot,
+  workItemId: string,
+): readonly Execution[] {
+  return snapshot.executions.filter(
+    (execution) => execution.workItemId === workItemId,
+  );
+}
+
+export function evidenceFor(
+  snapshot: BoardSnapshot,
+  workItemId: string,
+): readonly Evidence[] {
+  return snapshot.evidence.filter(
+    (evidence) => evidence.workItemId === workItemId,
   );
 }
 

@@ -5,8 +5,9 @@ use tempfile::TempDir;
 use super::{BoardStoreError, SqliteEventStore};
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyGraphError, DependencyId,
-    DependencyKind, DependencySource, Project, ProjectId, SchemaMetadata, WorkItem, WorkItemBudget,
-    WorkItemEventId, WorkItemId, WorkItemState,
+    DependencyKind, DependencySource, Evidence, EvidenceId, EvidenceKind, EvidenceResult,
+    Execution, ExecutionId, ExecutionStatus, ExecutionUsage, Project, ProjectId, SchemaMetadata,
+    WorkItem, WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
 };
 
 fn project(id: &str) -> Project {
@@ -48,6 +49,36 @@ fn create_work_item_command(id: &str, board_id: &str) -> CreateWorkItemCommand {
         event_id: WorkItemEventId::from(format!("create-{id}").as_str()),
         work_item: work_item(id, board_id),
         recorded_at: "2026-08-08T00:00:00Z".to_owned(),
+    }
+}
+
+fn execution(work_item_id: &str) -> Execution {
+    Execution {
+        schema: SchemaMetadata::current(),
+        id: ExecutionId::from("execution-1"),
+        work_item_id: WorkItemId::from(work_item_id),
+        adapter_name: "codex-cli".to_owned(),
+        status: ExecutionStatus::AwaitingReview,
+        session_id: Some("session-1".to_owned()),
+        workspace_path: "/workspaces/task-1".to_owned(),
+        usage: ExecutionUsage {
+            input_tokens: 10,
+            output_tokens: 5,
+            cost_micros: Some(100),
+        },
+        last_event_sequence: 4,
+    }
+}
+
+fn evidence(work_item_id: &str) -> Evidence {
+    Evidence {
+        schema: SchemaMetadata::current(),
+        id: EvidenceId::from("evidence-1"),
+        work_item_id: WorkItemId::from(work_item_id),
+        kind: EvidenceKind::CompletionReport,
+        result: EvidenceResult::Recorded,
+        summary: "Agent requested review.".to_owned(),
+        recorded_at: "2026-08-08T00:02:00Z".to_owned(),
     }
 }
 
@@ -95,6 +126,12 @@ fn persists_a_board_snapshot_across_reopen() {
     store
         .add_board_dependency(dependency("task-1-blocks-task-2", "task-1", "task-2"))
         .expect("dependency should persist in its board");
+    store
+        .record_execution(execution("task-1"))
+        .expect("execution should persist");
+    store
+        .record_evidence(evidence("task-1"))
+        .expect("evidence should persist");
     drop(store);
 
     let reopened_store = opened_store(&database_path);
@@ -116,6 +153,8 @@ fn persists_a_board_snapshot_across_reopen() {
     assert_eq!(snapshot.work_items.len(), 2);
     assert_eq!(snapshot.activity.len(), 2);
     assert_eq!(snapshot.activity[0].summary, "Task created.");
+    assert_eq!(snapshot.executions, vec![execution("task-1")]);
+    assert_eq!(snapshot.evidence, vec![evidence("task-1")]);
     assert_eq!(
         snapshot.dependencies,
         vec![dependency("task-1-blocks-task-2", "task-1", "task-2")]

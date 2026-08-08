@@ -9,6 +9,8 @@ use crate::domain::{
 use super::{BoardStoreError, SqliteEventStore};
 
 const RECENT_ACTIVITY_LIMIT_PER_WORK_ITEM: u32 = 20;
+const RECENT_EXECUTION_LIMIT_PER_WORK_ITEM: u32 = 20;
+const RECENT_EVIDENCE_LIMIT_PER_WORK_ITEM: u32 = 20;
 
 impl SqliteEventStore {
     pub fn create_project(&mut self, project: Project) -> Result<Project, BoardStoreError> {
@@ -138,11 +140,23 @@ impl SqliteEventStore {
 
     pub fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, BoardStoreError> {
         let work_items = self.work_items_for_board(board_id)?;
+        let work_item_ids = work_items
+            .iter()
+            .map(|materialized_work_item| materialized_work_item.work_item.id.clone())
+            .collect::<Vec<_>>();
         Ok(BoardSnapshot {
             board: self.require_board(board_id)?,
             activity: self.activity_for(&work_items)?,
             work_items,
             dependencies: self.dependencies_for_board(board_id)?,
+            executions: self.recent_executions_for_work_items(
+                &work_item_ids,
+                RECENT_EXECUTION_LIMIT_PER_WORK_ITEM,
+            )?,
+            evidence: self.recent_evidence_for_work_items(
+                &work_item_ids,
+                RECENT_EVIDENCE_LIMIT_PER_WORK_ITEM,
+            )?,
         })
     }
 

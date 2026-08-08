@@ -1,16 +1,19 @@
 use serde::Serialize;
 
 use crate::domain::{
-    CompletionEvidence, MaterializedWorkItem, RecordedWorkItemEvent, WorkItemEventKind, WorkItemId,
+    Board, CompletionEvidence, Dependency, Evidence, Execution, MaterializedWorkItem,
+    RecordedWorkItemEvent, WorkItemEventKind, WorkItemId,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BoardSnapshot {
-    pub board: crate::domain::Board,
+    pub board: Board,
     pub work_items: Vec<MaterializedWorkItem>,
-    pub dependencies: Vec<crate::domain::Dependency>,
+    pub dependencies: Vec<Dependency>,
     pub activity: Vec<BoardActivity>,
+    pub executions: Vec<Execution>,
+    pub evidence: Vec<Evidence>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

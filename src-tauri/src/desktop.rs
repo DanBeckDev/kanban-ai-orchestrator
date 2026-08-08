@@ -10,7 +10,8 @@ use tauri::{AppHandle, Manager, State};
 use crate::{
     application::{
         AddDependencyRequest, BoardService, BoardSnapshot, CreateBoardRequest,
-        CreateProjectRequest, CreateWorkItemRequest, TransitionWorkItemRequest,
+        CreateProjectRequest, CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
+        TransitionWorkItemRequest, UpdateExecutionRequest,
     },
     domain::{BoardId, Project},
     persistence::SqliteEventStore,
@@ -90,6 +91,36 @@ pub(crate) fn transition_work_item(
 ) -> Result<BoardSnapshot, String> {
     lock_service(&state)?
         .transition_work_item(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn record_execution(
+    state: State<'_, BoardDaemonState>,
+    request: RecordExecutionRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .record_execution(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn record_evidence(
+    state: State<'_, BoardDaemonState>,
+    request: RecordEvidenceRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .record_evidence(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn update_execution(
+    state: State<'_, BoardDaemonState>,
+    request: UpdateExecutionRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .update_execution(request)
         .map_err(error_message)
 }
 

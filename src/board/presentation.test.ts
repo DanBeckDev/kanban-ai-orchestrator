@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  blockersFor,
   activityFor,
+  blockersFor,
   boardColumns,
   budgetSummary,
+  evidenceFor,
+  executionsFor,
   nextTransitionStates,
   stateLabel,
   workItemsForColumn,
@@ -69,6 +71,27 @@ const snapshot: BoardSnapshot = {
       summary: "State changed from inbox to planned: Approved.",
     },
   ],
+  executions: [
+    {
+      id: "execution-1",
+      workItemId: "ui",
+      adapterName: "codex-cli",
+      status: "awaiting_review",
+      workspacePath: "/workspaces/ui",
+      usage: { inputTokens: 42, outputTokens: 24 },
+      lastEventSequence: 3,
+    },
+  ],
+  evidence: [
+    {
+      id: "check-1",
+      workItemId: "ui",
+      kind: "check",
+      result: "passed",
+      summary: "Unit tests passed.",
+      recordedAt: "2026-08-08T00:02:00Z",
+    },
+  ],
 };
 
 describe("board presentation", () => {
@@ -88,6 +111,12 @@ describe("board presentation", () => {
     expect(activityFor(snapshot, "ui").map(({ sequence }) => sequence)).toEqual(
       [3],
     );
+    expect(executionsFor(snapshot, "ui").map(({ id }) => id)).toEqual([
+      "execution-1",
+    ]);
+    expect(evidenceFor(snapshot, "ui").map(({ id }) => id)).toEqual([
+      "check-1",
+    ]);
     expect(boardColumns.map(({ label }) => label)).toEqual([
       "Plan",
       "Ready",

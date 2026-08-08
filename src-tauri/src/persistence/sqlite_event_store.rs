@@ -15,13 +15,15 @@ use super::{
         idempotent_policy_decision, idempotent_protected_git_approval,
         policy_decision_matches_protected_git_approval,
     },
-    event_store_schema::{create_initial_schema, create_policy_audit_schema},
+    event_store_schema::{
+        create_execution_schema, create_initial_schema, create_policy_audit_schema,
+    },
     event_store_support::{
         deserialize_recorded_event, event_sequence, idempotent_creation, idempotent_transition,
     },
 };
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 4;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 5;
 pub struct SqliteEventStore {
     pub(crate) connection: Connection,
 }
@@ -260,6 +262,11 @@ impl SqliteEventStore {
         if current_version < 4 {
             crate::persistence::board_store::create_board_schema(&transaction)?;
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [4])?;
+        }
+
+        if current_version < 5 {
+            create_execution_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [5])?;
         }
 
         transaction.commit()?;

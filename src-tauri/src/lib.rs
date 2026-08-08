@@ -36,6 +36,9 @@ pub fn run() {
             desktop::create_work_item,
             desktop::add_dependency,
             desktop::transition_work_item,
+            desktop::record_execution,
+            desktop::record_evidence,
+            desktop::update_execution,
             desktop::board_snapshot,
         ])
         .run(tauri::generate_context!())

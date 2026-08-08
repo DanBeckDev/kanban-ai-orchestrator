@@ -1,15 +1,17 @@
 use std::{error::Error, fmt};
 
-use serde::Deserialize;
-
 use crate::domain::{
-    Board, BoardId, CompletionEvidence, CreateWorkItemCommand, Dependency, DependencyId,
-    DependencyKind, DependencySource, MaterializedWorkItem, Project, ProjectId,
-    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
-    WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
+    Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
+    EvidenceId, Execution, ExecutionId, ExecutionStatus, ExecutionUsage, MaterializedWorkItem,
+    Project, ProjectId, RecordedWorkItemEvent, SchemaMetadata, TransitionConfig,
+    TransitionWorkItemCommand, WorkItem, WorkItemEventId, WorkItemId, WorkItemState,
 };
 
-use super::BoardSnapshot;
+use super::{
+    AddDependencyRequest, BoardSnapshot, CreateBoardRequest, CreateProjectRequest,
+    CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
+    TransitionWorkItemRequest, UpdateExecutionRequest,
+};
 
 pub trait BoardRepository {
     type Error: Error;
@@ -29,6 +31,10 @@ pub trait BoardRepository {
         &mut self,
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
+    fn record_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error>;
+    fn execution(&self, execution_id: &ExecutionId) -> Result<Option<Execution>, Self::Error>;
+    fn update_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error>;
+    fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error>;
     fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, Self::Error>;
 }
 
@@ -186,6 +192,87 @@ where
         self.snapshot(&board_id)
     }
 
+    pub fn record_execution(
+        &mut self,
+        request: RecordExecutionRequest,
+    ) -> Result<BoardSnapshot, BoardServiceError<Repository::Error>> {
+        validate_required(&request.execution_id, "execution id")?;
+        validate_required(&request.work_item_id, "work item id")?;
+        validate_required(&request.adapter_name, "adapter name")?;
+        validate_required(&request.workspace_path, "workspace path")?;
+
+        let work_item_id = WorkItemId::from(request.work_item_id.as_str());
+        let board_id = self.board_id_for(&work_item_id)?;
+        self.repository
+            .record_execution(Execution {
+                schema: SchemaMetadata::current(),
+                id: ExecutionId::from(request.execution_id.as_str()),
+                work_item_id,
+                adapter_name: request.adapter_name,
+                status: ExecutionStatus::Pending,
+                session_id: None,
+                workspace_path: request.workspace_path,
+                usage: ExecutionUsage {
+                    input_tokens: 0,
+                    output_tokens: 0,
+                    cost_micros: None,
+                },
+                last_event_sequence: 0,
+            })
+            .map_err(BoardServiceError::Repository)?;
+        self.snapshot(&board_id)
+    }
+
+    pub fn record_evidence(
+        &mut self,
+        request: RecordEvidenceRequest,
+    ) -> Result<BoardSnapshot, BoardServiceError<Repository::Error>> {
+        validate_required(&request.evidence_id, "evidence id")?;
+        validate_required(&request.work_item_id, "work item id")?;
+        validate_required(&request.summary, "evidence summary")?;
+        validate_required(&request.recorded_at, "evidence recorded at")?;
+
+        let work_item_id = WorkItemId::from(request.work_item_id.as_str());
+        let board_id = self.board_id_for(&work_item_id)?;
+        self.repository
+            .record_evidence(Evidence {
+                schema: SchemaMetadata::current(),
+                id: EvidenceId::from(request.evidence_id.as_str()),
+                work_item_id,
+                kind: request.kind,
+                result: request.result,
+                summary: request.summary,
+                recorded_at: request.recorded_at,
+            })
+            .map_err(BoardServiceError::Repository)?;
+        self.snapshot(&board_id)
+    }
+
+    pub fn update_execution(
+        &mut self,
+        request: UpdateExecutionRequest,
+    ) -> Result<BoardSnapshot, BoardServiceError<Repository::Error>> {
+        validate_required(&request.execution_id, "execution id")?;
+
+        let execution_id = ExecutionId::from(request.execution_id.as_str());
+        let mut execution = self
+            .repository
+            .execution(&execution_id)
+            .map_err(BoardServiceError::Repository)?
+            .ok_or_else(|| BoardServiceError::ExecutionNotFound {
+                execution_id: execution_id.clone(),
+            })?;
+        let board_id = self.board_id_for(&execution.work_item_id)?;
+        execution.status = request.status;
+        execution.session_id = request.session_id;
+        execution.usage = request.usage;
+        execution.last_event_sequence = request.last_event_sequence;
+        self.repository
+            .update_execution(execution)
+            .map_err(BoardServiceError::Repository)?;
+        self.snapshot(&board_id)
+    }
+
     pub fn snapshot(
         &self,
         board_id: &BoardId,
@@ -234,70 +321,13 @@ fn validate_criteria<RepositoryError>(
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateProjectRequest {
-    pub project_id: String,
-    pub name: String,
-    pub repository_path: String,
-    pub base_ref: String,
-    pub policy_set_id: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateBoardRequest {
-    pub board_id: String,
-    pub project_id: String,
-    pub name: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateWorkItemRequest {
-    pub event_id: String,
-    pub work_item_id: String,
-    pub board_id: String,
-    pub title: String,
-    pub description: String,
-    pub acceptance_criteria: Vec<String>,
-    #[serde(default)]
-    pub budget: WorkItemBudget,
-    pub requires_human_review: bool,
-    pub recorded_at: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AddDependencyRequest {
-    pub dependency_id: String,
-    pub upstream_work_item_id: String,
-    pub downstream_work_item_id: String,
-    pub kind: DependencyKind,
-    pub reason: String,
-    pub owner: String,
-    pub next_action: String,
-    pub created_by: String,
-    pub created_at: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransitionWorkItemRequest {
-    pub event_id: String,
-    pub work_item_id: String,
-    pub next_state: WorkItemState,
-    pub evidence: Option<CompletionEvidence>,
-    pub reason: String,
-    pub recorded_at: String,
-}
-
 #[derive(Debug)]
 pub enum BoardServiceError<RepositoryError> {
     Repository(RepositoryError),
     MissingRequiredField { field: &'static str },
     InvalidAcceptanceCriteria,
     WorkItemNotFound { work_item_id: WorkItemId },
+    ExecutionNotFound { execution_id: ExecutionId },
 }
 
 impl<RepositoryError> fmt::Display for BoardServiceError<RepositoryError>
@@ -314,6 +344,9 @@ where
             Self::WorkItemNotFound { work_item_id } => {
                 write!(formatter, "work item {} was not found", work_item_id.0)
             }
+            Self::ExecutionNotFound { execution_id } => {
+                write!(formatter, "execution {} was not found", execution_id.0)
+            }
         }
     }
 }
@@ -327,7 +360,8 @@ where
             Self::Repository(error) => Some(error),
             Self::MissingRequiredField { .. }
             | Self::InvalidAcceptanceCriteria
-            | Self::WorkItemNotFound { .. } => None,
+            | Self::WorkItemNotFound { .. }
+            | Self::ExecutionNotFound { .. } => None,
         }
     }
 }

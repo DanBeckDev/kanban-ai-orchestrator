@@ -4,6 +4,8 @@ import {
   activityFor,
   blockersFor,
   budgetSummary,
+  evidenceFor,
+  executionsFor,
   nextTransitionStates,
   stateLabel,
   timestamp,
@@ -40,6 +42,8 @@ export function WorkItemCard({
   const [evidence, setEvidence] = useState(emptyEvidence);
   const dependencies = blockersFor(snapshot, workItem.id);
   const activity = activityFor(snapshot, workItem.id);
+  const executions = executionsFor(snapshot, workItem.id);
+  const evidenceRecords = evidenceFor(snapshot, workItem.id);
   const options = nextTransitionStates(workItem.state);
 
   async function submitTransition(event: FormEvent<HTMLFormElement>) {
@@ -72,6 +76,10 @@ export function WorkItemCard({
           <li key={criterion}>{criterion}</li>
         ))}
       </ul>
+      {executions.length > 0 && <ExecutionHistory executions={executions} />}
+      {evidenceRecords.length > 0 && (
+        <EvidenceHistory evidence={evidenceRecords} />
+      )}
       {activity.length > 0 && <DecisionHistory activity={activity} />}
       {dependencies.length > 0 && (
         <section className="dependency-notice">
@@ -126,6 +134,52 @@ export function WorkItemCard({
         </form>
       )}
     </article>
+  );
+}
+
+function ExecutionHistory({
+  executions,
+}: Readonly<{ executions: ReturnType<typeof executionsFor> }>) {
+  return (
+    <details className="execution-history">
+      <summary>Recent agent attempts ({executions.length})</summary>
+      <ol>
+        {executions.map((execution) => (
+          <li key={execution.id}>
+            <p>
+              {execution.adapterName} · {execution.status.replaceAll("_", " ")}
+            </p>
+            <span>Workspace: {execution.workspacePath}</span>
+            {execution.sessionId && <span>Session: {execution.sessionId}</span>}
+            <span>
+              Usage: {execution.usage.inputTokens} input /{" "}
+              {execution.usage.outputTokens} output tokens
+            </span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function EvidenceHistory({
+  evidence,
+}: Readonly<{ evidence: ReturnType<typeof evidenceFor> }>) {
+  return (
+    <details className="evidence-history">
+      <summary>Recent review evidence ({evidence.length})</summary>
+      <ol>
+        {evidence.map((entry) => (
+          <li key={entry.id}>
+            <p>
+              {entry.kind.replaceAll("_", " ")}: {entry.result}
+            </p>
+            <span>{entry.summary}</span>
+            <time dateTime={entry.recordedAt}>{entry.recordedAt}</time>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

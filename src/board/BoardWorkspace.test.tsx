@@ -18,12 +18,16 @@ import type {
 function snapshot(
   workItems: BoardSnapshot["workItems"] = [],
   activity: BoardSnapshot["activity"] = [],
+  executions: BoardSnapshot["executions"] = [],
+  evidence: BoardSnapshot["evidence"] = [],
 ): BoardSnapshot {
   return {
     board: { id: "board-1", projectId: "project-1", name: "MVP" },
     workItems,
     dependencies: [],
     activity,
+    executions,
+    evidence,
   };
 }
 
@@ -109,6 +113,9 @@ function gateway(initialSnapshot = snapshot()): BoardGateway {
         };
         return current;
       }),
+    recordExecution: vi.fn().mockImplementation(async () => current),
+    recordEvidence: vi.fn().mockImplementation(async () => current),
+    updateExecution: vi.fn().mockImplementation(async () => current),
     boardSnapshot: vi.fn().mockImplementation(async () => current),
   };
 }
@@ -281,5 +288,44 @@ describe("board workspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Open board" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("not found");
+  });
+
+  it("shows durable agent attempts and review evidence for the selected task", async () => {
+    const boardGateway = gateway(
+      snapshot(
+        [workItem("review-task", "review")],
+        [],
+        [
+          {
+            id: "execution-1",
+            workItemId: "review-task",
+            adapterName: "codex-cli",
+            status: "awaiting_review",
+            sessionId: "session-1",
+            workspacePath: "/workspaces/review-task",
+            usage: { inputTokens: 42, outputTokens: 24 },
+            lastEventSequence: 3,
+          },
+        ],
+        [
+          {
+            id: "check-1",
+            workItemId: "review-task",
+            kind: "check",
+            result: "passed",
+            summary: "Unit tests passed.",
+            recordedAt: "2026-08-08T00:02:00Z",
+          },
+        ],
+      ),
+    );
+
+    await createBoard(boardGateway);
+    fireEvent.click(screen.getByText("Recent agent attempts (1)"));
+    fireEvent.click(screen.getByText("Recent review evidence (1)"));
+
+    expect(screen.getByText(/codex-cli · awaiting review/)).toBeVisible();
+    expect(screen.getByText("Session: session-1")).toBeVisible();
+    expect(screen.getByText("Unit tests passed.")).toBeVisible();
   });
 });

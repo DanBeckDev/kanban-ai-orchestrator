@@ -1,7 +1,7 @@
 use crate::application::{BoardRepository, BoardSnapshot};
 use crate::domain::{
-    Board, BoardId, CreateWorkItemCommand, Dependency, MaterializedWorkItem, Project,
-    RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
+    Board, BoardId, CreateWorkItemCommand, Dependency, Evidence, Execution, MaterializedWorkItem,
+    Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
 };
 
 use super::{BoardStoreError, SqliteEventStore};
@@ -40,6 +40,25 @@ impl BoardRepository for SqliteEventStore {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error> {
         SqliteEventStore::transition_work_item(self, command).map_err(BoardStoreError::from)
+    }
+
+    fn record_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error> {
+        SqliteEventStore::record_execution(self, execution).map_err(BoardStoreError::from)
+    }
+
+    fn execution(
+        &self,
+        execution_id: &crate::domain::ExecutionId,
+    ) -> Result<Option<Execution>, Self::Error> {
+        SqliteEventStore::execution(self, execution_id).map_err(BoardStoreError::from)
+    }
+
+    fn update_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error> {
+        SqliteEventStore::update_execution(self, execution).map_err(BoardStoreError::from)
+    }
+
+    fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error> {
+        SqliteEventStore::record_evidence(self, evidence).map_err(BoardStoreError::from)
     }
 
     fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, Self::Error> {

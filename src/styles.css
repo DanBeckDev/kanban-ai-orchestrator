@@ -259,6 +259,46 @@ legend,
   margin: 0.35rem 0;
 }
 
+.execution-history,
+.evidence-history,
+.decision-history {
+  margin: 0.7rem 0;
+  color: #d7e0ed;
+  font-size: 0.78rem;
+}
+
+.execution-history summary,
+.evidence-history summary,
+.decision-history summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.execution-history ol,
+.evidence-history ol,
+.decision-history ol {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.execution-history p,
+.evidence-history p,
+.decision-history p {
+  margin-bottom: 0.2rem;
+}
+
+.execution-history span,
+.evidence-history span,
+.decision-history span,
+.execution-history time,
+.evidence-history time,
+.decision-history time {
+  display: block;
+  color: #aebbd0;
+}
+
 .work-item-card p {
   margin-bottom: 0.75rem;
   font-size: 0.84rem;
@@ -278,31 +318,6 @@ legend,
   padding-left: 1.15rem;
   color: #c5ceda;
   font-size: 0.8rem;
-}
-
-.decision-history {
-  margin: 0 0 0.75rem;
-  color: #c5ceda;
-  font-size: 0.76rem;
-}
-
-.decision-history ol {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0.55rem 0 0;
-  padding-left: 1.1rem;
-}
-
-.decision-history p,
-.decision-history time,
-.decision-history span {
-  display: block;
-  margin: 0;
-}
-
-.decision-history time,
-.decision-history span {
-  color: #aebbd0;
 }
 
 .dependency-notice {

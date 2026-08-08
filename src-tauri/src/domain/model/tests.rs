@@ -208,3 +208,14 @@ fn state_categories_keep_recovery_states_distinct_from_terminal_states() {
     assert!(!WorkItemState::Review.is_recoverable());
     assert!(!SchemaMetadata { version: 0 }.is_current());
 }
+
+#[test]
+fn execution_lifecycle_keeps_terminal_attempts_distinct_from_recoverable_progress() {
+    assert!(ExecutionStatus::Completed.is_terminal());
+    assert!(ExecutionStatus::Failed.is_terminal());
+    assert!(!ExecutionStatus::AwaitingInput.is_terminal());
+    assert!(ExecutionStatus::Pending.allows_transition_to(ExecutionStatus::Running));
+    assert!(ExecutionStatus::Running.allows_transition_to(ExecutionStatus::AwaitingReview));
+    assert!(ExecutionStatus::AwaitingInput.allows_transition_to(ExecutionStatus::Running));
+    assert!(!ExecutionStatus::Completed.allows_transition_to(ExecutionStatus::Running));
+}

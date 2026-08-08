@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{EvidenceId, ExecutionId, SchemaMetadata, VersionedSchema, WorkItemId};
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecutionStatus {
     Pending,
@@ -13,6 +13,39 @@ pub enum ExecutionStatus {
     Failed,
     Interrupted,
     Cancelled,
+}
+
+impl ExecutionStatus {
+    pub const fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Completed | Self::Failed | Self::Interrupted | Self::Cancelled
+        )
+    }
+
+    pub const fn allows_transition_to(self, next: Self) -> bool {
+        matches!(
+            (self, next),
+            (
+                Self::Pending,
+                Self::Running | Self::Failed | Self::Interrupted | Self::Cancelled
+            ) | (
+                Self::Running,
+                Self::AwaitingInput
+                    | Self::AwaitingReview
+                    | Self::Completed
+                    | Self::Failed
+                    | Self::Interrupted
+                    | Self::Cancelled
+            ) | (
+                Self::AwaitingInput,
+                Self::Running | Self::Failed | Self::Interrupted | Self::Cancelled
+            ) | (
+                Self::AwaitingReview,
+                Self::Completed | Self::Failed | Self::Interrupted | Self::Cancelled
+            )
+        )
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

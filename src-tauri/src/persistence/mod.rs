@@ -7,6 +7,7 @@ mod event_store_queries;
 mod event_store_recovery;
 mod event_store_schema;
 mod event_store_support;
+mod execution_store;
 pub(crate) mod sqlite_event_store;
 
 pub use board_store_error::BoardStoreError;
@@ -27,3 +28,6 @@ mod sqlite_event_store_policy_tests;
 
 #[cfg(test)]
 mod sqlite_event_store_replay_tests;
+
+#[cfg(test)]
+mod execution_store_tests;

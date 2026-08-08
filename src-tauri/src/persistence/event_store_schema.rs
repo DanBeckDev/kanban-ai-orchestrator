@@ -31,3 +31,22 @@ pub(super) fn create_policy_audit_schema(
         CREATE INDEX IF NOT EXISTS policy_decisions_by_project ON policy_decisions (project_id, decided_at, decision_id);",
     )
 }
+
+pub(super) fn create_execution_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS executions (
+            execution_id TEXT PRIMARY KEY,
+            work_item_id TEXT NOT NULL,
+            execution_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS executions_by_work_item ON executions (work_item_id, execution_id);
+        CREATE TABLE IF NOT EXISTS evidence (
+            evidence_id TEXT PRIMARY KEY,
+            work_item_id TEXT NOT NULL,
+            evidence_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS evidence_by_work_item ON evidence (work_item_id, evidence_id);",
+    )
+}

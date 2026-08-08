@@ -1,9 +1,11 @@
 use super::{
     AddDependencyRequest, BoardService, BoardServiceError, CreateBoardRequest,
-    CreateProjectRequest, CreateWorkItemRequest, TransitionWorkItemRequest,
+    CreateProjectRequest, CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
+    TransitionWorkItemRequest, UpdateExecutionRequest,
 };
 use crate::domain::{
-    CompletionEvidence, DependencyKind, WorkItemBudget, WorkItemId, WorkItemState,
+    CompletionEvidence, DependencyKind, EvidenceKind, EvidenceResult, ExecutionStatus,
+    ExecutionUsage, WorkItemBudget, WorkItemId, WorkItemState,
 };
 use crate::persistence::{BoardStoreError, EventStoreError, SqliteEventStore};
 
@@ -59,6 +61,26 @@ fn transition_request(
     }
 }
 
+fn execution_request(work_item_id: &str) -> RecordExecutionRequest {
+    RecordExecutionRequest {
+        execution_id: "execution-1".to_owned(),
+        work_item_id: work_item_id.to_owned(),
+        adapter_name: "codex-cli".to_owned(),
+        workspace_path: "/workspaces/task-1".to_owned(),
+    }
+}
+
+fn evidence_request(work_item_id: &str) -> RecordEvidenceRequest {
+    RecordEvidenceRequest {
+        evidence_id: "evidence-1".to_owned(),
+        work_item_id: work_item_id.to_owned(),
+        kind: EvidenceKind::Check,
+        result: EvidenceResult::Passed,
+        summary: "The required checks passed.".to_owned(),
+        recorded_at: "2026-08-08T00:02:00Z".to_owned(),
+    }
+}
+
 fn create_board(service: &mut BoardService<SqliteEventStore>) {
     service
         .create_project(create_project_request())
@@ -95,6 +117,8 @@ fn creates_a_durable_board_task_and_guarded_transition_through_the_use_case() {
     );
     assert_eq!(planned_snapshot.board.id.0, "board-1");
     assert_eq!(planned_snapshot.activity.len(), 2);
+    assert!(planned_snapshot.executions.is_empty());
+    assert!(planned_snapshot.evidence.is_empty());
     assert_eq!(
         planned_snapshot.activity[1].summary,
         "State changed from inbox to planned: The user requested the lifecycle update."
@@ -121,6 +145,56 @@ fn rejects_empty_product_input_before_it_reaches_the_repository() {
         service.create_work_item(work_item_request),
         Err(BoardServiceError::InvalidAcceptanceCriteria)
     ));
+}
+
+#[test]
+fn records_a_pending_worker_attempt_and_review_evidence_through_the_use_case() {
+    let mut service = service();
+    create_board(&mut service);
+    service
+        .create_work_item(create_work_item_request("task-1"))
+        .expect("work item should be created");
+
+    let execution_snapshot = service
+        .record_execution(execution_request("task-1"))
+        .expect("execution should be recorded");
+    let evidence_snapshot = service
+        .record_evidence(evidence_request("task-1"))
+        .expect("evidence should be recorded");
+
+    assert_eq!(execution_snapshot.executions.len(), 1);
+    assert_eq!(
+        execution_snapshot.executions[0].status,
+        ExecutionStatus::Pending
+    );
+    let updated_execution_snapshot = service
+        .update_execution(UpdateExecutionRequest {
+            execution_id: "execution-1".to_owned(),
+            status: ExecutionStatus::Running,
+            session_id: Some("session-1".to_owned()),
+            usage: ExecutionUsage {
+                input_tokens: 10,
+                output_tokens: 5,
+                cost_micros: Some(100),
+            },
+            last_event_sequence: 1,
+        })
+        .expect("execution should start");
+    assert_eq!(
+        updated_execution_snapshot.executions[0].status,
+        ExecutionStatus::Running
+    );
+    assert_eq!(
+        updated_execution_snapshot.executions[0]
+            .session_id
+            .as_deref(),
+        Some("session-1")
+    );
+    assert_eq!(evidence_snapshot.evidence.len(), 1);
+    assert_eq!(
+        evidence_snapshot.evidence[0].summary,
+        "The required checks passed."
+    );
 }
 
 #[test]

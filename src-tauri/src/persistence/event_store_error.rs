@@ -1,23 +1,59 @@
 use std::{error::Error, fmt};
 
-use crate::domain::{PolicyDecisionId, WorkItemEventId, WorkItemId};
+use crate::domain::{EvidenceId, ExecutionId, PolicyDecisionId, WorkItemEventId, WorkItemId};
 
 #[derive(Debug)]
 pub enum EventStoreError {
     Database(rusqlite::Error),
     Serialization(serde_json::Error),
     StateTransition(crate::domain::TransitionError),
-    WorkItemAlreadyExists { work_item_id: WorkItemId },
-    WorkItemNotFound { work_item_id: WorkItemId },
-    EventIdConflict { event_id: WorkItemEventId },
-    PolicyDecisionIdConflict { decision_id: PolicyDecisionId },
-    ProtectedGitApprovalIdConflict { decision_id: PolicyDecisionId },
-    PolicyApprovalDecisionNotFound { decision_id: PolicyDecisionId },
-    PolicyApprovalDecisionMismatch { decision_id: PolicyDecisionId },
-    MissingTransitionReason { event_id: WorkItemEventId },
-    MissingRecoveryEventId { work_item_id: WorkItemId },
-    InvalidEventSequence { value: i64 },
-    UnsupportedDatabaseSchemaVersion { current: i64, supported: i64 },
+    WorkItemAlreadyExists {
+        work_item_id: WorkItemId,
+    },
+    WorkItemNotFound {
+        work_item_id: WorkItemId,
+    },
+    ExecutionAlreadyExists {
+        execution_id: ExecutionId,
+    },
+    ExecutionNotFound {
+        execution_id: ExecutionId,
+    },
+    InvalidExecutionUpdate {
+        execution_id: ExecutionId,
+        reason: &'static str,
+    },
+    EvidenceAlreadyExists {
+        evidence_id: EvidenceId,
+    },
+    EventIdConflict {
+        event_id: WorkItemEventId,
+    },
+    PolicyDecisionIdConflict {
+        decision_id: PolicyDecisionId,
+    },
+    ProtectedGitApprovalIdConflict {
+        decision_id: PolicyDecisionId,
+    },
+    PolicyApprovalDecisionNotFound {
+        decision_id: PolicyDecisionId,
+    },
+    PolicyApprovalDecisionMismatch {
+        decision_id: PolicyDecisionId,
+    },
+    MissingTransitionReason {
+        event_id: WorkItemEventId,
+    },
+    MissingRecoveryEventId {
+        work_item_id: WorkItemId,
+    },
+    InvalidEventSequence {
+        value: i64,
+    },
+    UnsupportedDatabaseSchemaVersion {
+        current: i64,
+        supported: i64,
+    },
 }
 
 impl fmt::Display for EventStoreError {
@@ -33,6 +69,23 @@ impl fmt::Display for EventStoreError {
             }
             Self::WorkItemNotFound { work_item_id } => {
                 write!(formatter, "work item {} was not found", work_item_id.0)
+            }
+            Self::ExecutionAlreadyExists { execution_id } => {
+                write!(formatter, "execution {} already exists", execution_id.0)
+            }
+            Self::ExecutionNotFound { execution_id } => {
+                write!(formatter, "execution {} was not found", execution_id.0)
+            }
+            Self::InvalidExecutionUpdate {
+                execution_id,
+                reason,
+            } => write!(
+                formatter,
+                "execution {} cannot be updated: {reason}",
+                execution_id.0
+            ),
+            Self::EvidenceAlreadyExists { evidence_id } => {
+                write!(formatter, "evidence {} already exists", evidence_id.0)
             }
             Self::EventIdConflict { event_id } => write!(
                 formatter,

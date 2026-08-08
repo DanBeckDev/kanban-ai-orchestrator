@@ -244,6 +244,12 @@ export function BoardWorkspace({
     }
   }
 
+  const loadExecutionActivity = useCallback(
+    (executionId: string, afterSequence?: number) =>
+      gateway.executionActivity(executionId, afterSequence),
+    [gateway],
+  );
+
   const boardId = snapshot?.board.id;
   useEffect(() => {
     if (boardId === undefined) return undefined;
@@ -294,6 +300,7 @@ export function BoardWorkspace({
           onSavePlannerProfile={savePlannerProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}
+          onLoadExecutionActivity={loadExecutionActivity}
           onRecordReviewCheck={recordReviewCheck}
           onRecordReviewDecision={recordReviewDecision}
           onRecordCleanCodeReview={recordCleanCodeReview}

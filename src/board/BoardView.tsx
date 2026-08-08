@@ -14,6 +14,7 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
+  ExecutionActivityPage,
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
@@ -50,6 +51,10 @@ type BoardViewProps = Readonly<{
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
+  onLoadExecutionActivity: (
+    executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
   onRecordReviewDecision: (
     request: RecordReviewDecisionRequest,
@@ -81,6 +86,7 @@ export function BoardView({
   onSavePlannerProfile,
   onStartExecution,
   onStopExecution,
+  onLoadExecutionActivity,
   onRecordReviewCheck,
   onRecordReviewDecision,
   onRecordCleanCodeReview,
@@ -121,6 +127,7 @@ export function BoardView({
                     agentProfiles={agentProfiles}
                     onStartExecution={onStartExecution}
                     onStopExecution={onStopExecution}
+                    onLoadExecutionActivity={onLoadExecutionActivity}
                     onRecordReviewCheck={onRecordReviewCheck}
                     onRecordReviewDecision={onRecordReviewDecision}
                     onRecordCleanCodeReview={onRecordCleanCodeReview}

@@ -187,6 +187,18 @@ pub(crate) fn stop_execution(
 }
 
 #[tauri::command]
+pub(crate) fn execution_activity(
+    state: State<'_, BoardDaemonState>,
+    execution_id: String,
+    after_sequence: Option<u64>,
+) -> Result<crate::desktop_execution_activity::ExecutionActivityPage, String> {
+    state
+        .runtime
+        .activity_page(&execution_id, after_sequence)
+        .map_err(error_message)
+}
+
+#[tauri::command]
 pub(crate) fn record_review_check(
     state: State<'_, BoardDaemonState>,
     request: RecordReviewCheckRequest,

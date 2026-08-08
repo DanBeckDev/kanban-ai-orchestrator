@@ -58,6 +58,7 @@ describe("tauri board gateway", () => {
     await tauriBoardGateway.createWorkItem(workItem);
     await tauriBoardGateway.addDependency(dependency);
     await tauriBoardGateway.transitionWorkItem(transition);
+    await tauriBoardGateway.executionActivity("execution-1", 2);
     await tauriBoardGateway.boardSnapshot("board-1");
 
     expect(invoke.mock.calls).toEqual([
@@ -66,6 +67,7 @@ describe("tauri board gateway", () => {
       ["create_work_item", { request: workItem }],
       ["add_dependency", { request: dependency }],
       ["transition_work_item", { request: transition }],
+      ["execution_activity", { executionId: "execution-1", afterSequence: 2 }],
       ["board_snapshot", { boardId: "board-1" }],
     ]);
   });

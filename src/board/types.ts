@@ -93,6 +93,27 @@ export type Execution = Readonly<{
   lastEventSequence: number;
 }>;
 
+export type ExecutionActivityKind =
+  | "activity"
+  | "approval_requested"
+  | "awaiting_input"
+  | "awaiting_review"
+  | "completed"
+  | "failed"
+  | "interrupted";
+
+export type ExecutionActivityChunk = Readonly<{
+  sequence: number;
+  kind: ExecutionActivityKind;
+  summary: string;
+  recordedAt: string;
+}>;
+
+export type ExecutionActivityPage = Readonly<{
+  chunks: readonly ExecutionActivityChunk[];
+  hasMore: boolean;
+}>;
+
 export type EvidenceKind =
   | "agent_report"
   | "check"
@@ -377,6 +398,10 @@ export interface BoardGateway {
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
+  executionActivity(
+    executionId: string,
+    afterSequence?: number,
+  ): Promise<ExecutionActivityPage>;
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
   recordReviewDecision(
     request: RecordReviewDecisionRequest,

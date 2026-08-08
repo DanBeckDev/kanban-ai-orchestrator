@@ -7,22 +7,17 @@ use std::{
 };
 
 use crate::{
-    agent::{
-        AgentAdapter, AgentProfile, NormalizedAgentEvent, NormalizedAgentEventKind,
-        WorkerAgentAdapter,
-    },
+    agent::{AgentAdapter, AgentProfile, NormalizedAgentEvent, WorkerAgentAdapter},
     application::{
-        ExecutionEventController, RecordEvidenceRequest, RecordExecutionRequest,
-        StartExecutionRequest, UpdateExecutionRequest, prepare_execution_launch,
+        ExecutionEventController, RecordExecutionRequest, StartExecutionRequest,
+        prepare_execution_launch,
     },
-    domain::{
-        EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus, SchemaMetadata,
-        WorkItemId,
-    },
+    domain::{Execution, ExecutionId, ExecutionStatus, SchemaMetadata, WorkItemId},
     workspace::{DependencySharingStrategy, WorkspaceManager, WorkspaceProvisionRequest},
 };
 
 use crate::desktop::LocalBoardService;
+use crate::desktop_execution_activity::{ExecutionActivityPage, ExecutionActivityStreams};
 use crate::desktop_execution_policy::authorize_execution_start;
 use crate::desktop_execution_runtime_support::{
     ExecutionRuntimeError, ensure_startable, is_terminal_event, lock, timestamp,
@@ -35,6 +30,7 @@ pub(crate) struct ExecutionRuntime {
     pub(crate) workspace_root: PathBuf,
     launch_gate: Arc<Mutex<()>>,
     pub(crate) agents: Arc<Mutex<BTreeMap<String, WorkerAgentAdapter>>>,
+    activity_streams: Arc<Mutex<ExecutionActivityStreams>>,
     pub(crate) stop_requests: Arc<Mutex<BTreeSet<String>>>,
 }
 
@@ -45,6 +41,7 @@ impl ExecutionRuntime {
             workspace_root,
             launch_gate: Arc::new(Mutex::new(())),
             agents: Arc::new(Mutex::new(BTreeMap::new())),
+            activity_streams: Arc::new(Mutex::new(ExecutionActivityStreams::default())),
             stop_requests: Arc::new(Mutex::new(BTreeSet::new())),
         }
     }
@@ -200,7 +197,7 @@ impl ExecutionRuntime {
         mut adapter: WorkerAgentAdapter,
         session_id: &str,
     ) -> Result<(), ExecutionRuntimeError> {
-        let mut agents = match lock(&self.agents, "agent runtime") {
+        let agents = match lock(&self.agents, "agent runtime") {
             Ok(agents) => agents,
             Err(error) => {
                 let _ = adapter.terminate(session_id);
@@ -216,7 +213,17 @@ impl ExecutionRuntime {
             let _ = adapter.terminate(session_id);
             return Err(error);
         }
-        agents.insert(execution_id.to_owned(), adapter);
+        drop(agents);
+        let mut activity_streams = match lock(&self.activity_streams, "activity stream") {
+            Ok(activity_streams) => activity_streams,
+            Err(error) => {
+                let _ = adapter.terminate(session_id);
+                return Err(error);
+            }
+        };
+        activity_streams.activate(execution_id);
+        drop(activity_streams);
+        lock(&self.agents, "agent runtime")?.insert(execution_id.to_owned(), adapter);
         Ok(())
     }
 
@@ -329,60 +336,25 @@ impl ExecutionRuntime {
         execution_id: &str,
         event: NormalizedAgentEvent,
     ) -> Result<(), ExecutionRuntimeError> {
+        let activity_event = event.clone();
+        let recorded_at = timestamp();
         ExecutionEventController::record_event(
             &mut *lock(&self.service, "board service")?,
             execution_id,
             event,
-            &timestamp(),
+            &recorded_at,
         )
-        .map(|_| ())
-        .map_err(ExecutionRuntimeError::Activation)
+        .map_err(ExecutionRuntimeError::Activation)?;
+        self.record_activity(execution_id, &activity_event, &recorded_at);
+        Ok(())
     }
 
-    pub(crate) fn record_monitor_failure(&self, execution_id: &str, reason: &str) {
-        let Ok(execution) = self.execution(execution_id) else {
-            return;
-        };
-        if !matches!(
-            execution.status,
-            ExecutionStatus::Running | ExecutionStatus::AwaitingInput
-        ) {
-            return;
-        }
-        let event = NormalizedAgentEvent {
-            sequence: execution.last_event_sequence.saturating_add(1),
-            kind: NormalizedAgentEventKind::Failed {
-                reason: reason.to_owned(),
-            },
-        };
-        let _ = self.record_event(execution_id, event);
-    }
-
-    fn fail_pending_execution(&self, execution_id: &str, reason: &str) {
-        let Ok(mut service) = lock(&self.service, "board service") else {
-            return;
-        };
-        let Ok(execution) = service.execution(&ExecutionId::from(execution_id)) else {
-            return;
-        };
-        if execution.status != ExecutionStatus::Pending {
-            return;
-        }
-        let _ = service.update_execution(UpdateExecutionRequest {
-            execution_id: execution.id.0.clone(),
-            status: ExecutionStatus::Failed,
-            session_id: None,
-            usage: execution.usage,
-            last_event_sequence: execution.last_event_sequence,
-        });
-        let _ = service.record_evidence(RecordEvidenceRequest {
-            evidence_id: format!("launch-failure-{execution_id}"),
-            work_item_id: execution.work_item_id.0,
-            kind: EvidenceKind::AgentReport,
-            result: EvidenceResult::Failed,
-            summary: reason.to_owned(),
-            recorded_at: timestamp(),
-        });
+    pub(crate) fn activity_page(
+        &self,
+        execution_id: &str,
+        after_sequence: Option<u64>,
+    ) -> Result<ExecutionActivityPage, ExecutionRuntimeError> {
+        Ok(lock(&self.activity_streams, "activity stream")?.page(execution_id, after_sequence))
     }
 
     pub(crate) fn stop_agent(&self, execution_id: &str, session_id: &str) {
@@ -392,7 +364,16 @@ impl ExecutionRuntime {
         if let Some(mut adapter) = adapter {
             let _ = adapter.terminate(session_id);
         }
+        if let Ok(mut streams) = self.activity_streams.lock() {
+            streams.complete(execution_id);
+        }
         self.clear_stop_request(execution_id);
+    }
+
+    fn record_activity(&self, execution_id: &str, event: &NormalizedAgentEvent, recorded_at: &str) {
+        if let Ok(mut streams) = self.activity_streams.lock() {
+            streams.record(execution_id, event, recorded_at);
+        }
     }
 }
 

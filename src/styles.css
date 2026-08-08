@@ -261,10 +261,62 @@ legend,
 
 .execution-history,
 .evidence-history,
-.decision-history {
+.decision-history,
+.activity-stream {
   margin: 0.7rem 0;
   color: #d7e0ed;
   font-size: 0.78rem;
+}
+
+.activity-stream h5 {
+  margin: 0 0 0.45rem;
+  font-size: inherit;
+}
+
+.activity-empty,
+.activity-error {
+  margin: 0;
+  color: #aebbd0;
+}
+
+.activity-error {
+  color: #ffd6da;
+}
+
+.activity-viewport {
+  height: 15rem;
+  overflow-y: auto;
+  border: 1px solid #405069;
+  border-radius: 0.45rem;
+  background: #101924;
+}
+
+.activity-viewport ol {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-viewport li {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+}
+
+.activity-viewport span,
+.activity-viewport time {
+  color: #aebbd0;
+  font-size: 0.7rem;
+}
+
+.activity-viewport p {
+  margin: 0.1rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .agent-launch-form,

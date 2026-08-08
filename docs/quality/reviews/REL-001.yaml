@@ -1,0 +1,123 @@
+work_item: REL-001
+scope:
+  - "Bounded, ephemeral execution-activity stream at the local daemon boundary."
+  - "Asynchronous, virtualized React card viewer for safe normalized activity chunks."
+  - "Reliability, architecture, and ADR documentation for activity retention and privacy."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 387
+      responsibilities: "Exposes typed local-board Tauri commands and initializes daemon dependencies."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_activity.rs
+      meaningful_lines: 162
+      responsibilities: "Owns bounded, pageable, ephemeral normalized activity streams."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_activity_tests.rs
+      meaningful_lines: 102
+      responsibilities: "Covers activity paging, retention, UTF-8 truncation, and event filtering."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime.rs
+      meaningful_lines: 377
+      responsibilities: "Owns execution launch, agent monitoring, and narrow live-resource coordination."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_events.rs
+      meaningful_lines: 53
+      responsibilities: "Owns execution failure recording and pending-launch failure persistence."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_tests.rs
+      meaningful_lines: 304
+      responsibilities: "Exercises detached execution lifecycle, policy, stop, review, and retained activity behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 71
+      responsibilities: "Registers desktop commands and internal application modules."
+      decision: kept cohesive
+    - path: src/board/ActivityStream.tsx
+      meaningful_lines: 130
+      responsibilities: "Fetches bounded activity pages and virtualizes a card's fixed-height activity rows."
+      decision: kept cohesive
+    - path: src/board/ActivityStream.test.tsx
+      meaningful_lines: 53
+      responsibilities: "Covers paged activity loading, virtual rendering, and recoverable command errors."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 185
+      responsibilities: "Composes the board layout and passes typed user actions to work-item cards."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 392
+      responsibilities: "Provides one in-memory typed board gateway for workspace interaction tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 289
+      responsibilities: "Coordinates board state, typed gateway actions, and refresh lifecycle."
+      decision: kept cohesive
+    - path: src/board/WorkItemCard.tsx
+      meaningful_lines: 389
+      responsibilities: "Composes one work-item card's state, histories, execution controls, and review actions."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 116
+      responsibilities: "Maps typed board-gateway operations to local Tauri commands."
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 67
+      responsibilities: "Verifies Tauri command names and typed argument mapping."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 374
+      responsibilities: "Defines provider-neutral board, execution, activity, and gateway contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T00:48:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric:
+      - finding: "Initial activity integration pushed desktop_execution_runtime.rs to 432 meaningful lines, beyond the zero-exception 400-line policy."
+      - finding: "An inline bound gateway callback changed on every board refresh, resetting a live activity feed."
+      - finding: "The browser-side activity collection would have grown for the duration of a long-running execution."
+      - finding: "A malformed page with hasMore set but no new cursor would have caused an immediate retry loop."
+      - finding: "Fixed-height activity rows needed overflow containment to avoid overlapping a 1 KiB summary."
+    considers:
+      - finding: "Recent completed activity feeds remain in memory briefly so a caller can page a just-finished execution."
+        resolution: accepted
+        rationale: "The collection is capped at 32 completed executions, discarded on restart, and is explicitly separate from durable recovery state."
+        decision_reference: ADR-0017
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Initial activity integration pushed desktop_execution_runtime.rs to 432 meaningful lines, beyond the zero-exception 400-line policy."
+    change: "Moved launch-failure and monitor-failure persistence into desktop_execution_runtime_events.rs; the runtime is now 377 meaningful lines and the repository-wide structure gate passes."
+  - finding: "An inline bound gateway callback changed on every board refresh, resetting a live activity feed."
+    change: "Memoized the typed execution-activity loader with useCallback so a board refresh does not reset the card feed."
+  - finding: "The browser-side activity collection would have grown for the duration of a long-running execution."
+    change: "Retained at most 128 rendered chunks, matching the daemon's per-execution buffer limit."
+  - finding: "A malformed page with hasMore set but no new cursor would have caused an immediate retry loop."
+    change: "Continues immediate paging only when a response advances the event-sequence cursor."
+  - finding: "Fixed-height activity rows needed overflow containment to avoid overlapping a 1 KiB summary."
+    change: "Added a fixed-height, scrollable viewport and ellipsis containment for virtualized row summaries."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run test:coverage
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 90.71
+        statements: 90.29
+        functions: 84.77
+        branches: 87.56
+      - package_or_crate: src-tauri-rust
+        lines: 85.33
+        statements: 81.35
+        functions: 84.55
+        branches: 80.27
+    threshold_met: true
+exceptions: []

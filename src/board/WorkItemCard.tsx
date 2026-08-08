@@ -12,6 +12,7 @@ import {
   timestamp,
 } from "./presentation";
 import { AgentLaunchForm } from "./AgentLaunchForm";
+import { ActivityStream } from "./ActivityStream";
 import { CleanCodeReviewForm } from "./CleanCodeReviewForm";
 import { ReviewCheckForm } from "./ReviewCheckForm";
 import { ReviewDecisionForm } from "./ReviewDecisionForm";
@@ -22,6 +23,8 @@ import type {
   BoardSnapshot,
   AgentProfile,
   CompletionEvidence,
+  Execution,
+  ExecutionActivityPage,
   RecordCleanCodeReviewRequest,
   TransitionWorkItemRequest,
   StartExecutionRequest,
@@ -39,6 +42,10 @@ type WorkItemCardProps = Readonly<{
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
+  onLoadExecutionActivity: (
+    executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
   onRecordReviewDecision: (
     request: RecordReviewDecisionRequest,
@@ -62,6 +69,7 @@ export function WorkItemCard({
   onTransition,
   onStartExecution,
   onStopExecution,
+  onLoadExecutionActivity,
   onRecordReviewCheck,
   onRecordReviewDecision,
   onRecordCleanCodeReview,
@@ -78,6 +86,7 @@ export function WorkItemCard({
       execution.role === "independent_review" &&
       execution.status === "completed",
   );
+  const liveExecution = executions.find(isLiveExecution);
   const externalLinks = externalLinksFor(snapshot, workItem.id);
   const options = manualTransitionStates(workItem.state);
 
@@ -115,6 +124,12 @@ export function WorkItemCard({
       </ul>
       <ExternalLinks links={externalLinks} />
       {executions.length > 0 && <ExecutionHistory executions={executions} />}
+      {liveExecution !== undefined && (
+        <ActivityStream
+          execution={liveExecution}
+          onLoad={onLoadExecutionActivity}
+        />
+      )}
       {evidenceRecords.length > 0 && (
         <EvidenceHistory evidence={evidenceRecords} />
       )}
@@ -235,6 +250,14 @@ export function WorkItemCard({
 
 function isRecoveryState(state: WorkItemState): boolean {
   return state === "blocked" || state === "failed" || state === "interrupted";
+}
+
+function isLiveExecution(execution: Execution): boolean {
+  return (
+    execution.status === "running" ||
+    execution.status === "awaiting_input" ||
+    execution.status === "awaiting_review"
+  );
 }
 
 function ExecutionHistory({

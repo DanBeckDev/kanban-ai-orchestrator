@@ -9,6 +9,7 @@ import type {
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
+  ExecutionActivityPage,
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
@@ -71,6 +72,12 @@ export const tauriBoardGateway: BoardGateway = {
   },
   stopExecution(executionId: string): Promise<BoardSnapshot> {
     return invoke("stop_execution", { executionId });
+  },
+  executionActivity(
+    executionId: string,
+    afterSequence?: number,
+  ): Promise<ExecutionActivityPage> {
+    return invoke("execution_activity", { executionId, afterSequence });
   },
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot> {
     return invoke("record_review_check", { request });

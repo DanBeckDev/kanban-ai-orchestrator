@@ -12,9 +12,11 @@ pub mod policy;
 pub mod workspace;
 
 mod desktop;
+mod desktop_execution_activity;
 mod desktop_execution_policy;
 mod desktop_execution_runtime;
 mod desktop_execution_runtime_control;
+mod desktop_execution_runtime_events;
 mod desktop_execution_runtime_review;
 mod desktop_execution_runtime_support;
 mod desktop_planning;
@@ -54,6 +56,7 @@ pub fn run() {
             desktop_planning::generate_plan,
             desktop::start_execution,
             desktop::stop_execution,
+            desktop::execution_activity,
             desktop::record_review_check,
             desktop::record_review_decision,
             desktop::record_clean_code_review,
@@ -77,6 +80,9 @@ mod tests {
         assert_eq!(foundation_summary(), FoundationSummary::new());
     }
 }
+
+#[cfg(test)]
+mod desktop_execution_activity_tests;
 
 #[cfg(test)]
 mod desktop_execution_runtime_tests;

@@ -283,6 +283,9 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
       return current;
     }),
     stopExecution: vi.fn().mockImplementation(async () => current),
+    executionActivity: vi
+      .fn()
+      .mockResolvedValue({ chunks: [], hasMore: false }),
     recordReviewCheck: vi.fn().mockImplementation(async (request) => {
       current = {
         ...current,

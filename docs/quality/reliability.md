@@ -6,7 +6,7 @@ The reference project's public issue history is a useful failure-mode catalogue.
 
 | Failure mode | Required protection |
 | --- | --- |
-| Long terminal sessions freeze the board | Virtualize activity, cap/chunk retained terminal data, render asynchronously, and never restore an unbounded terminal snapshot on the UI thread. |
+| Long terminal sessions freeze the board | Keep only safe normalized activity summaries: 1 KiB per entry, 128 entries per execution, 32 entries per request, and a virtualized card renderer. Never restore an unbounded terminal snapshot on the UI thread. |
 | Restart loses task/session state | Persist domain events and execution checkpoints; reconcile rather than discard on restart. |
 | UI state and runtime state diverge | Only the daemon transitions task state; the UI observes it. |
 | Failed work appears complete | Keep `Failed`, `Interrupted`, `Cancelled`, and `Done` distinct; require evidence for `Done`. |
@@ -37,8 +37,9 @@ The reference project's public issue history is a useful failure-mode catalogue.
 ### Performance
 
 - A board with 100 active/recent cards remains interactive while terminal output streams.
-- Switching between a large and small task does not synchronously render an unbounded transcript.
-- Sustained agent hooks/events do not create one heavyweight runtime process per event.
+- Switching between a large and small task requests no more than 32 safe activity entries at once and renders a fixed-height virtual window.
+- An execution retains at most 128 activity entries; at most 32 completed feeds remain in memory, and daemon restart discards them.
+- Sustained agent hooks/events use the existing execution monitor and do not create one heavyweight runtime process or worker per event.
 
 ### Security and privacy
 

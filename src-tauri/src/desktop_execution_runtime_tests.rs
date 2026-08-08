@@ -125,6 +125,12 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
             .expect("work item should persist");
         if execution.status == crate::domain::ExecutionStatus::AwaitingReview {
             assert_eq!(work_item.work_item.state, WorkItemState::Review);
+            let activity = runtime
+                .activity_page("execution-1", None)
+                .expect("activity should remain available after completion");
+            assert_eq!(activity.chunks.len(), 2);
+            assert_eq!(activity.chunks[0].summary, "Working");
+            assert_eq!(activity.chunks[1].summary, "Ready for review");
             assert!(
                 service
                     .snapshot(&crate::domain::BoardId::from("board-1"))

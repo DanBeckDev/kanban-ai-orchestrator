@@ -248,13 +248,13 @@ tasks:
   - id: REL-001
     epic: REL
     title: Build responsive terminal/activity data paths
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [FDN-002, CORE-003, EXEC-002]
     acceptance_criteria:
-      - Large output is chunked, bounded, and virtualized.
-      - Switching cards never requires rendering an unbounded terminal snapshot.
-      - Event ingestion does not spawn a heavyweight runtime per event.
+      - Live agent activity is exposed as normalized chunks of at most 1 KiB, retained only in a bounded per-execution buffer, and raw provider transcripts remain outside board snapshots and durable state.
+      - An activity request returns no more than 32 chunks; the card viewer virtualizes its fixed-height rows, so switching cards never requires rendering an unbounded terminal snapshot.
+      - Activity chunks are recorded by the existing per-execution reader/monitor path; event ingestion starts no additional runtime or worker per event.
 
   - id: REL-002
     epic: REL

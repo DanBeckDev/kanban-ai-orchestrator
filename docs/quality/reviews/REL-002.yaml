@@ -2,6 +2,7 @@ work_item: REL-002
 scope:
   - "Portable core verification command for the shared TypeScript and Rust runtime."
   - "Linux, macOS, and Windows CI matrix with release-specific evidence boundaries."
+  - "Windows-safe Git worktree path translation at the process boundary."
 source_structure:
   reviewed_files:
     - path: scripts/project-root.mjs
@@ -32,14 +33,23 @@ source_structure:
       meaningful_lines: 208
       responsibilities: "Covers quality-receipt validation and command behavior."
       decision: kept cohesive
+    - path: src-tauri/src/workspace/git_cli.rs
+      meaningful_lines: 326
+      responsibilities: "Wraps Git CLI operations behind a repository-context-safe process boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/git_cli/tests.rs
+      meaningful_lines: 81
+      responsibilities: "Covers Git CLI parsing, environment isolation, errors, and Windows path translation."
+      decision: kept cohesive
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T22:44:51Z
+  reviewed_at: 2026-08-08T23:04:19Z
   findings:
     must_fix: []
     should_fix: []
-    outside_clean_code_rubric: []
+    outside_clean_code_rubric:
+      - finding: "Windows Git rejected canonical verbatim paths when creating or attaching a worktree."
     considers: []
   unresolved_actionable_findings: 0
 remediation:
@@ -47,6 +57,8 @@ remediation:
     change: "Separated the portable core matrix from explicit target-platform evidence for packaging, credentials, provider lifecycle, signing, and notarization."
   - finding: "Windows rejected the POSIX-only file URL used by three script tests."
     change: "Extracted one root-resolution helper and changed each test to construct a platform-native file URL."
+  - finding: "Windows Git rejected canonical verbatim paths when creating or attaching a worktree."
+    change: "Translated only Git process arguments from verbatim disk and UNC paths, retained canonical paths for authorization comparisons, and isolated the Git tests from the production adapter."
 verification:
   commands:
     - command: npm run test:platform
@@ -61,9 +73,9 @@ verification:
         functions: 84.33
         branches: 87.82
       - package_or_crate: src-tauri-rust
-        lines: 85.39
-        statements: 81.37
-        functions: 84.43
+        lines: 85.30
+        statements: 81.22
+        functions: 84.32
         branches: 80.20
     threshold_met: true
 exceptions: []

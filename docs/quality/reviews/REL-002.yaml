@@ -3,7 +3,35 @@ scope:
   - "Portable core verification command for the shared TypeScript and Rust runtime."
   - "Linux, macOS, and Windows CI matrix with release-specific evidence boundaries."
 source_structure:
-  reviewed_files: []
+  reviewed_files:
+    - path: scripts/project-root.mjs
+      meaningful_lines: 7
+      responsibilities: "Resolves a script repository root from a real file URL or a virtual-module working directory."
+      decision: kept cohesive
+    - path: scripts/check-code-structure.mjs
+      meaningful_lines: 151
+      responsibilities: "Validates changed source-file size and approved structural exceptions."
+      decision: kept cohesive
+    - path: scripts/check-rust-coverage.mjs
+      meaningful_lines: 85
+      responsibilities: "Runs and validates the Rust coverage threshold gate."
+      decision: kept cohesive
+    - path: scripts/verify-quality-receipt.mjs
+      meaningful_lines: 203
+      responsibilities: "Requires a complete Clean Code receipt for code-bearing changes."
+      decision: kept cohesive
+    - path: scripts/check-code-structure.test.mjs
+      meaningful_lines: 232
+      responsibilities: "Covers structure-gate classification, validation, and command behavior."
+      decision: kept cohesive
+    - path: scripts/check-rust-coverage.test.mjs
+      meaningful_lines: 97
+      responsibilities: "Covers Rust coverage parsing and command behavior."
+      decision: kept cohesive
+    - path: scripts/verify-quality-receipt.test.mjs
+      meaningful_lines: 208
+      responsibilities: "Covers quality-receipt validation and command behavior."
+      decision: kept cohesive
 review:
   skill: clean-code-review
   reviewer: codex
@@ -17,6 +45,8 @@ review:
 remediation:
   - finding: "The release policy could incorrectly imply that every platform-specific native capability is automated in generic CI."
     change: "Separated the portable core matrix from explicit target-platform evidence for packaging, credentials, provider lifecycle, signing, and notarization."
+  - finding: "Windows rejected the POSIX-only file URL used by three script tests."
+    change: "Extracted one root-resolution helper and changed each test to construct a platform-native file URL."
 verification:
   commands:
     - command: npm run test:platform
@@ -26,10 +56,10 @@ verification:
   coverage:
     packages:
       - package_or_crate: frontend-vite-vitest
-        lines: 90.17
+        lines: 90.15
         statements: 89.93
-        functions: 84.43
-        branches: 87.96
+        functions: 84.33
+        branches: 87.82
       - package_or_crate: src-tauri-rust
         lines: 85.39
         statements: 81.37

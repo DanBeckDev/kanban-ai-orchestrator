@@ -3,14 +3,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { projectRootFor } from "./project-root.mjs";
+
+export { projectRootFor } from "./project-root.mjs";
+
 export const MAX_PRODUCTION_SOURCE_LINES = 400;
 export const MAX_TEST_SOURCE_LINES = 400;
-
-export function projectRootFor(moduleUrl, workingDirectory) {
-  return moduleUrl.startsWith("file:")
-    ? resolve(fileURLToPath(new URL("..", moduleUrl)))
-    : workingDirectory;
-}
 
 const projectRoot = projectRootFor(import.meta.url, process.cwd());
 const exceptionsPath = "docs/quality/code-structure-exceptions.json";

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   MAX_PRODUCTION_SOURCE_LINES,
@@ -15,15 +17,15 @@ import {
 
 describe("source structure gate", () => {
   it("resolves its root in Node and virtual test-module environments", () => {
+    const workspace = resolve("workspace");
     expect(
       projectRootFor(
-        "file:///workspace/scripts/check-code-structure.mjs",
-        "/ignored",
+        pathToFileURL(resolve(workspace, "scripts", "check-code-structure.mjs"))
+          .href,
+        "ignored",
       ),
-    ).toBe("/workspace");
-    expect(projectRootFor("vite://virtual-module", "/workspace")).toBe(
-      "/workspace",
-    );
+    ).toBe(workspace);
+    expect(projectRootFor("vite://virtual-module", workspace)).toBe(workspace);
   });
 
   it("classifies production, test, and non-source paths", () => {

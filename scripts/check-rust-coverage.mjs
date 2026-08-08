@@ -3,11 +3,9 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export function projectRootFor(moduleUrl, workingDirectory) {
-  return moduleUrl.startsWith("file:")
-    ? resolve(fileURLToPath(new URL("..", moduleUrl)))
-    : workingDirectory;
-}
+import { projectRootFor } from "./project-root.mjs";
+
+export { projectRootFor } from "./project-root.mjs";
 
 const projectRoot = projectRootFor(import.meta.url, process.cwd());
 const reportPath = resolve(projectRoot, "coverage", "rust-coverage.json");

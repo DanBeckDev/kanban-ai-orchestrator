@@ -7,12 +7,9 @@ import {
   meaningfulLineCount,
   sourceFileLimit,
 } from "./check-code-structure.mjs";
+import { projectRootFor } from "./project-root.mjs";
 
-export function projectRootFor(moduleUrl, workingDirectory) {
-  return moduleUrl.startsWith("file:")
-    ? resolve(fileURLToPath(new URL("..", moduleUrl)))
-    : workingDirectory;
-}
+export { projectRootFor } from "./project-root.mjs";
 
 const projectRoot = projectRootFor(import.meta.url, process.cwd());
 const reviewDirectory = "docs/quality/reviews";

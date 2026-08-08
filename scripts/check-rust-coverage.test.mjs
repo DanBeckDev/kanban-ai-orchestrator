@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   projectRootFor,
@@ -16,15 +18,15 @@ const completeTotals = {
 
 describe("Rust coverage gate", () => {
   it("resolves its root in Node and virtual test-module environments", () => {
+    const workspace = resolve("workspace");
     expect(
       projectRootFor(
-        "file:///workspace/scripts/check-rust-coverage.mjs",
-        "/ignored",
+        pathToFileURL(resolve(workspace, "scripts", "check-rust-coverage.mjs"))
+          .href,
+        "ignored",
       ),
-    ).toBe("/workspace");
-    expect(projectRootFor("vite://virtual-module", "/workspace")).toBe(
-      "/workspace",
-    );
+    ).toBe(workspace);
+    expect(projectRootFor("vite://virtual-module", workspace)).toBe(workspace);
   });
 
   it("accepts complete coverage and treats no executable branches as complete", () => {

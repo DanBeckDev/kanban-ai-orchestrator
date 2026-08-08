@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   changedPathsFor,
@@ -37,15 +39,16 @@ const oneMeaningfulLine = "export const app = true;\n";
 
 describe("quality-review receipt gate", () => {
   it("resolves its root in Node and virtual test-module environments", () => {
+    const workspace = resolve("workspace");
     expect(
       projectRootFor(
-        "file:///workspace/scripts/verify-quality-receipt.mjs",
-        "/ignored",
+        pathToFileURL(
+          resolve(workspace, "scripts", "verify-quality-receipt.mjs"),
+        ).href,
+        "ignored",
       ),
-    ).toBe("/workspace");
-    expect(projectRootFor("vite://virtual-module", "/workspace")).toBe(
-      "/workspace",
-    );
+    ).toBe(workspace);
+    expect(projectRootFor("vite://virtual-module", workspace)).toBe(workspace);
   });
 
   it("recognizes code-bearing paths", () => {

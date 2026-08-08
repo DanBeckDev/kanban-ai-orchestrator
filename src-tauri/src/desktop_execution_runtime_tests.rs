@@ -20,6 +20,8 @@ use crate::{
     persistence::SqliteEventStore,
 };
 
+const DETACHED_RUNTIME_OBSERVATION_TIMEOUT: Duration = Duration::from_secs(60);
+
 fn prepared_runtime(
     policy_set_id: &str,
 ) -> (
@@ -114,7 +116,7 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
         WorkItemState::Running
     );
 
-    let deadline = Instant::now() + Duration::from_secs(15);
+    let deadline = Instant::now() + DETACHED_RUNTIME_OBSERVATION_TIMEOUT;
     loop {
         let service = service.lock().expect("service should remain available");
         let execution = service

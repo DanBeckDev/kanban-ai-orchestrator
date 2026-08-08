@@ -26,7 +26,7 @@ source_structure:
       responsibilities: "Owns execution failure recording and pending-launch failure persistence."
       decision: kept cohesive
     - path: src-tauri/src/desktop_execution_runtime_tests.rs
-      meaningful_lines: 304
+      meaningful_lines: 305
       responsibilities: "Exercises detached execution lifecycle, policy, stop, review, and retained activity behavior."
       decision: kept cohesive
     - path: src-tauri/src/lib.rs
@@ -99,6 +99,8 @@ remediation:
     change: "Continues immediate paging only when a response advances the event-sequence cursor."
   - finding: "Fixed-height activity rows needed overflow containment to avoid overlapping a 1 KiB summary."
     change: "Added a fixed-height, scrollable viewport and ellipsis containment for virtualized row summaries."
+  - finding: "The detached execution integration test exceeded its 15-second observation deadline in the independently instrumented Linux CI suite."
+    change: "Retained the explicit monotonic liveness deadline, extended it to 60 seconds for a scheduler-sensitive integration test, and kept the three-platform core suite exercising the same runtime path. The test asserts eventual lifecycle persistence; it is not a product latency service-level objective."
 verification:
   commands:
     - command: npm run quality:verify

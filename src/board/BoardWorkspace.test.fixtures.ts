@@ -5,6 +5,8 @@ import type {
   BoardGateway,
   BoardSnapshot,
   CreateWorkItemRequest,
+  LinearConnectionStatus,
+  LinearOAuthConfiguration,
   TransitionWorkItemRequest,
   WorkItemState,
 } from "./types";
@@ -47,6 +49,7 @@ export function workItem(
 
 export function gateway(initialSnapshot = snapshot()): BoardGateway {
   let current = initialSnapshot;
+  let linearConnectionStatus: LinearConnectionStatus = { kind: "disconnected" };
   let profiles: readonly AgentProfile[] = [];
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
@@ -154,6 +157,15 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
       };
       return current;
     }),
+    beginLinearOAuth: vi
+      .fn()
+      .mockImplementation(async (_configuration: LinearOAuthConfiguration) => {
+        linearConnectionStatus = { kind: "awaiting_authorization" };
+        return linearConnectionStatus;
+      }),
+    linearConnectionStatus: vi
+      .fn()
+      .mockImplementation(async () => linearConnectionStatus),
     importLinearIssue: vi.fn().mockImplementation(async (request) => {
       current = {
         ...current,

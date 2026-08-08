@@ -103,6 +103,21 @@ export type EvidenceResult = "recorded" | "passed" | "failed";
 
 export type ExternalConnectionMode = "read_only" | "linked_execution";
 
+export type LinearOAuthConfiguration = Readonly<{
+  clientId: string;
+  redirectUri: string;
+}>;
+
+export type LinearConnectionStatus =
+  | Readonly<{ kind: "disconnected" }>
+  | Readonly<{ kind: "awaiting_authorization" }>
+  | Readonly<{
+      kind: "connected";
+      expiresAt: string;
+      scopes: readonly string[];
+    }>
+  | Readonly<{ kind: "failed"; message: string }>;
+
 export type ExternalLink = Readonly<{
   id: string;
   workItemId: string;
@@ -233,6 +248,10 @@ export interface BoardGateway {
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
+  beginLinearOAuth(
+    configuration: LinearOAuthConfiguration,
+  ): Promise<LinearConnectionStatus>;
+  linearConnectionStatus(): Promise<LinearConnectionStatus>;
   importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot>;
   importLinearBlocker(
     request: ImportLinearBlockerRequest,

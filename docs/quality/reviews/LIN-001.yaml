@@ -1,0 +1,68 @@
+work_item: LIN-001
+scope:
+  - docs/integrations/linear.md
+  - docs/planning/backlog.yaml
+  - src-tauri/Cargo.toml
+  - src-tauri/Cargo.lock
+  - src-tauri/gen/schemas/acl-manifests.json
+  - src-tauri/gen/schemas/desktop-schema.json
+  - src-tauri/gen/schemas/macOS-schema.json
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/linear/credential_store.rs
+  - src-tauri/src/linear/loopback_callback.rs
+  - src-tauri/src/linear/mod.rs
+  - src-tauri/src/linear/oauth.rs
+  - src-tauri/src/linear/oauth/tests.rs
+  - src-tauri/src/linear/token_client.rs
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.linear.test.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.tsx
+  - src/board/LinearConnectionPanel.test.tsx
+  - src/board/LinearConnectionPanel.tsx
+  - src/board/LinearImportForm.tsx
+  - src/board/gateway.ts
+  - src/board/types.ts
+  - src/styles.css
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T19:34:31Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Native browser opening and OS credential-store calls are framework and platform boundaries rather than pure application behavior.
+        resolution: not-applicable
+        rationale: The framework shell is deliberately thin; the PKCE, callback parsing, token-response validation, credential lifecycle, and UI state remain isolated and tested. A live OAuth verification still requires a user-created Linear OAuth application.
+        decision_reference: LIN-001
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A source module exceeded the repository's 400-meaningful-line limit while OAuth tests were being added.
+    change: Split OAuth tests into a dedicated test module; the whole-repository structure gate now verifies every source and test file is within the hard limit.
+  - finding: The initial callback worker held the shared connector lock while exchanging an OAuth code over the network.
+    change: Separated authorization-state extraction from token exchange, so the worker releases the mutex before network I/O and locks again only to record validated credentials.
+  - finding: Credential-bearing data derived Debug, risking accidental access- or refresh-token disclosure in diagnostics.
+    change: Removed Debug from credential and authorization-code data structures while retaining precise, token-free error messages.
+  - finding: Continuous board refresh polled the local credential status even when no OAuth callback was pending.
+    change: Status refresh is now limited to an awaiting authorization, avoiding needless credential-store access and external-style polling behavior.
+  - finding: The first full verification found Rust branch and statement coverage below the mandatory 80% floor.
+    change: Added deterministic tests for PKCE state transitions, redirect validation, credential lifecycle, token-response validation, and bounded callback parsing until all coverage dimensions met the required floor.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: cargo test --manifest-path src-tauri/Cargo.toml --lib linear::
+      result: passed (20 focused Linear tests)
+    - command: npm run structure:verify
+      result: passed (135 repository paths)
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 84.57
+    statements: 80.08
+    functions: 83.60
+    branches: 81.39
+    threshold_met: true
+exceptions: []

@@ -9,6 +9,8 @@ import type {
   CreateWorkItemRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
+  LinearConnectionStatus,
+  LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -46,6 +48,14 @@ export const tauriBoardGateway: BoardGateway = {
   },
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot> {
     return invoke("record_review_check", { request });
+  },
+  beginLinearOAuth(
+    configuration: LinearOAuthConfiguration,
+  ): Promise<LinearConnectionStatus> {
+    return invoke("begin_linear_oauth", { configuration });
+  },
+  linearConnectionStatus(): Promise<LinearConnectionStatus> {
+    return invoke("linear_connection_status");
   },
   importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot> {
     return invoke("import_linear_issue", { request });

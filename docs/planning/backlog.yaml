@@ -187,13 +187,14 @@ tasks:
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [FDN-002, CORE-001]
     acceptance_criteria:
       - OAuth/PKCE callback design, scopes, token refresh, and keychain storage are verified against Linear's current API.
       - The local-first refresh approach respects Linear rate-limit guidance.
       - The public-webhook relay remains optional and is not required for core use.
+    notes: The desktop OAuth/PKCE foundation is implemented and tested against Linear's current documented authorization, token, refresh, and rate-limit contract: an explicit loopback callback, state validation, S256 challenge, system-browser launch, native credential storage, bounded refresh, and read-only scope. A live end-to-end verification needs a user-created Linear OAuth app configured with the declared callback URI; no client secret or API token will be requested in this repository.
 
   - id: LIN-002
     epic: LIN

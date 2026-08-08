@@ -6,6 +6,7 @@ use std::{
 };
 
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_opener::OpenerExt;
 
 use crate::{
     agent::AgentProfile,
@@ -17,12 +18,20 @@ use crate::{
     },
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
+    linear::{
+        KeyringCredentialStore, LinearConnectionStatus, LinearOAuthConfiguration, LinearOAuthError,
+        LinearOAuthService, LinearTokenClient, ReqwestLinearTokenClient, await_loopback_callback,
+        bind_loopback_callback,
+    },
     persistence::SqliteEventStore,
 };
 
 pub(crate) type LocalBoardService = BoardService<SqliteEventStore>;
+type LocalLinearOAuthService = LinearOAuthService<KeyringCredentialStore>;
 
 pub(crate) struct BoardDaemonState {
+    linear_oauth: Arc<Mutex<LocalLinearOAuthService>>,
+    linear_token_client: Arc<ReqwestLinearTokenClient>,
     service: Arc<Mutex<LocalBoardService>>,
     runtime: ExecutionRuntime,
 }
@@ -35,6 +44,8 @@ impl BoardDaemonState {
             database_path,
         )?)));
         Ok(Self {
+            linear_oauth: Arc::new(Mutex::new(LinearOAuthService::new(KeyringCredentialStore))),
+            linear_token_client: Arc::new(ReqwestLinearTokenClient::new()),
             runtime: ExecutionRuntime::new(service.clone(), data_directory.join("workspaces")),
             service,
         })
@@ -151,6 +162,58 @@ pub(crate) fn record_review_check(
 }
 
 #[tauri::command]
+pub(crate) fn begin_linear_oauth(
+    app_handle: AppHandle,
+    state: State<'_, BoardDaemonState>,
+    configuration: LinearOAuthConfiguration,
+) -> Result<LinearConnectionStatus, String> {
+    let listener = bind_loopback_callback(&configuration).map_err(error_message)?;
+    let authorization_url = lock_linear_oauth(&state)?
+        .begin(configuration.clone())
+        .map_err(error_message)?;
+    if let Err(error) = app_handle
+        .opener()
+        .open_url(&authorization_url, None::<&str>)
+    {
+        let error = LinearOAuthError::BrowserLaunch(error.to_string());
+        lock_linear_oauth(&state)?.record_failure(error.clone());
+        return Err(error_message(error));
+    }
+    let oauth_service = state.linear_oauth.clone();
+    let token_client = state.linear_token_client.clone();
+    std::thread::spawn(move || {
+        let outcome = await_loopback_callback(listener, &configuration).and_then(|callback| {
+            let exchange = oauth_service
+                .lock()
+                .map_err(|_| LinearOAuthError::ConnectorUnavailable)?
+                .authorization_code_exchange(&callback.code, &callback.state)?;
+            let credentials = token_client.exchange_authorization_code(exchange)?;
+            oauth_service
+                .lock()
+                .map_err(|_| LinearOAuthError::ConnectorUnavailable)?
+                .record_credentials(credentials)
+        });
+        if let Err(error) = outcome
+            && let Ok(mut oauth) = oauth_service.lock()
+        {
+            oauth.record_failure(error);
+        }
+    });
+    lock_linear_oauth(&state)?
+        .connection_status()
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn linear_connection_status(
+    state: State<'_, BoardDaemonState>,
+) -> Result<LinearConnectionStatus, String> {
+    lock_linear_oauth(&state)?
+        .connection_status()
+        .map_err(error_message)
+}
+
+#[tauri::command]
 pub(crate) fn import_linear_issue(
     state: State<'_, BoardDaemonState>,
     request: ImportLinearIssueRequest,
@@ -187,6 +250,15 @@ fn lock_service<'state, 'daemon>(
         .service
         .lock()
         .map_err(|_| "the local board daemon stopped unexpectedly".to_owned())
+}
+
+fn lock_linear_oauth<'state, 'daemon>(
+    state: &'state State<'daemon, BoardDaemonState>,
+) -> Result<MutexGuard<'state, LocalLinearOAuthService>, String> {
+    state
+        .linear_oauth
+        .lock()
+        .map_err(|_| "the local Linear connector stopped unexpectedly".to_owned())
 }
 
 fn error_message(error: impl fmt::Display) -> String {

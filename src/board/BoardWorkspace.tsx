@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BoardSetup, type CreateBoardInput } from "./BoardSetup";
 import { BoardView } from "./BoardView";
 import { tauriBoardGateway } from "./gateway";
@@ -10,6 +10,8 @@ import type {
   CreateWorkItemRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
+  LinearConnectionStatus,
+  LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -18,6 +20,10 @@ import type {
 type BoardWorkspaceProps = Readonly<{
   gateway?: BoardGateway;
 }>;
+
+const disconnectedLinearStatus: LinearConnectionStatus = {
+  kind: "disconnected",
+};
 
 export function BoardWorkspace({
   gateway = tauriBoardGateway,
@@ -28,6 +34,8 @@ export function BoardWorkspace({
   const [agentProfiles, setAgentProfiles] = useState<readonly AgentProfile[]>(
     [],
   );
+  const [linearConnectionStatus, setLinearConnectionStatus] =
+    useState<LinearConnectionStatus>(disconnectedLinearStatus);
 
   async function run(operation: () => Promise<BoardSnapshot | undefined>) {
     setBusy(true);
@@ -59,6 +67,7 @@ export function BoardWorkspace({
         name: input.boardName,
       });
       setAgentProfiles(await gateway.agentProfiles());
+      await refreshLinearConnectionStatus();
       return boardSnapshot;
     });
   }
@@ -67,6 +76,7 @@ export function BoardWorkspace({
     await run(async () => {
       const boardSnapshot = await gateway.boardSnapshot(boardId);
       setAgentProfiles(await gateway.agentProfiles());
+      await refreshLinearConnectionStatus();
       return boardSnapshot;
     });
   }
@@ -116,6 +126,29 @@ export function BoardWorkspace({
     await run(() => gateway.importLinearBlocker(request));
   }
 
+  const refreshLinearConnectionStatus = useCallback(async () => {
+    try {
+      setLinearConnectionStatus(await gateway.linearConnectionStatus());
+    } catch (connectionError) {
+      setLinearConnectionStatus({
+        kind: "failed",
+        message: errorMessage(connectionError),
+      });
+    }
+  }, [gateway]);
+
+  async function beginLinearOAuth(configuration: LinearOAuthConfiguration) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setLinearConnectionStatus(await gateway.beginLinearOAuth(configuration));
+    } catch (connectionError) {
+      setError(errorMessage(connectionError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const boardId = snapshot?.board.id;
   useEffect(() => {
     if (boardId === undefined) return undefined;
@@ -124,10 +157,18 @@ export function BoardWorkspace({
         .boardSnapshot(boardId)
         .then(setSnapshot)
         .catch(() => undefined);
+      if (linearConnectionStatus.kind === "awaiting_authorization") {
+        void refreshLinearConnectionStatus();
+      }
     };
     const intervalId = window.setInterval(refresh, 1_000);
     return () => window.clearInterval(intervalId);
-  }, [boardId, gateway]);
+  }, [
+    boardId,
+    gateway,
+    linearConnectionStatus.kind,
+    refreshLinearConnectionStatus,
+  ]);
 
   return (
     <section className="board-shell">
@@ -146,6 +187,8 @@ export function BoardWorkspace({
           onCreateWorkItem={createWorkItem}
           onImportLinearBlocker={importLinearBlocker}
           onImportLinearIssue={importLinearIssue}
+          linearConnectionStatus={linearConnectionStatus}
+          onConnectLinear={beginLinearOAuth}
           onSaveAgentProfile={saveAgentProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}

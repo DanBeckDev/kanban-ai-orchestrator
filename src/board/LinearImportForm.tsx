@@ -63,8 +63,7 @@ export function LinearImportForm({
     <section className="linear-import-panel">
       <h3>Linear import</h3>
       <p>
-        Link immutable issue UUIDs copied from Linear. OAuth refresh is
-        configured separately.
+        Link immutable issue UUIDs copied from Linear after connecting above.
       </p>
       <form aria-label="Import Linear issue" onSubmit={importIssue}>
         <label>

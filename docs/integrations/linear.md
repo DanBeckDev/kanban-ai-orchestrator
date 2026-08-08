@@ -16,6 +16,18 @@ The connector is not a background copy process. It is a synchronized mapping wit
 
 OAuth is the release path. A personal API key may be offered only for private development/testing and is stored in the OS keychain.
 
+## Desktop OAuth connection
+
+The desktop connection uses Linear's authorization-code flow with PKCE. The user creates a Linear OAuth application and configures this exact redirect URI:
+
+`http://127.0.0.1:38471/linear/oauth/callback`
+
+The app accepts only an explicit HTTP loopback IP address, port, and path. It generates a fresh state value and S256 verifier for every attempt, opens the system browser, and accepts one bounded callback. The callback state must match before the daemon exchanges the code. The public client ID is supplied in the UI; a client secret is neither requested nor embedded in the desktop app.
+
+Access and refresh tokens, together with the public connection metadata needed to refresh them, are serialized only into the operating system credential store: Keychain Services on macOS, Credential Manager on Windows, and Secret Service on Linux. SQLite, diagnostics, activity history, and board snapshots never contain a token. A refresh happens only when an access token is within one minute of expiry; the existing credential is preserved until its replacement has been validated and saved. This produces no background polling and respects Linear's guidance to avoid it.
+
+The desktop currently requests the least-privileged `read` scope. Linked execution may be selected for an imported task, but remote writes, app-actor installation, comments, status mapping, outbox processing, and webhooks are still separate, opt-in work; choosing the mode must not grant those powers early. See Linear's [OAuth documentation](https://linear.app/developers/oauth-2-0-authentication) and [rate-limit guidance](https://linear.app/developers/rate-limiting).
+
 ## Mapping and provenance
 
 Each link stores the immutable Linear UUID, display identifier, URL, last observed revision, field provenance, and sync state. Never use a mutable title or identifier alone as the key.

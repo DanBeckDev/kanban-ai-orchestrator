@@ -272,7 +272,9 @@ legend,
 .review-check-form,
 .recovery-actions,
 .execution-control,
+.linear-connection-panel,
 .linear-import-panel,
+.linear-connection-panel form,
 .linear-import-panel form {
   display: grid;
   gap: 0.65rem;
@@ -405,6 +407,7 @@ legend,
 
 .execution-control p,
 .recovery-actions p,
+.linear-connection-panel > p,
 .linear-import-panel > p {
   color: #aebbd0;
   font-size: 0.78rem;

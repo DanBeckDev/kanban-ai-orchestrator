@@ -5,6 +5,7 @@ use tauri::Manager;
 pub mod agent;
 pub mod application;
 pub mod domain;
+pub mod linear;
 pub mod orchestration;
 pub mod persistence;
 pub mod policy;
@@ -28,6 +29,7 @@ fn foundation_summary() -> FoundationSummary {
 #[cfg_attr(coverage_nightly, coverage(off))]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let daemon = desktop::open_daemon(app.handle())
                 .map_err(|error| -> Box<dyn std::error::Error> { Box::new(error) })?;
@@ -46,6 +48,8 @@ pub fn run() {
             desktop::start_execution,
             desktop::stop_execution,
             desktop::record_review_check,
+            desktop::begin_linear_oauth,
+            desktop::linear_connection_status,
             desktop::import_linear_issue,
             desktop::import_linear_blocker,
             desktop::board_snapshot,

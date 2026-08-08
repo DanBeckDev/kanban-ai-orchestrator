@@ -1,6 +1,7 @@
 import { AgentProfileForm } from "./AgentProfileForm";
 import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
+import { LinearConnectionPanel } from "./LinearConnectionPanel";
 import { LinearImportForm } from "./LinearImportForm";
 import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
@@ -11,6 +12,8 @@ import type {
   CreateWorkItemRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
+  LinearConnectionStatus,
+  LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -24,6 +27,8 @@ type BoardViewProps = Readonly<{
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
   onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
   onImportLinearIssue: (request: ImportLinearIssueRequest) => Promise<void>;
+  linearConnectionStatus: LinearConnectionStatus;
+  onConnectLinear: (configuration: LinearOAuthConfiguration) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
@@ -39,6 +44,8 @@ export function BoardView({
   onCreateWorkItem,
   onImportLinearBlocker,
   onImportLinearIssue,
+  linearConnectionStatus,
+  onConnectLinear,
   onSaveAgentProfile,
   onStartExecution,
   onStopExecution,
@@ -102,6 +109,11 @@ export function BoardView({
             busy={busy}
             profiles={agentProfiles}
             onSave={onSaveAgentProfile}
+          />
+          <LinearConnectionPanel
+            busy={busy}
+            status={linearConnectionStatus}
+            onConnect={onConnectLinear}
           />
           <LinearImportForm
             busy={busy}

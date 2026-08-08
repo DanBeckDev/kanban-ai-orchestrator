@@ -52,6 +52,7 @@ domain_id!(EvidenceId);
 domain_id!(PolicyDecisionId);
 domain_id!(ExternalLinkId);
 domain_id!(DependencyId);
+domain_id!(WorkItemEventId);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

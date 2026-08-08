@@ -1,0 +1,56 @@
+work_item: CORE-003
+scope:
+  - src-tauri/Cargo.toml
+  - src-tauri/Cargo.lock
+  - src-tauri/src/lib.rs
+  - src-tauri/src/domain/events.rs
+  - src-tauri/src/domain/model.rs
+  - src-tauri/src/domain/mod.rs
+  - src-tauri/src/domain/state_machine.rs
+  - src-tauri/src/persistence/mod.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T12:34:05Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Restart reconciliation writes each independent uncertain work item in its own event-and-snapshot transaction rather than making the complete recovery batch one transaction.
+        resolution: accepted
+        rationale: Each task remains individually atomic, recovery event IDs make a repeated daemon restart idempotent, and all required IDs are validated before the first mutation. This avoids holding a long database transaction while preserving a safe, resumable recovery path. A future globally atomic recovery checkpoint should be introduced only if the product needs batch-level audit semantics.
+        decision_reference: CORE-003
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Restart reconciliation used a panic-based invariant after validating recovery event IDs.
+    change: Replaced the panic with the typed missing-event-ID error so a future invariant regression remains recoverable and diagnosable.
+  - finding: The database-sequence conversion helper was exposed to sibling tests despite being an implementation detail.
+    change: Made it private and co-located its focused negative-value test with the implementation.
+  - finding: An app could otherwise open a database whose recorded schema is newer than it supports.
+    change: Added a fail-closed migration guard and regression test, preventing incompatible writes by an older application version.
+  - finding: The initial persistence tests did not exercise every idempotency-equivalence condition in transition replay.
+    change: Added focused tests for every conflicting replay field, duplicate work items, recovery validation, reconnect safety, and future-schema rejection.
+verification:
+  commands:
+    - command: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      result: passed
+    - command: cargo test --manifest-path src-tauri/Cargo.toml
+      result: passed
+    - command: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      result: passed
+    - command: node scripts/check-rust-coverage.mjs
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 98.52
+    statements: 96.23
+    functions: 97.76
+    branches: 96.59
+    threshold_met: true
+exceptions: []

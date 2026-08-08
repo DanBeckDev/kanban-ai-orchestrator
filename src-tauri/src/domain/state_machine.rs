@@ -1,13 +1,17 @@
 use std::{error::Error, fmt};
 
+use serde::{Deserialize, Serialize};
+
 use super::WorkItemState;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TransitionConfig {
     pub human_review_required: bool,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CompletionEvidence {
     pub checks_passed: bool,
     pub completion_report_present: bool,

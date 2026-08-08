@@ -10,6 +10,7 @@ import type {
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
+  LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
@@ -56,6 +57,9 @@ export const tauriBoardGateway: BoardGateway = {
   },
   linearConnectionStatus(): Promise<LinearConnectionStatus> {
     return invoke("linear_connection_status");
+  },
+  linearAssignedIssues(): Promise<readonly LinearIssueSummary[]> {
+    return invoke("linear_assigned_issues");
   },
   importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot> {
     return invoke("import_linear_issue", { request });

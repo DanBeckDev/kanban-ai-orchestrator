@@ -4,7 +4,7 @@
 
 Linear is a first-class planning-system integration. A linked board lets teams retain their Linear workflow while using this app to orchestrate agent execution, worktrees, reviews, and evidence.
 
-The connector is not a background copy process. It is a synchronized mapping with provenance, permission boundaries, idempotency, and visible conflict resolution.
+The initial connector is not a background copy process. It provides user-triggered, provenance-preserving import; any future synchronization must add explicit permission boundaries, idempotency, and visible conflict resolution.
 
 ## Connection modes
 
@@ -27,6 +27,10 @@ The app accepts only an explicit HTTP loopback IP address, port, and path. It ge
 Access and refresh tokens, together with the public connection metadata needed to refresh them, are serialized only into the operating system credential store: Keychain Services on macOS, Credential Manager on Windows, and Secret Service on Linux. SQLite, diagnostics, activity history, and board snapshots never contain a token. A refresh happens only when an access token is within one minute of expiry; the existing credential is preserved until its replacement has been validated and saved. This produces no background polling and respects Linear's guidance to avoid it.
 
 The desktop currently requests the least-privileged `read` scope. Linked execution may be selected for an imported task, but remote writes, app-actor installation, comments, status mapping, outbox processing, and webhooks are still separate, opt-in work; choosing the mode must not grant those powers early. See Linear's [OAuth documentation](https://linear.app/developers/oauth-2-0-authentication) and [rate-limit guidance](https://linear.app/developers/rate-limiting).
+
+## Authenticated issue retrieval
+
+After the connection status is explicitly `connected`, the user may press **Load my assigned Linear issues**. That one user action sends a read-only GraphQL `viewer.assignedIssues` query, ordered by `updatedAt` and bounded to 50 issue summaries (`id`, `identifier`, `title`, and `url`). It never creates, changes, comments on, or transitions a Linear issue, and it does not poll. Choosing a returned summary merely pre-fills the existing local import form; the daemon still validates the immutable ID and Linear HTTPS URL before it creates a durable link.
 
 ## Mapping and provenance
 

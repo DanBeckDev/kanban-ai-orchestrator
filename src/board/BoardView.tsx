@@ -13,6 +13,7 @@ import type {
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
+  LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
@@ -28,7 +29,9 @@ type BoardViewProps = Readonly<{
   onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
   onImportLinearIssue: (request: ImportLinearIssueRequest) => Promise<void>;
   linearConnectionStatus: LinearConnectionStatus;
+  linearIssues: readonly LinearIssueSummary[];
   onConnectLinear: (configuration: LinearOAuthConfiguration) => Promise<void>;
+  onLoadLinearIssues: () => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
@@ -45,7 +48,9 @@ export function BoardView({
   onImportLinearBlocker,
   onImportLinearIssue,
   linearConnectionStatus,
+  linearIssues,
   onConnectLinear,
+  onLoadLinearIssues,
   onSaveAgentProfile,
   onStartExecution,
   onStopExecution,
@@ -117,9 +122,12 @@ export function BoardView({
           />
           <LinearImportForm
             busy={busy}
+            connectionStatus={linearConnectionStatus}
+            issues={linearIssues}
             workItems={workItems}
             onImportBlocker={onImportLinearBlocker}
             onImportIssue={onImportLinearIssue}
+            onLoadIssues={onLoadLinearIssues}
           />
         </aside>
       </div>

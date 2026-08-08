@@ -29,9 +29,12 @@ describe("LinearImportForm", () => {
     render(
       <LinearImportForm
         busy={false}
+        connectionStatus={{ kind: "disconnected" }}
+        issues={[]}
         workItems={workItems}
         onImportBlocker={vi.fn().mockResolvedValue(undefined)}
         onImportIssue={onImportIssue}
+        onLoadIssues={vi.fn().mockResolvedValue(undefined)}
       />,
     );
     const form = screen.getByRole("form", { name: "Import Linear issue" });
@@ -64,5 +67,44 @@ describe("LinearImportForm", () => {
         }),
       ),
     );
+  });
+
+  it("loads and uses a selected assigned issue without putting a token in the form", async () => {
+    const onLoadIssues = vi.fn().mockResolvedValue(undefined);
+    render(
+      <LinearImportForm
+        busy={false}
+        connectionStatus={{
+          kind: "connected",
+          expiresAt: "2026-08-09T12:00:00Z",
+          scopes: ["read"],
+        }}
+        issues={[
+          {
+            id: "d290f1ee-6c54-4b01-90e6-d701748f0851",
+            identifier: "LIN-12",
+            title: "Load the issue",
+            url: "https://linear.app/example/issue/LIN-12",
+          },
+        ]}
+        workItems={workItems}
+        onImportBlocker={vi.fn().mockResolvedValue(undefined)}
+        onImportIssue={vi.fn().mockResolvedValue(undefined)}
+        onLoadIssues={onLoadIssues}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load my assigned Linear issues" }),
+    );
+    await waitFor(() => expect(onLoadIssues).toHaveBeenCalledOnce());
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use LIN-12: Load the issue" }),
+    );
+
+    expect(screen.getByLabelText("Linear issue UUID")).toHaveValue(
+      "d290f1ee-6c54-4b01-90e6-d701748f0851",
+    );
+    expect(screen.queryByLabelText(/access token/i)).toBeNull();
   });
 });

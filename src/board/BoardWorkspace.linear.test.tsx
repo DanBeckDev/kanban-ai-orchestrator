@@ -48,4 +48,33 @@ describe("Linear connection in the board workspace", () => {
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: "MVP" })).toBeVisible();
   });
+
+  it("loads assigned Linear issues only after a connected account is confirmed", async () => {
+    const boardGateway = gateway(snapshot());
+    boardGateway.linearConnectionStatus = vi.fn().mockResolvedValue({
+      kind: "connected",
+      expiresAt: "2026-08-09T12:00:00Z",
+      scopes: ["read"],
+    });
+    boardGateway.linearAssignedIssues = vi.fn().mockResolvedValue([
+      {
+        id: "d290f1ee-6c54-4b01-90e6-d701748f0851",
+        identifier: "LIN-12",
+        title: "Load the issue",
+        url: "https://linear.app/example/issue/LIN-12",
+      },
+    ]);
+
+    await openBoard(boardGateway);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load my assigned Linear issues" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.linearAssignedIssues).toHaveBeenCalledOnce(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Use LIN-12: Load the issue" }),
+    ).toBeVisible();
+  });
 });

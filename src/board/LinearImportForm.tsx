@@ -5,21 +5,29 @@ import type {
   ExternalConnectionMode,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
+  LinearConnectionStatus,
+  LinearIssueSummary,
   WorkItem,
 } from "./types";
 
 type LinearImportFormProps = Readonly<{
   busy: boolean;
+  connectionStatus: LinearConnectionStatus;
+  issues: readonly LinearIssueSummary[];
   workItems: readonly WorkItem[];
   onImportBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
   onImportIssue: (request: ImportLinearIssueRequest) => Promise<void>;
+  onLoadIssues: () => Promise<void>;
 }>;
 
 export function LinearImportForm({
   busy,
+  connectionStatus,
+  issues,
   workItems,
   onImportBlocker,
   onImportIssue,
+  onLoadIssues,
 }: LinearImportFormProps) {
   const [workItemId, setWorkItemId] = useState("");
   const [issueId, setIssueId] = useState("");
@@ -59,12 +67,37 @@ export function LinearImportForm({
     });
   }
 
+  function selectIssue(issue: LinearIssueSummary) {
+    setIssueId(issue.id);
+    setIdentifier(issue.identifier);
+    setUrl(issue.url);
+  }
+
   return (
     <section className="linear-import-panel">
       <h3>Linear import</h3>
       <p>
-        Link immutable issue UUIDs copied from Linear after connecting above.
+        Load your assigned Linear issues after connecting, or link an immutable
+        issue UUID copied from Linear.
       </p>
+      <button
+        disabled={busy || connectionStatus.kind !== "connected"}
+        type="button"
+        onClick={onLoadIssues}
+      >
+        Load my assigned Linear issues
+      </button>
+      {issues.length > 0 && (
+        <ul aria-label="Assigned Linear issues">
+          {issues.map((issue) => (
+            <li key={issue.id}>
+              <button type="button" onClick={() => selectIssue(issue)}>
+                Use {issue.identifier}: {issue.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <form aria-label="Import Linear issue" onSubmit={importIssue}>
         <label>
           Local task

@@ -50,6 +50,7 @@ pub fn run() {
             desktop::record_review_check,
             desktop::begin_linear_oauth,
             desktop::linear_connection_status,
+            desktop::linear_assigned_issues,
             desktop::import_linear_issue,
             desktop::import_linear_blocker,
             desktop::board_snapshot,

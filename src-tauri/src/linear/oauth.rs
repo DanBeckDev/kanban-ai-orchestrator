@@ -46,6 +46,11 @@ pub struct LinearCredentials {
     pub scopes: Vec<String>,
 }
 
+pub enum LinearRequestCredentials {
+    AccessToken(String),
+    RequiresRefresh(LinearCredentials),
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct AuthorizationCodeExchange {
     pub code: String,
@@ -69,6 +74,20 @@ pub trait LinearTokenClient {
         &self,
         credentials: &LinearCredentials,
     ) -> Result<LinearCredentials, LinearOAuthError>;
+}
+
+pub fn resolve_request_credentials(
+    request_credentials: LinearRequestCredentials,
+    token_client: &impl LinearTokenClient,
+) -> Result<(String, Option<LinearCredentials>), LinearOAuthError> {
+    match request_credentials {
+        LinearRequestCredentials::AccessToken(access_token) => Ok((access_token, None)),
+        LinearRequestCredentials::RequiresRefresh(existing) => {
+            let refreshed = token_client.refresh_access_token(&existing)?;
+            let access_token = refreshed.access_token.clone();
+            Ok((access_token, Some(refreshed)))
+        }
+    }
 }
 
 pub struct LinearOAuthService<Store> {
@@ -166,18 +185,18 @@ where
         Ok(self.status.clone())
     }
 
-    pub fn credentials_needing_refresh(
+    pub fn credentials_for_request(
         &mut self,
-    ) -> Result<Option<LinearCredentials>, LinearOAuthError> {
+    ) -> Result<LinearRequestCredentials, LinearOAuthError> {
         let existing = self
             .credential_store
             .load()?
             .ok_or(LinearOAuthError::NotConnected)?;
         if existing.expires_at > Utc::now() + REFRESH_SAFETY_WINDOW {
             self.status = connected_status(&existing);
-            return Ok(None);
+            return Ok(LinearRequestCredentials::AccessToken(existing.access_token));
         }
-        Ok(Some(existing))
+        Ok(LinearRequestCredentials::RequiresRefresh(existing))
     }
 
     pub fn forget_local_credentials(&mut self) -> Result<(), LinearOAuthError> {
@@ -290,6 +309,7 @@ pub enum LinearOAuthError {
     Callback(String),
     ConnectorUnavailable,
     CredentialStore(String),
+    GraphQl(String),
     InvalidRedirectUri,
     MissingAuthorizationCode,
     MissingClientId,
@@ -322,6 +342,7 @@ impl fmt::Display for LinearOAuthError {
             Self::CredentialStore(error) => {
                 write!(formatter, "secure credential storage failed: {error}")
             }
+            Self::GraphQl(error) => write!(formatter, "Linear GraphQL request failed: {error}"),
             Self::InvalidRedirectUri => formatter.write_str(
                 "Linear redirect URI must be an HTTP loopback URL with an explicit port and path",
             ),

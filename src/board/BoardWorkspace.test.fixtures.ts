@@ -6,6 +6,7 @@ import type {
   BoardSnapshot,
   CreateWorkItemRequest,
   LinearConnectionStatus,
+  LinearIssueSummary,
   LinearOAuthConfiguration,
   TransitionWorkItemRequest,
   WorkItemState,
@@ -50,6 +51,7 @@ export function workItem(
 export function gateway(initialSnapshot = snapshot()): BoardGateway {
   let current = initialSnapshot;
   let linearConnectionStatus: LinearConnectionStatus = { kind: "disconnected" };
+  const linearIssues: readonly LinearIssueSummary[] = [];
   let profiles: readonly AgentProfile[] = [];
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
@@ -166,6 +168,7 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
     linearConnectionStatus: vi
       .fn()
       .mockImplementation(async () => linearConnectionStatus),
+    linearAssignedIssues: vi.fn().mockImplementation(async () => linearIssues),
     importLinearIssue: vi.fn().mockImplementation(async (request) => {
       current = {
         ...current,

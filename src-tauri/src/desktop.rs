@@ -19,17 +19,20 @@ use crate::{
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
     linear::{
-        KeyringCredentialStore, LinearConnectionStatus, LinearOAuthConfiguration, LinearOAuthError,
-        LinearOAuthService, LinearTokenClient, ReqwestLinearTokenClient, await_loopback_callback,
-        bind_loopback_callback,
+        KeyringCredentialStore, LinearConnectionStatus, LinearIssueReader, LinearIssueSummary,
+        LinearOAuthConfiguration, LinearOAuthError, LinearOAuthService, LinearTokenClient,
+        ReqwestLinearGraphQlTransport, ReqwestLinearTokenClient, await_loopback_callback,
+        bind_loopback_callback, resolve_request_credentials,
     },
     persistence::SqliteEventStore,
 };
 
 pub(crate) type LocalBoardService = BoardService<SqliteEventStore>;
 type LocalLinearOAuthService = LinearOAuthService<KeyringCredentialStore>;
+type LocalLinearIssueReader = LinearIssueReader<ReqwestLinearGraphQlTransport>;
 
 pub(crate) struct BoardDaemonState {
+    linear_issue_reader: LocalLinearIssueReader,
     linear_oauth: Arc<Mutex<LocalLinearOAuthService>>,
     linear_token_client: Arc<ReqwestLinearTokenClient>,
     service: Arc<Mutex<LocalBoardService>>,
@@ -44,6 +47,7 @@ impl BoardDaemonState {
             database_path,
         )?)));
         Ok(Self {
+            linear_issue_reader: LocalLinearIssueReader::new(ReqwestLinearGraphQlTransport::new()),
             linear_oauth: Arc::new(Mutex::new(LinearOAuthService::new(KeyringCredentialStore))),
             linear_token_client: Arc::new(ReqwestLinearTokenClient::new()),
             runtime: ExecutionRuntime::new(service.clone(), data_directory.join("workspaces")),
@@ -214,6 +218,17 @@ pub(crate) fn linear_connection_status(
 }
 
 #[tauri::command]
+pub(crate) fn linear_assigned_issues(
+    state: State<'_, BoardDaemonState>,
+) -> Result<Vec<LinearIssueSummary>, String> {
+    let access_token = linear_access_token(&state)?;
+    state
+        .linear_issue_reader
+        .assigned_issues(&access_token)
+        .map_err(error_message)
+}
+
+#[tauri::command]
 pub(crate) fn import_linear_issue(
     state: State<'_, BoardDaemonState>,
     request: ImportLinearIssueRequest,
@@ -255,6 +270,27 @@ fn lock_service<'state, 'daemon>(
 fn lock_linear_oauth<'state, 'daemon>(
     state: &'state State<'daemon, BoardDaemonState>,
 ) -> Result<MutexGuard<'state, LocalLinearOAuthService>, String> {
+    lock_linear_oauth_state(state.inner())
+}
+
+fn linear_access_token(state: &BoardDaemonState) -> Result<String, String> {
+    let request_credentials = lock_linear_oauth_state(state)?
+        .credentials_for_request()
+        .map_err(error_message)?;
+    let (access_token, refreshed_credentials) =
+        resolve_request_credentials(request_credentials, state.linear_token_client.as_ref())
+            .map_err(error_message)?;
+    if let Some(refreshed_credentials) = refreshed_credentials {
+        lock_linear_oauth_state(state)?
+            .record_credentials(refreshed_credentials)
+            .map_err(error_message)?;
+    }
+    Ok(access_token)
+}
+
+fn lock_linear_oauth_state(
+    state: &BoardDaemonState,
+) -> Result<MutexGuard<'_, LocalLinearOAuthService>, String> {
     state
         .linear_oauth
         .lock()

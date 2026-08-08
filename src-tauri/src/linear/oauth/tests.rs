@@ -5,8 +5,11 @@ use url::Url;
 
 use super::{
     AuthorizationCodeExchange, LinearConnectionStatus, LinearCredentialStore, LinearCredentials,
-    LinearOAuthConfiguration, LinearOAuthError, LinearOAuthService, LinearTokenClient,
+    LinearOAuthConfiguration, LinearOAuthError, LinearOAuthService, LinearRequestCredentials,
+    LinearTokenClient, resolve_request_credentials,
 };
+
+mod callback;
 
 #[derive(Default)]
 struct MemoryCredentialStore {
@@ -32,6 +35,40 @@ impl LinearCredentialStore for MemoryCredentialStore {
 #[derive(Default)]
 struct FakeTokenClient {
     refreshes: Cell<u8>,
+}
+
+struct FailingTokenClient;
+
+impl LinearTokenClient for FailingTokenClient {
+    fn exchange_authorization_code(
+        &self,
+        _exchange: AuthorizationCodeExchange,
+    ) -> Result<LinearCredentials, LinearOAuthError> {
+        Err(LinearOAuthError::TokenExchange("unavailable".to_owned()))
+    }
+
+    fn refresh_access_token(
+        &self,
+        _credentials: &LinearCredentials,
+    ) -> Result<LinearCredentials, LinearOAuthError> {
+        Err(LinearOAuthError::TokenExchange("unavailable".to_owned()))
+    }
+}
+
+struct FailingCredentialStore;
+
+impl LinearCredentialStore for FailingCredentialStore {
+    fn clear(&self) -> Result<(), LinearOAuthError> {
+        Err(LinearOAuthError::CredentialStore("clear failed".to_owned()))
+    }
+
+    fn load(&self) -> Result<Option<LinearCredentials>, LinearOAuthError> {
+        Err(LinearOAuthError::CredentialStore("load failed".to_owned()))
+    }
+
+    fn save(&self, _credentials: &LinearCredentials) -> Result<(), LinearOAuthError> {
+        Err(LinearOAuthError::CredentialStore("save failed".to_owned()))
+    }
 }
 
 impl LinearTokenClient for FakeTokenClient {
@@ -205,22 +242,29 @@ fn refreshes_an_expired_credential_without_clearing_the_existing_connection_firs
         .expect("expired credential should be stored");
     let token_client = FakeTokenClient::default();
     let mut service = LinearOAuthService::new(store);
-    let existing = service
-        .credentials_needing_refresh()
+    let existing = match service
+        .credentials_for_request()
         .expect("expired connection should be readable")
-        .expect("expired connection should request a refresh");
-    let refreshed = token_client
-        .refresh_access_token(&existing)
-        .expect("expired token should refresh");
+    {
+        LinearRequestCredentials::RequiresRefresh(credentials) => credentials,
+        LinearRequestCredentials::AccessToken(_) => {
+            panic!("expired connection should request a refresh")
+        }
+    };
+    let (access_token, refreshed) = resolve_request_credentials(
+        LinearRequestCredentials::RequiresRefresh(existing),
+        &token_client,
+    )
+    .expect("expired token should refresh");
     service
-        .record_credentials(refreshed)
+        .record_credentials(refreshed.expect("refresh should produce replacement credentials"))
         .expect("refreshed credentials should be stored");
 
     assert_eq!(
-        token_client.refreshes.get(),
-        1,
-        "refresh should occur outside the credential service"
+        access_token, "access-token",
+        "refresh should return the replacement access token"
     );
+    assert_eq!(token_client.refreshes.get(), 1);
     assert_eq!(
         service
             .credential_store
@@ -244,7 +288,15 @@ fn keeps_a_valid_credential_without_requesting_a_refresh() {
         .expect("valid credential should be stored");
     let mut service = LinearOAuthService::new(store);
 
-    assert!(matches!(service.credentials_needing_refresh(), Ok(None)));
+    let request_credentials = service
+        .credentials_for_request()
+        .expect("valid credentials should remain readable");
+    let token_client = FakeTokenClient::default();
+    let (access_token, refreshed) = resolve_request_credentials(request_credentials, &token_client)
+        .expect("valid credentials should not require refresh");
+    assert_eq!(access_token, "access-token");
+    assert!(refreshed.is_none());
+    assert_eq!(token_client.refreshes.get(), 0);
     assert!(matches!(
         service.connection_status().expect("status should load"),
         LinearConnectionStatus::Connected { .. }
@@ -252,11 +304,50 @@ fn keeps_a_valid_credential_without_requesting_a_refresh() {
 }
 
 #[test]
+fn surfaces_a_refresh_failure_without_discarding_the_stored_credentials() {
+    let existing = credentials(
+        "client-id".to_owned(),
+        "http://127.0.0.1:38471/linear/oauth/callback".to_owned(),
+        Utc::now() - Duration::minutes(1),
+    );
+
+    assert!(matches!(
+        resolve_request_credentials(
+            LinearRequestCredentials::RequiresRefresh(existing),
+            &FailingTokenClient,
+        ),
+        Err(LinearOAuthError::TokenExchange(error)) if error == "unavailable"
+    ));
+}
+
+#[test]
+fn surfaces_secure_credential_store_failures_at_the_operation_that_needs_them() {
+    let credentials = credentials(
+        "client-id".to_owned(),
+        "http://127.0.0.1:38471/linear/oauth/callback".to_owned(),
+        Utc::now() + Duration::hours(24),
+    );
+
+    assert_eq!(
+        LinearOAuthService::new(FailingCredentialStore).record_credentials(credentials),
+        Err(LinearOAuthError::CredentialStore("save failed".to_owned()))
+    );
+    assert!(matches!(
+        LinearOAuthService::new(FailingCredentialStore).credentials_for_request(),
+        Err(LinearOAuthError::CredentialStore(error)) if error == "load failed"
+    ));
+    assert_eq!(
+        LinearOAuthService::new(FailingCredentialStore).forget_local_credentials(),
+        Err(LinearOAuthError::CredentialStore("clear failed".to_owned()))
+    );
+}
+
+#[test]
 fn reports_no_refresh_credential_when_no_linear_account_is_connected() {
     let mut service = LinearOAuthService::new(MemoryCredentialStore::default());
 
     assert!(matches!(
-        service.credentials_needing_refresh(),
+        service.credentials_for_request(),
         Err(LinearOAuthError::NotConnected)
     ));
 }
@@ -341,25 +432,4 @@ fn rejects_redirect_uris_that_are_not_explicit_loopback_callbacks() {
             Err(LinearOAuthError::InvalidRedirectUri)
         );
     }
-}
-
-#[test]
-fn requires_a_nonblank_client_id_and_accepts_ipv6_loopback_callbacks() {
-    let mut service = LinearOAuthService::new(MemoryCredentialStore::default());
-    assert_eq!(
-        service.begin(LinearOAuthConfiguration {
-            client_id: " ".to_owned(),
-            redirect_uri: "http://127.0.0.1:38471/linear/oauth/callback".to_owned(),
-        }),
-        Err(LinearOAuthError::MissingClientId)
-    );
-
-    assert!(
-        service
-            .begin(LinearOAuthConfiguration {
-                client_id: "client-id".to_owned(),
-                redirect_uri: "http://[::1]:38471/linear/oauth/callback".to_owned(),
-            })
-            .is_ok()
-    );
 }

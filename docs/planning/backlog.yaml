@@ -206,7 +206,7 @@ tasks:
       - Links use immutable Linear IDs and retain source/provenance.
       - Linear blockers import into the typed dependency graph without bypassing cycle validation.
       - Read-only and linked-execution connection modes work independently.
-    notes: An offline, locally durable import foundation was implemented on 2026-08-08 under the MVP direction before LIN-001 is complete: immutable Linear UUID links, explicit provenance and connection mode, safe HTTPS Linear URLs, and imported blocks all pass through the existing typed-cycle validation. This is an accepted sequencing exception because it makes no remote API call and stores no credentials. OAuth/PKCE, keychain token storage, refresh, live project selection, and any remote write/sync behavior remain incomplete in LIN-001 and LIN-003; the board must not represent this manual import as a connected Linear account.
+    notes: The locally durable import foundation and authenticated assigned-issue retrieval were implemented on 2026-08-08. Links retain immutable Linear UUIDs, explicit provenance and connection mode, safe HTTPS Linear URLs, and imported blockers all pass through typed-cycle validation. Once the user connects through LIN-001 OAuth, an explicit UI action queries at most 50 assigned issues by recent update and pre-fills the same validated local-import flow; it neither polls nor writes remotely. Live project selection and all remote write/sync behavior remain incomplete in LIN-003; the board must not imply that those capabilities exist.
 
   - id: LIN-003
     epic: LIN

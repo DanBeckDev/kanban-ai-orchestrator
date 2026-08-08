@@ -118,6 +118,13 @@ export type LinearConnectionStatus =
     }>
   | Readonly<{ kind: "failed"; message: string }>;
 
+export type LinearIssueSummary = Readonly<{
+  id: string;
+  identifier: string;
+  title: string;
+  url: string;
+}>;
+
 export type ExternalLink = Readonly<{
   id: string;
   workItemId: string;
@@ -252,6 +259,7 @@ export interface BoardGateway {
     configuration: LinearOAuthConfiguration,
   ): Promise<LinearConnectionStatus>;
   linearConnectionStatus(): Promise<LinearConnectionStatus>;
+  linearAssignedIssues(): Promise<readonly LinearIssueSummary[]>;
   importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot>;
   importLinearBlocker(
     request: ImportLinearBlockerRequest,

@@ -11,6 +11,7 @@ import type {
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
+  LinearIssueSummary,
   LinearOAuthConfiguration,
   RecordReviewCheckRequest,
   StartExecutionRequest,
@@ -36,6 +37,9 @@ export function BoardWorkspace({
   );
   const [linearConnectionStatus, setLinearConnectionStatus] =
     useState<LinearConnectionStatus>(disconnectedLinearStatus);
+  const [linearIssues, setLinearIssues] = useState<
+    readonly LinearIssueSummary[]
+  >([]);
 
   async function run(operation: () => Promise<BoardSnapshot | undefined>) {
     setBusy(true);
@@ -149,6 +153,18 @@ export function BoardWorkspace({
     }
   }
 
+  async function loadLinearAssignedIssues() {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setLinearIssues(await gateway.linearAssignedIssues());
+    } catch (linearError) {
+      setError(errorMessage(linearError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const boardId = snapshot?.board.id;
   useEffect(() => {
     if (boardId === undefined) return undefined;
@@ -188,7 +204,9 @@ export function BoardWorkspace({
           onImportLinearBlocker={importLinearBlocker}
           onImportLinearIssue={importLinearIssue}
           linearConnectionStatus={linearConnectionStatus}
+          linearIssues={linearIssues}
           onConnectLinear={beginLinearOAuth}
+          onLoadLinearIssues={loadLinearAssignedIssues}
           onSaveAgentProfile={saveAgentProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}

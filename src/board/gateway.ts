@@ -1,15 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   AddDependencyRequest,
+  AgentProfile,
   BoardGateway,
   BoardSnapshot,
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
-  RecordEvidenceRequest,
-  RecordExecutionRequest,
+  StartExecutionRequest,
   TransitionWorkItemRequest,
-  UpdateExecutionRequest,
 } from "./types";
 
 export const tauriBoardGateway: BoardGateway = {
@@ -30,14 +29,14 @@ export const tauriBoardGateway: BoardGateway = {
   ): Promise<BoardSnapshot> {
     return invoke("transition_work_item", { request });
   },
-  recordExecution(request: RecordExecutionRequest): Promise<BoardSnapshot> {
-    return invoke("record_execution", { request });
+  saveAgentProfile(profile: AgentProfile): Promise<AgentProfile> {
+    return invoke("save_agent_profile", { profile });
   },
-  recordEvidence(request: RecordEvidenceRequest): Promise<BoardSnapshot> {
-    return invoke("record_evidence", { request });
+  agentProfiles(): Promise<readonly AgentProfile[]> {
+    return invoke("agent_profiles");
   },
-  updateExecution(request: UpdateExecutionRequest): Promise<BoardSnapshot> {
-    return invoke("update_execution", { request });
+  startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
+    return invoke("start_execution", { request });
   },
   boardSnapshot(boardId: string): Promise<BoardSnapshot> {
     return invoke("board_snapshot", { boardId });

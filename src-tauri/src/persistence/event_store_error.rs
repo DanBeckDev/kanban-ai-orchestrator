@@ -1,6 +1,9 @@
 use std::{error::Error, fmt};
 
-use crate::domain::{EvidenceId, ExecutionId, PolicyDecisionId, WorkItemEventId, WorkItemId};
+use crate::{
+    agent::AgentProfileError,
+    domain::{EvidenceId, ExecutionId, PolicyDecisionId, WorkItemEventId, WorkItemId},
+};
 
 #[derive(Debug)]
 pub enum EventStoreError {
@@ -23,6 +26,7 @@ pub enum EventStoreError {
         execution_id: ExecutionId,
         reason: &'static str,
     },
+    InvalidAgentProfile(AgentProfileError),
     EvidenceAlreadyExists {
         evidence_id: EvidenceId,
     },
@@ -84,6 +88,7 @@ impl fmt::Display for EventStoreError {
                 "execution {} cannot be updated: {reason}",
                 execution_id.0
             ),
+            Self::InvalidAgentProfile(error) => write!(formatter, "invalid agent profile: {error}"),
             Self::EvidenceAlreadyExists { evidence_id } => {
                 write!(formatter, "evidence {} already exists", evidence_id.0)
             }
@@ -140,6 +145,7 @@ impl Error for EventStoreError {
             Self::Database(error) => Some(error),
             Self::Serialization(error) => Some(error),
             Self::StateTransition(error) => Some(error),
+            Self::InvalidAgentProfile(error) => Some(error),
             _ => None,
         }
     }

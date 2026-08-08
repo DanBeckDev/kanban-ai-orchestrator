@@ -16,14 +16,15 @@ use super::{
         policy_decision_matches_protected_git_approval,
     },
     event_store_schema::{
-        create_execution_schema, create_initial_schema, create_policy_audit_schema,
+        create_agent_profile_schema, create_execution_schema, create_initial_schema,
+        create_policy_audit_schema,
     },
     event_store_support::{
         deserialize_recorded_event, event_sequence, idempotent_creation, idempotent_transition,
     },
 };
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 5;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 6;
 pub struct SqliteEventStore {
     pub(crate) connection: Connection,
 }
@@ -269,6 +270,11 @@ impl SqliteEventStore {
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [5])?;
         }
 
+        if current_version < 6 {
+            create_agent_profile_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [6])?;
+        }
+
         transaction.commit()?;
         Ok(())
     }
@@ -327,7 +333,7 @@ impl SqliteEventStore {
             .transpose()
     }
 
-    fn required_materialized_work_item(
+    pub(super) fn required_materialized_work_item(
         &self,
         work_item_id: &WorkItemId,
     ) -> Result<MaterializedWorkItem, EventStoreError> {

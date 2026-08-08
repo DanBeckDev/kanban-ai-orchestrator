@@ -6,23 +6,27 @@ import {
   budgetSummary,
   evidenceFor,
   executionsFor,
-  nextTransitionStates,
+  manualTransitionStates,
   stateLabel,
   timestamp,
 } from "./presentation";
 import type {
   BoardSnapshot,
+  AgentProfile,
   CompletionEvidence,
   TransitionWorkItemRequest,
+  StartExecutionRequest,
   WorkItem,
   WorkItemState,
 } from "./types";
 
 type WorkItemCardProps = Readonly<{
   busy: boolean;
+  agentProfiles: readonly AgentProfile[];
   snapshot: BoardSnapshot;
   workItem: WorkItem;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
+  onStartExecution: (request: StartExecutionRequest) => Promise<void>;
 }>;
 
 const emptyEvidence: CompletionEvidence = {
@@ -33,9 +37,11 @@ const emptyEvidence: CompletionEvidence = {
 
 export function WorkItemCard({
   busy,
+  agentProfiles,
   snapshot,
   workItem,
   onTransition,
+  onStartExecution,
 }: WorkItemCardProps) {
   const [nextState, setNextState] = useState<WorkItemState | "">("");
   const [reason, setReason] = useState("");
@@ -44,7 +50,7 @@ export function WorkItemCard({
   const activity = activityFor(snapshot, workItem.id);
   const executions = executionsFor(snapshot, workItem.id);
   const evidenceRecords = evidenceFor(snapshot, workItem.id);
-  const options = nextTransitionStates(workItem.state);
+  const options = manualTransitionStates(workItem.state);
 
   async function submitTransition(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,6 +100,14 @@ export function WorkItemCard({
           ))}
         </section>
       )}
+      {workItem.state === "ready" && (
+        <StartAgentForm
+          busy={busy}
+          profiles={agentProfiles}
+          workItem={workItem}
+          onStart={onStartExecution}
+        />
+      )}
       {options.length > 0 && (
         <form
           aria-label={`Transition ${workItem.title}`}
@@ -134,6 +148,76 @@ export function WorkItemCard({
         </form>
       )}
     </article>
+  );
+}
+
+function StartAgentForm({
+  busy,
+  profiles,
+  workItem,
+  onStart,
+}: Readonly<{
+  busy: boolean;
+  profiles: readonly AgentProfile[];
+  workItem: WorkItem;
+  onStart: (request: StartExecutionRequest) => Promise<void>;
+}>) {
+  const [profileName, setProfileName] = useState("");
+  const [brief, setBrief] = useState(
+    `Implement ${workItem.title}.\n\n${workItem.description}\n\nAcceptance criteria:\n${workItem.acceptanceCriteria.map((criterion) => `- ${criterion}`).join("\n")}`,
+  );
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await onStart({
+      executionId: `execution-${workItem.id}-${timestamp()}`,
+      workItemId: workItem.id,
+      agentProfileName: profileName,
+      taskBrief: brief,
+    });
+  }
+
+  if (profiles.length === 0) {
+    return (
+      <p className="launch-hint">
+        Save an agent profile before starting this task.
+      </p>
+    );
+  }
+
+  return (
+    <form
+      aria-label={`Start agent for ${workItem.title}`}
+      className="agent-launch-form"
+      onSubmit={submit}
+    >
+      <label>
+        Agent profile
+        <select
+          required
+          value={profileName}
+          onChange={(event) => setProfileName(event.target.value)}
+        >
+          <option value="">Select profile</option>
+          {profiles.map((profile) => (
+            <option key={profile.name} value={profile.name}>
+              {profile.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Task brief
+        <textarea
+          required
+          value={brief}
+          onChange={(event) => setBrief(event.target.value)}
+        />
+      </label>
+      <button disabled={busy} type="submit">
+        Start agent
+      </button>
+    </form>
   );
 }
 

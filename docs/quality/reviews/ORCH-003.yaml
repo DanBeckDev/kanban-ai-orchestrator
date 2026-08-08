@@ -1,98 +1,91 @@
 work_item: ORCH-003
 scope:
-  - src-tauri/src/agent/ingestion.rs
-  - src-tauri/src/application/board_snapshot.rs
-  - src-tauri/src/application/board_requests.rs
+  - docs/architecture/overview.md
+  - docs/decisions/0013-structured-process-agent-adapter.md
+  - docs/planning/backlog.yaml
+  - src-tauri/Cargo.lock
+  - src-tauri/Cargo.toml
+  - src-tauri/src/agent/mod.rs
+  - src-tauri/src/agent/process_adapter.rs
+  - src-tauri/src/agent/process_adapter_tests.rs
+  - src-tauri/src/agent/profile.rs
+  - src-tauri/src/application/agent_profile_service.rs
   - src-tauri/src/application/board_service.rs
-  - src-tauri/src/application/board_service_tests.rs
   - src-tauri/src/application/execution_event_controller.rs
   - src-tauri/src/application/execution_event_controller_tests.rs
+  - src-tauri/src/application/execution_launch.rs
+  - src-tauri/src/application/execution_launch_tests.rs
+  - src-tauri/src/application/execution_policy_service.rs
+  - src-tauri/src/application/execution_service.rs
+  - src-tauri/src/application/execution_start_request.rs
   - src-tauri/src/application/mod.rs
-  - src-tauri/src/domain/model/work_item.rs
-  - src-tauri/src/domain/model/execution.rs
   - src-tauri/src/desktop.rs
+  - src-tauri/src/desktop_execution_policy.rs
+  - src-tauri/src/desktop_execution_runtime.rs
+  - src-tauri/src/desktop_execution_runtime_support.rs
+  - src-tauri/src/desktop_execution_runtime_tests.rs
   - src-tauri/src/lib.rs
+  - src-tauri/src/persistence/agent_profile_store.rs
+  - src-tauri/src/persistence/board_repository.rs
   - src-tauri/src/persistence/board_store.rs
-  - src-tauri/src/persistence/board_store_tests.rs
-  - src-tauri/src/persistence/event_store_queries.rs
   - src-tauri/src/persistence/event_store_error.rs
   - src-tauri/src/persistence/event_store_schema.rs
+  - src-tauri/src/persistence/execution_activation_store.rs
   - src-tauri/src/persistence/execution_store.rs
-  - src-tauri/src/persistence/execution_store_tests.rs
   - src-tauri/src/persistence/mod.rs
-  - src-tauri/src/persistence/board_repository.rs
   - src-tauri/src/persistence/sqlite_event_store.rs
   - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
-  - src/board/types.ts
-  - src/board/presentation.ts
-  - src/board/presentation.test.ts
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - src-tauri/src/workspace/mod.rs
+  - src-tauri/src/workspace/tests.rs
+  - src/board/AgentProfileForm.tsx
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.test.tsx
+  - src/board/BoardWorkspace.tsx
   - src/board/WorkItemCard.tsx
   - src/board/gateway.ts
-  - src/board/BoardWorkspace.test.tsx
+  - src/board/presentation.test.ts
+  - src/board/presentation.ts
+  - src/board/types.ts
   - src/styles.css
-  - docs/architecture/overview.md
-  - docs/decisions/0007-normalized-agent-adapter-contract.md
-  - docs/architecture/overview.md
-  - docs/planning/backlog.yaml
-  - docs/quality/code-requirements.md
-  - docs/quality/code-structure.md
-  - scripts/check-code-structure.mjs
-  - scripts/check-code-structure.test.mjs
-  - package.json
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T18:30:00Z
+  reviewed_at: 2026-08-08T18:12:39Z
   findings:
     must_fix: []
     should_fix: []
     outside_clean_code_rubric: []
-    considers:
-      - finding: An agent event updates a work-item event, evidence record, and execution checkpoint in separate short SQLite transactions.
-        resolution: accepted
-        rationale: Each write has a deterministic execution-and-sequence identifier and is idempotent on retry, so a process crash can replay incomplete work without holding a database lock across adapter I/O. A single long transaction would violate the daemon's no-external-I/O-under-lock boundary.
-        decision_reference: ORCH-003
+    considers: []
   unresolved_actionable_findings: 0
 remediation:
-  - finding: The board showed current state but did not let a reviewer inspect the durable decision trail that produced it.
-    change: Added ordered activity entries derived from append-only events to the board snapshot and rendered them per card with timing and completion evidence.
-  - finding: Current-state data and activity-history projection would otherwise be mixed into the board service.
-    change: Kept the snapshot/activity projection in a focused application module and made persistence collect and globally order only the board's task events.
-  - finding: Loading every historical event for every card could grow without bound and degrade a busy board.
-    change: Added a focused recent-event query and bounded board snapshots to the latest 20 events per task; a direct persistence test proves the query returns chronological recent events without truncating the full append-only history.
-  - finding: The board's advisory recovery menu had drifted from the daemon state machine.
-    change: Matched every displayed transition option to the guarded Rust lifecycle and added recovery-transition assertions.
-  - finding: The local quality command relied on an incremental source-structure scan, which could omit an untracked or unchanged oversized source file.
-    change: Made the local gate run the whole-repository structural scan, made the incremental scanner include untracked source, and added a unit test for that path union.
-  - finding: Agent attempts and review artifacts could not survive a restart or be reviewed from the board.
-    change: Added migration-backed execution and evidence persistence, bounded board projections, typed Tauri commands, restart and snapshot tests, and card sections for recent attempts and evidence.
-  - finding: A worker update could otherwise rewrite execution identity, session identity, usage, event sequence, or lifecycle state without a guard.
-    change: Made identity immutable and accepted only monotonic usage/sequence/session progress and valid execution-state transitions; focused tests cover accepted progress and each rejected mutation class.
-  - finding: Adding new command DTOs left the board service at 398 meaningful lines, risking a future breach of the repository limit.
-    change: Moved boundary request DTOs into a focused application module, reducing the service to 337 meaningful lines while keeping the command vocabulary explicit.
-  - finding: Normalized agent events could be displayed or stored without a durable, ordered execution checkpoint, allowing a provider claim to drift from task state after restart.
-    change: Added a focused execution-event controller that activates only a pending execution with a nonblank session, validates event order, maps every state request through the guarded state machine, stores monotonic usage/status, and preserves significant agent reports as evidence.
-  - finding: A repeated review report for an already-reviewing task would be treated as an illegal state transition rather than retained as additional evidence.
-    change: Made a requested state equal to the current state a no-op in the event ingestor while still advancing the validated sequence and storing the report.
-  - finding: A low-level update could set an execution to running without an attached agent session.
-    change: Added the storage invariant that Pending to Running requires a nonblank attached session, with focused persistence coverage.
-  - finding: Usage-event semantics could be interpreted as deltas, which would make a later valid adapter update look like a decrease and be rejected.
-    change: Specified cumulative usage checkpoints in the normalized adapter contract and added controller coverage for distinct failed and interrupted reports.
+  - finding: Direct local workers needed a durable provider-neutral profile and a runtime that could continue independently of the React window.
+    change: Added validated SQLite-backed direct-program profiles, typed desktop commands, a dedicated process monitor, bounded normalized events, and a board polling projection. The runtime keeps database locks narrow and never holds one across Git or process I/O.
+  - finding: Attaching an agent session and showing a task as Running in separate writes could leave durable task and execution state inconsistent after a failure.
+    change: Added one SQLite transaction that updates the pending execution, appends the Running task event, and materializes the task snapshot; a rollback test proves that a failed event write does not attach the session.
+  - finding: The launch path could provision a worktree and start an executable without the existing policy gate recording an authorization decision.
+    change: Added a focused policy-start service and project-wide active-execution count. The desktop MVP recognizes the documented standard policy, records allow and deny decisions before provisioning, and refuses a second active project execution or an unsupported policy set before any worktree/process side effect.
+  - finding: A generic process profile that reported awaiting input could be terminated while the board continued to display an interactive Awaiting Input state.
+    change: The monitor now records the input request, then records a clear failed report and terminates the direct child because this profile explicitly has no feedback/resume capability. The end-to-end test proves the task and execution become Failed rather than falsely waiting.
+  - finding: The general transition form and legacy raw desktop IPC commands could manufacture agent-owned execution state without a live worker.
+    change: Removed raw execution/evidence update commands from the desktop gateway, removed Running and Awaiting Input from manual transition choices, and made the remaining IPC command reject both states. Only the audited runtime activation and normalized agent events may enter them.
+  - finding: The runtime registration error returned a large tuple containing a live process adapter, and the launch preflight passed an unnecessary reference layer.
+    change: Made live-agent registration own child cleanup on its failure path and simplified the workspace preflight reference; strict clippy now passes with warnings denied.
 verification:
   commands:
-    - command: cargo test --manifest-path src-tauri/Cargo.toml application::board_service_tests
-      result: passed (7 tests)
-    - command: npm test -- --run src/board
-      result: passed (8 tests)
-    - command: cargo test --manifest-path src-tauri/Cargo.toml persistence::event_store_queries::tests
-      result: passed (1 test)
+    - command: cargo test --manifest-path src-tauri/Cargo.toml desktop_execution_runtime_tests --lib
+      result: passed (4 tests)
+    - command: cargo test --manifest-path src-tauri/Cargo.toml --lib
+      result: passed (139 tests)
+    - command: npm test -- --run
+      result: passed (36 tests)
     - command: npm run quality:verify
       result: passed
   coverage:
     package_or_crate: minimum across React frontend and Rust core
-    lines: 88.79
-    statements: 84.71
-    functions: 87.53
-    branches: 87.85
+    lines: 86.79
+    statements: 82.11
+    functions: 86.18
+    branches: 82.79
     threshold_met: true
 exceptions: []

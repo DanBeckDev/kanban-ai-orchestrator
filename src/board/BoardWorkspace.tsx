@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BoardSetup, type CreateBoardInput } from "./BoardSetup";
 import { BoardView } from "./BoardView";
 import { tauriBoardGateway } from "./gateway";
 import type {
   AddDependencyRequest,
+  AgentProfile,
   BoardGateway,
   BoardSnapshot,
   CreateWorkItemRequest,
+  StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
 
@@ -20,6 +22,9 @@ export function BoardWorkspace({
   const [snapshot, setSnapshot] = useState<BoardSnapshot>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [agentProfiles, setAgentProfiles] = useState<readonly AgentProfile[]>(
+    [],
+  );
 
   async function run(operation: () => Promise<BoardSnapshot | undefined>) {
     setBusy(true);
@@ -45,16 +50,22 @@ export function BoardWorkspace({
         baseRef: input.baseRef,
         policySetId: input.policySetId,
       });
-      return gateway.createBoard({
+      const boardSnapshot = await gateway.createBoard({
         boardId: input.boardId,
         projectId: input.projectId,
         name: input.boardName,
       });
+      setAgentProfiles(await gateway.agentProfiles());
+      return boardSnapshot;
     });
   }
 
   async function openBoard(boardId: string) {
-    await run(() => gateway.boardSnapshot(boardId));
+    await run(async () => {
+      const boardSnapshot = await gateway.boardSnapshot(boardId);
+      setAgentProfiles(await gateway.agentProfiles());
+      return boardSnapshot;
+    });
   }
 
   async function createWorkItem(request: CreateWorkItemRequest) {
@@ -69,6 +80,36 @@ export function BoardWorkspace({
     await run(() => gateway.transitionWorkItem(request));
   }
 
+  async function saveAgentProfile(profile: AgentProfile) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await gateway.saveAgentProfile(profile);
+      setAgentProfiles(await gateway.agentProfiles());
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startExecution(request: StartExecutionRequest) {
+    await run(() => gateway.startExecution(request));
+  }
+
+  const boardId = snapshot?.board.id;
+  useEffect(() => {
+    if (boardId === undefined) return undefined;
+    const refresh = () => {
+      void gateway
+        .boardSnapshot(boardId)
+        .then(setSnapshot)
+        .catch(() => undefined);
+    };
+    const intervalId = window.setInterval(refresh, 1_000);
+    return () => window.clearInterval(intervalId);
+  }, [boardId, gateway]);
+
   return (
     <section className="board-shell">
       {error !== undefined && (
@@ -81,8 +122,11 @@ export function BoardWorkspace({
       ) : (
         <BoardView
           busy={busy}
+          agentProfiles={agentProfiles}
           onAddDependency={addDependency}
           onCreateWorkItem={createWorkItem}
+          onSaveAgentProfile={saveAgentProfile}
+          onStartExecution={startExecution}
           onTransition={transitionWorkItem}
           snapshot={snapshot}
         />

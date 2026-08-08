@@ -121,6 +121,26 @@ fn process_adapter_reports_an_exit_without_a_terminal_event() {
 }
 
 #[test]
+fn process_adapter_can_terminate_its_direct_child_process() {
+    let mut adapter = adapter("cat >/dev/null; sleep 30");
+    let session = adapter.start(request()).expect("process should start");
+
+    adapter
+        .terminate(&session.id)
+        .expect("direct child should terminate");
+    for _ in 0..50 {
+        if matches!(
+            adapter.health_check(&session.id),
+            Err(AgentAdapterError::ProcessExited { .. })
+        ) {
+            return;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    panic!("terminated agent process should exit");
+}
+
+#[test]
 fn process_adapter_fails_closed_when_its_program_cannot_launch() {
     let mut adapter = ProcessAgentAdapter::new(ProcessAgentDefinition {
         name: "missing".to_owned(),

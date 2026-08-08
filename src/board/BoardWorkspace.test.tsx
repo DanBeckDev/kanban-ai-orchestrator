@@ -12,6 +12,7 @@ import type {
   BoardGateway,
   BoardSnapshot,
   CreateWorkItemRequest,
+  AgentProfile,
   TransitionWorkItemRequest,
 } from "./types";
 
@@ -33,7 +34,7 @@ function snapshot(
 
 function workItem(
   id: string,
-  state: "inbox" | "review" = "inbox",
+  state: "inbox" | "ready" | "review" = "inbox",
 ): BoardSnapshot["workItems"][number] {
   return {
     lastEventSequence: 1,
@@ -52,6 +53,7 @@ function workItem(
 
 function gateway(initialSnapshot = snapshot()): BoardGateway {
   let current = initialSnapshot;
+  let profiles: readonly AgentProfile[] = [];
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
     createBoard: vi.fn().mockImplementation(async () => current),
@@ -113,9 +115,33 @@ function gateway(initialSnapshot = snapshot()): BoardGateway {
         };
         return current;
       }),
-    recordExecution: vi.fn().mockImplementation(async () => current),
-    recordEvidence: vi.fn().mockImplementation(async () => current),
-    updateExecution: vi.fn().mockImplementation(async () => current),
+    saveAgentProfile: vi
+      .fn()
+      .mockImplementation(async (profile: AgentProfile) => {
+        profiles = [
+          ...profiles.filter(({ name }) => name !== profile.name),
+          profile,
+        ];
+        return profile;
+      }),
+    agentProfiles: vi.fn().mockImplementation(async () => profiles),
+    startExecution: vi.fn().mockImplementation(async (request) => {
+      current = {
+        ...current,
+        workItems: current.workItems.map((materializedWorkItem) =>
+          materializedWorkItem.workItem.id === request.workItemId
+            ? {
+                ...materializedWorkItem,
+                workItem: {
+                  ...materializedWorkItem.workItem,
+                  state: "running",
+                },
+              }
+            : materializedWorkItem,
+        ),
+      };
+      return current;
+    }),
     boardSnapshot: vi.fn().mockImplementation(async () => current),
   };
 }
@@ -327,5 +353,52 @@ describe("board workspace", () => {
     expect(screen.getByText(/codex-cli · awaiting review/)).toBeVisible();
     expect(screen.getByText("Session: session-1")).toBeVisible();
     expect(screen.getByText("Unit tests passed.")).toBeVisible();
+  });
+
+  it("saves a direct agent profile and starts it from a ready task", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    const profileForm = screen.getByRole("form", {
+      name: "Save agent profile",
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+      target: { value: "structured-worker" },
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Program"), {
+      target: { value: "agent-worker" },
+    });
+    fireEvent.change(
+      within(profileForm).getByLabelText("Arguments (one per line)"),
+      {
+        target: { value: "--jsonl" },
+      },
+    );
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Save profile" }),
+    );
+    await waitFor(() =>
+      expect(boardGateway.saveAgentProfile).toHaveBeenCalledOnce(),
+    );
+
+    const launchForm = screen.getByRole("form", {
+      name: "Start agent for Task ready-task",
+    });
+    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
+      target: { value: "structured-worker" },
+    });
+    fireEvent.click(
+      within(launchForm).getByRole("button", { name: "Start agent" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.startExecution).toHaveBeenCalledOnce(),
+    );
+    expect(boardGateway.startExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workItemId: "ready-task",
+        agentProfileName: "structured-worker",
+      }),
+    );
   });
 });

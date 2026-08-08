@@ -245,7 +245,7 @@ impl WorkspaceManager {
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 
 #[cfg(test)]
 mod error_tests;

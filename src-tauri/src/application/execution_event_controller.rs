@@ -22,27 +22,15 @@ impl ExecutionEventController {
         service: &mut BoardService<Repository>,
         execution_id: &str,
         session_id: &str,
+        recorded_at: &str,
     ) -> Result<BoardSnapshot, ExecutionEventControllerError<Repository::Error>>
     where
         Repository: BoardRepository,
     {
         validate_session_id(session_id)?;
-        let execution = execution(service, execution_id)?;
-        if execution.status != ExecutionStatus::Pending {
-            return Err(ExecutionEventControllerError::ExecutionNotPending {
-                execution_id: execution.id,
-                status: execution.status,
-            });
-        }
-
+        validate_recorded_at(recorded_at)?;
         service
-            .update_execution(UpdateExecutionRequest {
-                execution_id: execution_id.to_owned(),
-                status: ExecutionStatus::Running,
-                session_id: Some(session_id.to_owned()),
-                usage: execution.usage,
-                last_event_sequence: execution.last_event_sequence,
-            })
+            .activate_execution(execution_id, session_id, recorded_at)
             .map_err(ExecutionEventControllerError::BoardService)
     }
 
@@ -266,10 +254,6 @@ pub enum ExecutionEventControllerError<RepositoryError> {
     AgentAdapter(AgentAdapterError),
     MissingSessionId,
     MissingRecordedAt,
-    ExecutionNotPending {
-        execution_id: ExecutionId,
-        status: ExecutionStatus,
-    },
     ExecutionNotActive {
         execution_id: ExecutionId,
         status: ExecutionStatus,
@@ -288,14 +272,6 @@ where
             Self::MissingRecordedAt => {
                 formatter.write_str("agent event recorded-at time is required")
             }
-            Self::ExecutionNotPending {
-                execution_id,
-                status,
-            } => write!(
-                formatter,
-                "execution {} cannot start because it is {status:?}",
-                execution_id.0
-            ),
             Self::ExecutionNotActive {
                 execution_id,
                 status,
@@ -316,10 +292,9 @@ where
         match self {
             Self::BoardService(error) => Some(error),
             Self::AgentAdapter(error) => Some(error),
-            Self::MissingSessionId
-            | Self::MissingRecordedAt
-            | Self::ExecutionNotPending { .. }
-            | Self::ExecutionNotActive { .. } => None,
+            Self::MissingSessionId | Self::MissingRecordedAt | Self::ExecutionNotActive { .. } => {
+                None
+            }
         }
     }
 }

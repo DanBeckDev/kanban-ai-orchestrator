@@ -3,7 +3,7 @@ use rusqlite::{OptionalExtension, Transaction, params};
 use crate::application::{BoardSnapshot, board_activity};
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyGraph, DependencyId,
-    MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
+    ExecutionStatus, MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
 };
 
 use super::{BoardStoreError, SqliteEventStore};
@@ -88,6 +88,25 @@ impl SqliteEventStore {
             Ok(serde_json::from_str(&serialized_board)?)
         })
         .collect()
+    }
+
+    pub fn active_execution_count_for_project(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<u32, BoardStoreError> {
+        let mut work_item_ids = Vec::new();
+        for board in self.boards_for_project(project_id)? {
+            work_item_ids.extend(
+                self.work_items_for_board(&board.id)?
+                    .into_iter()
+                    .map(|item| item.work_item.id),
+            );
+        }
+        Ok(self
+            .executions_for_work_items(&work_item_ids)?
+            .into_iter()
+            .filter(|execution| execution.status == ExecutionStatus::Running)
+            .count() as u32)
     }
 
     pub fn create_board_work_item(

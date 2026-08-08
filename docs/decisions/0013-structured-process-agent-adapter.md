@@ -14,9 +14,11 @@ The core accepts normalized agent lifecycle events, but a provider-neutral deskt
 - A single event line is limited to 64 KiB and a session retains at most 1,000 events. Malformed, out-of-order, oversized, or excessive output becomes one normalized `failed` event and stops the child process.
 - Standard error is not retained by this adapter. Provider wrappers must publish selected safe lifecycle summaries instead of leaking raw transcripts or secrets into durable board data.
 - The generic adapter exposes structured streaming but honestly reports feedback, resume, and process-tree interruption as unsupported. It may not claim that killing a direct child cancels its descendants. Platform-specific adapters can add those capabilities only with a tested process-tree implementation.
+- If this generic adapter emits an input or approval request, the runtime records that request and then fails the attempt with an explicit capability reason. It must not show a card as interactively waiting when no feedback channel exists.
 
 ## Consequences
 
 - Codex CLI, Claude Code, and other providers can use small wrappers that translate their native protocols into this one event stream without changing the daemon state machine.
 - A provider `completed` event still requests only `Review`; `Done` remains subject to evidence and human-review rules.
-- The initial adapter is a safe capability boundary, not the complete execution controller. Durable session checkpoints, worktree launch authorization, and platform process-tree cancellation remain separate execution-layer work.
+- The desktop runtime durably saves a profile, records and audits a start decision, provisions and verifies the assigned worktree, starts the direct child, and atomically attaches its session while moving the task to `Running`. It monitors the process independently of React; a `completed` event stops at `Review`.
+- Platform process-tree cancellation, interactive feedback/resume, and provider-specific CLI wrappers remain separate execution-layer work.

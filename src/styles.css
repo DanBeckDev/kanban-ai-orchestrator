@@ -267,6 +267,34 @@ legend,
   font-size: 0.78rem;
 }
 
+.agent-launch-form,
+.profile-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.8rem 0;
+}
+
+.profile-list {
+  padding: 0;
+  list-style: none;
+}
+
+.profile-list li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem;
+  border: 1px solid #405069;
+  border-radius: 0.45rem;
+  color: #c5ceda;
+  font-size: 0.78rem;
+}
+
+.profile-list span,
+.launch-hint {
+  color: #aebbd0;
+  font-size: 0.78rem;
+}
+
 .execution-history summary,
 .evidence-history summary,
 .decision-history summary {

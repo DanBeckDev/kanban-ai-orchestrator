@@ -7,6 +7,7 @@ import {
   budgetSummary,
   evidenceFor,
   executionsFor,
+  manualTransitionStates,
   nextTransitionStates,
   stateLabel,
   workItemsForColumn,
@@ -155,6 +156,8 @@ describe("board presentation", () => {
     expect(nextTransitionStates("done")).toEqual([]);
     expect(nextTransitionStates("failed")).toEqual(["ready", "cancelled"]);
     expect(nextTransitionStates("awaiting_input")).toContain("interrupted");
+    expect(manualTransitionStates("ready")).not.toContain("running");
+    expect(manualTransitionStates("running")).not.toContain("awaiting_input");
     expect(
       states.every((state) => Array.isArray(nextTransitionStates(state))),
     ).toBe(true);

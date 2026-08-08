@@ -50,3 +50,14 @@ pub(super) fn create_execution_schema(
         CREATE INDEX IF NOT EXISTS evidence_by_work_item ON evidence (work_item_id, evidence_id);",
     )
 }
+
+pub(super) fn create_agent_profile_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS agent_profiles (
+            profile_name TEXT PRIMARY KEY,
+            profile_json TEXT NOT NULL
+        );",
+    )
+}

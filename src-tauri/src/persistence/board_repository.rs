@@ -1,7 +1,10 @@
-use crate::application::{BoardRepository, BoardSnapshot};
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, Evidence, Execution, MaterializedWorkItem,
     Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
+};
+use crate::{
+    agent::AgentProfile,
+    application::{BoardRepository, BoardSnapshot},
 };
 
 use super::{BoardStoreError, SqliteEventStore};
@@ -13,8 +16,19 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::create_project(self, project)
     }
 
+    fn project(
+        &self,
+        project_id: &crate::domain::ProjectId,
+    ) -> Result<Option<Project>, Self::Error> {
+        SqliteEventStore::project(self, project_id)
+    }
+
     fn create_board(&mut self, board: Board) -> Result<Board, Self::Error> {
         SqliteEventStore::create_board(self, board)
+    }
+
+    fn board(&self, board_id: &BoardId) -> Result<Option<Board>, Self::Error> {
+        SqliteEventStore::board(self, board_id)
     }
 
     fn create_board_work_item(
@@ -57,8 +71,36 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::update_execution(self, execution).map_err(BoardStoreError::from)
     }
 
+    fn active_execution_count_for_project(
+        &self,
+        project_id: &crate::domain::ProjectId,
+    ) -> Result<u32, Self::Error> {
+        SqliteEventStore::active_execution_count_for_project(self, project_id)
+    }
+
+    fn activate_execution_and_start_work_item(
+        &mut self,
+        execution: Execution,
+        command: TransitionWorkItemCommand,
+    ) -> Result<RecordedWorkItemEvent, Self::Error> {
+        SqliteEventStore::activate_execution_and_start_work_item(self, execution, command)
+            .map_err(BoardStoreError::from)
+    }
+
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error> {
         SqliteEventStore::record_evidence(self, evidence).map_err(BoardStoreError::from)
+    }
+
+    fn save_agent_profile(&mut self, profile: AgentProfile) -> Result<AgentProfile, Self::Error> {
+        SqliteEventStore::save_agent_profile(self, profile).map_err(BoardStoreError::from)
+    }
+
+    fn agent_profile(&self, name: &str) -> Result<Option<AgentProfile>, Self::Error> {
+        SqliteEventStore::agent_profile(self, name).map_err(BoardStoreError::from)
+    }
+
+    fn agent_profiles(&self) -> Result<Vec<AgentProfile>, Self::Error> {
+        SqliteEventStore::agent_profiles(self).map_err(BoardStoreError::from)
     }
 
     fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, Self::Error> {

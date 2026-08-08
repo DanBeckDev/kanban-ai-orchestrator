@@ -3,6 +3,7 @@ mod fake_adapter;
 mod ingestion;
 mod process_adapter;
 mod process_event_reader;
+mod profile;
 
 pub use contract::{
     AgentAdapter, AgentAdapterError, AgentCapabilities, AgentSession, NormalizedAgentEvent,
@@ -11,6 +12,7 @@ pub use contract::{
 pub use fake_adapter::FakeAgentAdapter;
 pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
+pub use profile::{AgentProfile, AgentProfileError};
 
 #[cfg(test)]
 mod tests;

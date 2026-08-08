@@ -165,28 +165,17 @@ export type TransitionWorkItemRequest = Readonly<{
   recordedAt: string;
 }>;
 
-export type RecordExecutionRequest = Readonly<{
-  executionId: string;
-  workItemId: string;
-  adapterName: string;
-  workspacePath: string;
+export type AgentProfile = Readonly<{
+  name: string;
+  program: string;
+  arguments: readonly string[];
 }>;
 
-export type RecordEvidenceRequest = Readonly<{
-  evidenceId: string;
-  workItemId: string;
-  kind: EvidenceKind;
-  result: EvidenceResult;
-  summary: string;
-  recordedAt: string;
-}>;
-
-export type UpdateExecutionRequest = Readonly<{
+export type StartExecutionRequest = Readonly<{
   executionId: string;
-  status: ExecutionStatus;
-  sessionId?: string;
-  usage: Execution["usage"];
-  lastEventSequence: number;
+  workItemId: string;
+  agentProfileName: string;
+  taskBrief: string;
 }>;
 
 export interface BoardGateway {
@@ -197,8 +186,8 @@ export interface BoardGateway {
   transitionWorkItem(
     request: TransitionWorkItemRequest,
   ): Promise<BoardSnapshot>;
-  recordExecution(request: RecordExecutionRequest): Promise<BoardSnapshot>;
-  recordEvidence(request: RecordEvidenceRequest): Promise<BoardSnapshot>;
-  updateExecution(request: UpdateExecutionRequest): Promise<BoardSnapshot>;
+  saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
+  agentProfiles(): Promise<readonly AgentProfile[]>;
+  startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   boardSnapshot(boardId: string): Promise<BoardSnapshot>;
 }

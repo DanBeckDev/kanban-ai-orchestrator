@@ -1,27 +1,36 @@
+import { AgentProfileForm } from "./AgentProfileForm";
 import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
 import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
   AddDependencyRequest,
+  AgentProfile,
   BoardSnapshot,
   CreateWorkItemRequest,
+  StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
 
 type BoardViewProps = Readonly<{
   busy: boolean;
+  agentProfiles: readonly AgentProfile[];
   snapshot: BoardSnapshot;
   onAddDependency: (request: AddDependencyRequest) => Promise<void>;
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
+  onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
+  onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
 }>;
 
 export function BoardView({
   busy,
+  agentProfiles,
   snapshot,
   onAddDependency,
   onCreateWorkItem,
+  onSaveAgentProfile,
+  onStartExecution,
   onTransition,
 }: BoardViewProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -56,6 +65,8 @@ export function BoardView({
                     snapshot={snapshot}
                     workItem={workItem}
                     onTransition={onTransition}
+                    agentProfiles={agentProfiles}
+                    onStartExecution={onStartExecution}
                   />
                 ))}
               </div>
@@ -72,6 +83,11 @@ export function BoardView({
             busy={busy}
             onCreate={onAddDependency}
             workItems={workItems}
+          />
+          <AgentProfileForm
+            busy={busy}
+            profiles={agentProfiles}
+            onSave={onSaveAgentProfile}
           />
         </aside>
       </div>

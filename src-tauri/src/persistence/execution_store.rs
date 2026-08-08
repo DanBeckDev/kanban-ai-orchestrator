@@ -224,7 +224,7 @@ where
     Ok(records)
 }
 
-fn validate_execution_update(
+pub(super) fn validate_execution_update(
     recorded_execution: &Execution,
     updated_execution: &Execution,
 ) -> Result<(), EventStoreError> {

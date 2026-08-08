@@ -142,6 +142,15 @@ export function nextTransitionStates(
   return transitions[state];
 }
 
+/** States entered only by the execution runtime or a normalized agent event. */
+export function manualTransitionStates(
+  state: WorkItemState,
+): readonly WorkItemState[] {
+  return nextTransitionStates(state).filter(
+    (nextState) => nextState !== "running" && nextState !== "awaiting_input",
+  );
+}
+
 export function timestamp(): string {
   return new Date().toISOString();
 }

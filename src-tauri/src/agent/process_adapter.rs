@@ -8,8 +8,8 @@ use std::{
 
 use super::process_event_reader::{has_terminal_event, kill_child, read_events};
 use super::{
-    AgentAdapter, AgentAdapterError, AgentCapabilities, AgentSession, NormalizedAgentEvent,
-    StartAgentRequest,
+    AgentAdapter, AgentAdapterError, AgentCapabilities, AgentProfile, AgentSession,
+    NormalizedAgentEvent, StartAgentRequest,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -31,6 +31,22 @@ struct ProcessSession {
 }
 
 impl ProcessAgentAdapter {
+    pub fn from_profile(profile: AgentProfile) -> Self {
+        Self::new(ProcessAgentDefinition {
+            name: profile.name,
+            program: profile.program,
+            arguments: profile.arguments,
+        })
+    }
+
+    pub fn from_profile_for_execution(profile: AgentProfile, execution_id: &str) -> Self {
+        Self::new(ProcessAgentDefinition {
+            name: format!("{}-{execution_id}", profile.name),
+            program: profile.program,
+            arguments: profile.arguments,
+        })
+    }
+
     pub fn new(definition: ProcessAgentDefinition) -> Self {
         Self {
             definition,
@@ -175,10 +191,21 @@ impl AgentAdapter for ProcessAgentAdapter {
     }
 
     fn terminate(&mut self, session_id: &str) -> Result<(), AgentAdapterError> {
-        self.session(session_id)?;
-        Err(AgentAdapterError::CapabilityUnsupported {
-            capability: "process-tree termination",
-        })
+        let session = self.session(session_id)?;
+        session
+            .child
+            .lock()
+            .map_err(|_| AgentAdapterError::ProcessRuntime {
+                session_id: session_id.to_owned(),
+                operation: "terminate the direct process",
+                reason: "the process state lock is unavailable".to_owned(),
+            })?
+            .kill()
+            .map_err(|error| AgentAdapterError::ProcessRuntime {
+                session_id: session_id.to_owned(),
+                operation: "terminate the direct process",
+                reason: error.to_string(),
+            })
     }
 
     fn stream_events(

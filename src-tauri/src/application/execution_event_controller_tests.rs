@@ -47,7 +47,6 @@ fn prepared_service() -> BoardService<SqliteEventStore> {
     for (event_id, next_state) in [
         ("plan-task-1", WorkItemState::Planned),
         ("ready-task-1", WorkItemState::Ready),
-        ("run-task-1", WorkItemState::Running),
     ] {
         service
             .transition_work_item(TransitionWorkItemRequest {
@@ -80,27 +79,50 @@ fn activation_attaches_one_nonblank_session_to_a_pending_execution() {
     let mut service = prepared_service();
 
     assert!(matches!(
-        ExecutionEventController::activate(&mut service, "execution-1", " "),
+        ExecutionEventController::activate(
+            &mut service,
+            "execution-1",
+            " ",
+            "2026-08-08T00:01:00Z",
+        ),
         Err(ExecutionEventControllerError::MissingSessionId)
     ));
-    let snapshot = ExecutionEventController::activate(&mut service, "execution-1", "session-1")
-        .expect("pending execution should become active");
+    let snapshot = ExecutionEventController::activate(
+        &mut service,
+        "execution-1",
+        "session-1",
+        "2026-08-08T00:01:00Z",
+    )
+    .expect("pending execution should become active");
     assert_eq!(snapshot.executions[0].status, ExecutionStatus::Running);
     assert_eq!(
         snapshot.executions[0].session_id.as_deref(),
         Some("session-1")
     );
-    assert!(matches!(
-        ExecutionEventController::activate(&mut service, "execution-1", "session-1"),
-        Err(ExecutionEventControllerError::ExecutionNotPending { .. })
-    ));
+    assert_eq!(
+        snapshot.work_items[0].work_item.state,
+        WorkItemState::Running
+    );
+    let retry = ExecutionEventController::activate(
+        &mut service,
+        "execution-1",
+        "session-1",
+        "2026-08-08T00:01:00Z",
+    )
+    .expect("replaying the same activation should be safe");
+    assert_eq!(retry.executions[0].status, ExecutionStatus::Running);
 }
 
 #[test]
 fn records_monotonic_usage_and_an_agent_input_request_durably() {
     let mut service = prepared_service();
-    ExecutionEventController::activate(&mut service, "execution-1", "session-1")
-        .expect("execution should start");
+    ExecutionEventController::activate(
+        &mut service,
+        "execution-1",
+        "session-1",
+        "2026-08-08T00:01:00Z",
+    )
+    .expect("execution should start");
 
     ExecutionEventController::record_event(
         &mut service,
@@ -148,8 +170,13 @@ fn records_monotonic_usage_and_an_agent_input_request_durably() {
 #[test]
 fn completion_requires_review_and_repeated_review_events_remain_auditable() {
     let mut service = prepared_service();
-    ExecutionEventController::activate(&mut service, "execution-1", "session-1")
-        .expect("execution should start");
+    ExecutionEventController::activate(
+        &mut service,
+        "execution-1",
+        "session-1",
+        "2026-08-08T00:01:00Z",
+    )
+    .expect("execution should start");
 
     let first_snapshot = ExecutionEventController::record_event(
         &mut service,
@@ -217,8 +244,13 @@ fn failure_and_interruption_remain_distinct_recovery_outcomes_with_reports() {
         ),
     ] {
         let mut service = prepared_service();
-        ExecutionEventController::activate(&mut service, "execution-1", "session-1")
-            .expect("execution should start");
+        ExecutionEventController::activate(
+            &mut service,
+            "execution-1",
+            "session-1",
+            "2026-08-08T00:01:00Z",
+        )
+        .expect("execution should start");
 
         let snapshot = ExecutionEventController::record_event(
             &mut service,
@@ -254,8 +286,13 @@ fn rejects_agent_events_until_activation_and_when_the_sequence_is_not_next() {
         ),
         Err(ExecutionEventControllerError::ExecutionNotActive { .. })
     ));
-    ExecutionEventController::activate(&mut service, "execution-1", "session-1")
-        .expect("execution should start");
+    ExecutionEventController::activate(
+        &mut service,
+        "execution-1",
+        "session-1",
+        "2026-08-08T00:01:00Z",
+    )
+    .expect("execution should start");
     assert!(matches!(
         ExecutionEventController::record_event(
             &mut service,

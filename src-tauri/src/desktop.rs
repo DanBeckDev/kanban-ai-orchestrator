@@ -2,34 +2,40 @@ use std::{
     error::Error,
     fmt, fs,
     path::{Path, PathBuf},
-    sync::{Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard},
 };
 
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
+    agent::AgentProfile,
     application::{
         AddDependencyRequest, BoardService, BoardSnapshot, CreateBoardRequest,
-        CreateProjectRequest, CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
-        TransitionWorkItemRequest, UpdateExecutionRequest,
+        CreateProjectRequest, CreateWorkItemRequest, StartExecutionRequest,
+        TransitionWorkItemRequest,
     },
-    domain::{BoardId, Project},
+    desktop_execution_runtime::ExecutionRuntime,
+    domain::{BoardId, Project, WorkItemState},
     persistence::SqliteEventStore,
 };
 
-type LocalBoardService = BoardService<SqliteEventStore>;
+pub(crate) type LocalBoardService = BoardService<SqliteEventStore>;
 
 pub(crate) struct BoardDaemonState {
-    service: Mutex<LocalBoardService>,
+    service: Arc<Mutex<LocalBoardService>>,
+    runtime: ExecutionRuntime,
 }
 
 impl BoardDaemonState {
     fn open(data_directory: &Path) -> Result<Self, DesktopBootstrapError> {
         fs::create_dir_all(data_directory)?;
         let database_path = data_directory.join("kanban-ai-orchestrator.sqlite");
-        let service = LocalBoardService::new(SqliteEventStore::open(database_path)?);
+        let service = Arc::new(Mutex::new(LocalBoardService::new(SqliteEventStore::open(
+            database_path,
+        )?)));
         Ok(Self {
-            service: Mutex::new(service),
+            runtime: ExecutionRuntime::new(service.clone(), data_directory.join("workspaces")),
+            service,
         })
     }
 }
@@ -89,39 +95,37 @@ pub(crate) fn transition_work_item(
     state: State<'_, BoardDaemonState>,
     request: TransitionWorkItemRequest,
 ) -> Result<BoardSnapshot, String> {
+    ensure_user_owned_transition(request.next_state)?;
     lock_service(&state)?
         .transition_work_item(request)
         .map_err(error_message)
 }
 
 #[tauri::command]
-pub(crate) fn record_execution(
+pub(crate) fn save_agent_profile(
     state: State<'_, BoardDaemonState>,
-    request: RecordExecutionRequest,
-) -> Result<BoardSnapshot, String> {
+    profile: AgentProfile,
+) -> Result<AgentProfile, String> {
     lock_service(&state)?
-        .record_execution(request)
+        .save_agent_profile(profile)
         .map_err(error_message)
 }
 
 #[tauri::command]
-pub(crate) fn record_evidence(
+pub(crate) fn agent_profiles(
     state: State<'_, BoardDaemonState>,
-    request: RecordEvidenceRequest,
-) -> Result<BoardSnapshot, String> {
+) -> Result<Vec<AgentProfile>, String> {
     lock_service(&state)?
-        .record_evidence(request)
+        .agent_profiles()
         .map_err(error_message)
 }
 
 #[tauri::command]
-pub(crate) fn update_execution(
+pub(crate) fn start_execution(
     state: State<'_, BoardDaemonState>,
-    request: UpdateExecutionRequest,
+    request: StartExecutionRequest,
 ) -> Result<BoardSnapshot, String> {
-    lock_service(&state)?
-        .update_execution(request)
-        .map_err(error_message)
+    state.runtime.start(request).map_err(error_message)
 }
 
 #[tauri::command]
@@ -145,6 +149,20 @@ fn lock_service<'state, 'daemon>(
 
 fn error_message(error: impl fmt::Display) -> String {
     error.to_string()
+}
+
+fn ensure_user_owned_transition(next_state: WorkItemState) -> Result<(), String> {
+    if matches!(
+        next_state,
+        WorkItemState::Running | WorkItemState::AwaitingInput
+    ) {
+        Err(
+            "running and awaiting-input states may only be entered by a live agent execution"
+                .to_owned(),
+        )
+    } else {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -203,7 +221,9 @@ impl From<crate::persistence::EventStoreError> for DesktopBootstrapError {
 mod tests {
     use tempfile::TempDir;
 
-    use super::BoardDaemonState;
+    use crate::domain::WorkItemState;
+
+    use super::{BoardDaemonState, ensure_user_owned_transition};
 
     #[test]
     fn creates_a_dedicated_directory_for_local_board_state() {
@@ -217,5 +237,12 @@ mod tests {
                 .join("kanban-ai-orchestrator.sqlite")
                 .exists()
         );
+    }
+
+    #[test]
+    fn keeps_agent_owned_states_out_of_the_general_transition_command() {
+        assert!(ensure_user_owned_transition(WorkItemState::Review).is_ok());
+        assert!(ensure_user_owned_transition(WorkItemState::Running).is_err());
+        assert!(ensure_user_owned_transition(WorkItemState::AwaitingInput).is_err());
     }
 }

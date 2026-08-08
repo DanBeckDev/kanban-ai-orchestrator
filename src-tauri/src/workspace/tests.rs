@@ -20,7 +20,7 @@ use crate::{
 
 use super::git_cli::GitCli;
 
-pub(super) fn repository() -> (TempDir, PathBuf) {
+pub(crate) fn repository() -> (TempDir, PathBuf) {
     let temporary_directory = TempDir::new().expect("temporary directory should be created");
     let repository_path = temporary_directory.path().join("project");
     fs::create_dir(&repository_path).expect("repository directory should be created");
@@ -63,12 +63,12 @@ fn project(repository_path: &Path) -> Project {
     }
 }
 
-pub(super) fn manager(repository_path: &Path, workspace_root: &Path) -> WorkspaceManager {
+pub(crate) fn manager(repository_path: &Path, workspace_root: &Path) -> WorkspaceManager {
     WorkspaceManager::new(&project(repository_path), workspace_root)
         .expect("workspace manager should initialize")
 }
 
-pub(super) fn request(work_item_id: &str) -> WorkspaceProvisionRequest {
+pub(crate) fn request(work_item_id: &str) -> WorkspaceProvisionRequest {
     WorkspaceProvisionRequest {
         work_item_id: WorkItemId::from(work_item_id),
         dependency_sharing: DependencySharingStrategy::IsolatedInstall,

@@ -11,6 +11,9 @@ pub mod policy;
 pub mod workspace;
 
 mod desktop;
+mod desktop_execution_policy;
+mod desktop_execution_runtime;
+mod desktop_execution_runtime_support;
 mod foundation;
 
 pub use foundation::FoundationSummary;
@@ -36,9 +39,9 @@ pub fn run() {
             desktop::create_work_item,
             desktop::add_dependency,
             desktop::transition_work_item,
-            desktop::record_execution,
-            desktop::record_evidence,
-            desktop::update_execution,
+            desktop::save_agent_profile,
+            desktop::agent_profiles,
+            desktop::start_execution,
             desktop::board_snapshot,
         ])
         .run(tauri::generate_context!())
@@ -54,3 +57,6 @@ mod tests {
         assert_eq!(foundation_summary(), FoundationSummary::new());
     }
 }
+
+#[cfg(test)]
+mod desktop_execution_runtime_tests;

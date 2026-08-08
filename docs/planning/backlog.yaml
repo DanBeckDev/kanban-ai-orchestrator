@@ -158,6 +158,19 @@ tasks:
       - A task cannot reach done without the configured evidence and approval.
     notes: Completed on 2026-08-08. Board snapshots carry a compact ordered trail of the most recent 20 durable task creation and state-decision events per task, plus bounded recent execution attempts and evidence records. Cards preserve and render agent/session/workspace/usage context, diff/commit evidence, checks, completion reports, and reviewer decisions after reopening. The execution-event controller activates a pending attempt atomically with its session and `Running` task transition, rejects unstarted or out-of-order events, checkpoints usage/status monotonically, and persists input/failure/interruption/completion reports as evidence. The desktop monitors one verified, policy-authorized process per execution independently of the UI; completion moves only to `Review`. Recovery offers attempt inspection, recover-to-Ready/retry, and cancellation. A human-reviewed task cannot reach Done until passing checks, completion report, and a durable accepted review decision all exist.
 
+  - id: ORCH-004
+    epic: ORCH
+    title: Generate safe plan proposals from natural-language goals
+    status: in_progress
+    priority: P0
+    depends_on: [APP-003, EXEC-003]
+    acceptance_criteria:
+      - A user can submit a goal and select a provider-neutral planner profile; the planner can produce only one typed, unconfirmed plan proposal for the selected board.
+      - Planner I/O is bounded, runs without a production shell, and parses only a strict plan payload; raw provider transcripts, credentials, and arbitrary lifecycle output are not persisted.
+      - A malformed, oversized, wrong-board, or invalid planner proposal cannot create or confirm tasks, and returns an actionable error while leaving the board unchanged.
+      - The proposal is shown through the existing exact preview and confirmation workflow, including dependencies, critical path, parallel stages, budgets, and assumptions.
+    notes: Started on 2026-08-08 after EXEC-003. The existing board accepts manually supplied typed plan JSON; this work replaces that manual-only path with a bounded planner adapter while preserving confirmation as the sole materialization authority.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

@@ -27,7 +27,7 @@ The desktop application uses Tauri 2 as its IPC/security boundary, React/TypeScr
 - The **daemon** owns durable task and dependency state. It is the only component that can make a state transition or schedule a task.
 - The **UI** is a client of the daemon. UI disconnection, a backgrounded window, or terminal rendering failure must not affect task execution.
 - An **agent adapter** translates one agent's lifecycle into normalized events. Its events are input to guarded transitions, not state changes by themselves.
-- The **workspace manager** owns creation, health validation, and cleanup of task worktrees. It never assumes that symlinked ignored files are safe for every project.
+- The **workspace manager** owns creation, health validation, and cleanup of task worktrees. It creates them in a declared root outside the base repository, verifies the assigned root and branch before launch, and never assumes that symlinked ignored files are safe for every project.
 - The **Linear connector** uses an outbox/inbox and reconciliation rules. It cannot mutate the core task graph directly without validation.
 
 ## Core entities

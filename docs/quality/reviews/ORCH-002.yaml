@@ -1,0 +1,47 @@
+work_item: ORCH-002
+scope:
+  - src-tauri/src/orchestration/mod.rs
+  - src-tauri/src/orchestration/tests.rs
+  - src-tauri/src/domain/model.rs
+  - src-tauri/src/domain/mod.rs
+  - src-tauri/src/lib.rs
+  - docs/architecture/overview.md
+  - docs/decisions/0009-confirmed-plan-scheduler.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T15:31:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: The pure scheduler holds its accepted confirmation in process memory.
+        resolution: accepted
+        rationale: The use case deliberately has no SQLite, UI, or agent-provider dependency so scheduling can be tested at the application boundary. ADR 0009 requires the application daemon to persist an accepted plan and confirmation before it offers restart-resume for planned work.
+        decision_reference: ADR-0009
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Repository capacity was implicit in policy parallelism.
+    change: Added an explicit repository-capacity input and explainable capacity deferrals before policy authorization.
+  - finding: Blank or reused policy-decision identifiers could make audit identity ambiguous.
+    change: Validated every candidate decision identifier before any audit write or authorization.
+  - finding: Several tests combined independent actions.
+    change: Split invalid-confirmation, malformed-decision, and proposal-validation scenarios into independently named tests.
+  - finding: Clippy reported an opaque conditional chain in the budget summary.
+    change: Replaced it with an explicit if/else branch.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml orchestration
+      result: passed (18 tests)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 96.34
+    statements: 93.61
+    functions: 95.85
+    branches: 93.44
+    threshold_met: true
+exceptions: []

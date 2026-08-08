@@ -134,13 +134,14 @@ tasks:
   - id: ORCH-002
     epic: ORCH
     title: Build plan-preview and daemon-owned dependency scheduler
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-002, EXEC-002, ORCH-001]
     acceptance_criteria:
       - A proposed plan lists tasks, criteria, dependencies, critical path, parallelism, budgets, and unresolved assumptions.
       - User confirmation is required before launch.
       - Scheduling continues correctly while the UI is hidden or disconnected.
+    notes: Completed on 2026-08-08 with a provider-neutral daemon scheduling use case. It produces a deterministic typed plan preview, rejects invalid or unconfirmed plans, evaluates hard dependencies from daemon progress, separately defers for repository capacity, and returns only policy-authorized starts. Tests prove scheduling does not require UI state, and ADR 0009 requires durable plan-confirmation persistence when application-level restart-resume is wired.
 
   - id: ORCH-003
     epic: ORCH

@@ -52,6 +52,7 @@ domain_id!(WorkItemId);
 domain_id!(ExecutionId);
 domain_id!(EvidenceId);
 domain_id!(PolicyDecisionId);
+domain_id!(PlanId);
 domain_id!(ExternalLinkId);
 domain_id!(DependencyId);
 domain_id!(WorkItemEventId);

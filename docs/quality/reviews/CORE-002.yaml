@@ -1,0 +1,45 @@
+work_item: CORE-002
+scope:
+  - src-tauri/src/domain/model.rs
+  - src-tauri/src/domain/dependency_graph.rs
+  - src-tauri/src/domain/mod.rs
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T12:08:28Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Critical-path calculation uses hard-dependency count instead of duration or cost estimates.
+        resolution: accepted
+        rationale: CORE-002 has no trustworthy duration estimate in the domain model, so treating every hard edge equally is explicit and deterministic rather than inventing planning data. Estimate-aware scheduling belongs with the future orchestration plan-preview work.
+        decision_reference: CORE-002
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A pure dependency-blocker helper had an unused graph receiver.
+    change: Made the helper an associated function, preserving its explicit inputs and avoiding a misleading dependency on graph state.
+  - finding: The parallel-ready query silently converted an impossible graph-invariant error into an omitted task.
+    change: Asserted the registered-item invariant so a future violation is visible rather than hiding scheduling state.
+  - finding: Hard blockers could be created with blank reason, owner, or next-action metadata.
+    change: Reject hard dependencies lacking any required blocker context and report the missing field in the actionable error.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml
+      result: passed
+    - command: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      result: passed
+    - command: node scripts/check-rust-coverage.mjs
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 99.73
+    statements: 99.41
+    functions: 100.00
+    branches: 96.55
+    threshold_met: true
+exceptions: []

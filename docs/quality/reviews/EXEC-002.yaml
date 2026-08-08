@@ -1,0 +1,42 @@
+work_item: EXEC-002
+scope:
+  - src-tauri/src/lib.rs
+  - src-tauri/src/agent/mod.rs
+  - docs/architecture/overview.md
+  - docs/decisions/0007-normalized-agent-adapter-contract.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T13:35:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: The first contract is synchronous and in-process rather than defining an async stream abstraction.
+        resolution: accepted
+        rationale: This milestone establishes a deterministic, provider-neutral lifecycle vocabulary. Actual process, PTY, and structured stream mechanics belong to the adapters in EXEC-003, where their cancellation and concurrency behavior can be tested at the boundary.
+        decision_reference: ADR-0005 and ADR-0007
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Recording an event sequence before validating a proposed transition would have made an illegal event unretryable after the daemon state changed.
+    change: Validate sequence first, apply the daemon transition guard, and advance the sequence only after the event is accepted.
+  - finding: Provider completion could have been mistaken for task completion.
+    change: Normalized completed events map only to Review; the adapter has no route to Done.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml
+      result: passed
+    - command: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 97.26
+    statements: 94.84
+    functions: 96.60
+    branches: 95.00
+    threshold_met: true
+exceptions: []

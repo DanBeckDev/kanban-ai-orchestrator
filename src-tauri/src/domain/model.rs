@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 pub type SchemaVersion = u16;
@@ -270,6 +272,70 @@ pub enum PolicyDecisionKind {
     ApprovalRequired,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolScope {
+    ReadAssignedWorkspace,
+    WriteAssignedWorkspace,
+    RunProjectChecks,
+    NetworkAccess,
+}
+
+impl fmt::Display for ToolScope {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::ReadAssignedWorkspace => "read_assigned_workspace",
+            Self::WriteAssignedWorkspace => "write_assigned_workspace",
+            Self::RunProjectChecks => "run_project_checks",
+            Self::NetworkAccess => "network_access",
+        };
+
+        formatter.write_str(name)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProtectedGitAction {
+    Commit,
+    Push,
+    Merge,
+    ForcePush,
+    DeleteBranch,
+}
+
+impl fmt::Display for ProtectedGitAction {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::Commit => "commit",
+            Self::Push => "push",
+            Self::Merge => "merge",
+            Self::ForcePush => "force_push",
+            Self::DeleteBranch => "delete_branch",
+        };
+
+        formatter.write_str(name)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum PolicyAction {
+    StartExecution,
+    Tool { scope: ToolScope },
+    ProtectedGit { action: ProtectedGitAction },
+}
+
+impl fmt::Display for PolicyAction {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::StartExecution => formatter.write_str("start_execution"),
+            Self::Tool { scope } => write!(formatter, "tool:{scope}"),
+            Self::ProtectedGit { action } => write!(formatter, "protected_git:{action}"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PolicyDecision {
@@ -277,6 +343,8 @@ pub struct PolicyDecision {
     pub id: PolicyDecisionId,
     pub project_id: ProjectId,
     pub work_item_id: Option<WorkItemId>,
+    #[serde(default)]
+    pub action: Option<PolicyAction>,
     pub decision: PolicyDecisionKind,
     pub actor: String,
     pub input_summary: String,
@@ -322,9 +390,10 @@ mod tests {
     use super::{
         Board, BoardId, Dependency, DependencyId, DependencyKind, DependencySource, Evidence,
         EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus,
-        ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PolicyDecision,
-        PolicyDecisionId, PolicyDecisionKind, Project, ProjectId, SchemaMetadata, VersionedSchema,
-        WorkItem, WorkItemBudget, WorkItemId, WorkItemState,
+        ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PolicyAction,
+        PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId,
+        ProtectedGitAction, SchemaMetadata, ToolScope, VersionedSchema, WorkItem, WorkItemBudget,
+        WorkItemId, WorkItemState,
     };
 
     #[test]
@@ -404,6 +473,9 @@ mod tests {
             id: PolicyDecisionId::from("policy-decision-1"),
             project_id,
             work_item_id: Some(work_item_id.clone()),
+            action: Some(PolicyAction::ProtectedGit {
+                action: ProtectedGitAction::Push,
+            }),
             decision: PolicyDecisionKind::ApprovalRequired,
             actor: "user-1".to_owned(),
             input_summary: "Request to push main".to_owned(),
@@ -449,6 +521,43 @@ mod tests {
 
         assert_eq!(serialized["schema"]["version"], 1);
         assert_eq!(serialized["state"], "inbox");
+    }
+
+    #[test]
+    fn policy_actions_are_typed_and_legacy_policy_decisions_remain_readable() {
+        let legacy_decision: PolicyDecision = serde_json::from_value(serde_json::json!({
+            "schema": { "version": 1 },
+            "id": "policy-decision-1",
+            "projectId": "project-1",
+            "workItemId": "work-item-1",
+            "decision": "allow",
+            "actor": "user-1",
+            "inputSummary": "A historical summary.",
+            "outcomeSummary": "Execution proceeded.",
+            "reason": "The previous policy allowed it.",
+            "decidedAt": "2026-08-08T00:00:00Z"
+        }))
+        .expect("legacy policy decision should deserialize");
+
+        assert_eq!(legacy_decision.action, None);
+        assert_eq!(
+            PolicyAction::Tool {
+                scope: ToolScope::RunProjectChecks,
+            }
+            .to_string(),
+            "tool:run_project_checks"
+        );
+        assert_eq!(
+            [
+                ProtectedGitAction::Commit,
+                ProtectedGitAction::Push,
+                ProtectedGitAction::Merge,
+                ProtectedGitAction::ForcePush,
+                ProtectedGitAction::DeleteBranch,
+            ]
+            .map(|action| action.to_string()),
+            ["commit", "push", "merge", "force_push", "delete_branch"]
+        );
     }
 
     #[test]

@@ -122,13 +122,14 @@ tasks:
   - id: ORCH-001
     epic: ORCH
     title: Implement policy, budget, and approval decisions
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, CORE-003, EXEC-001]
     acceptance_criteria:
       - Policies govern tool scope, parallelism, time/cost limits, and protected Git actions.
       - Allow, deny, and approval-required decisions have audit records.
       - The system prevents execution outside policy even when agent prompts conflict.
+    notes: Implemented on 2026-08-08. The typed daemon policy gate enforces project and work-item budget limits, returns an opaque execution capability only for allows, records every decision durably, and verifies exact stored Git approvals before it can authorize a protected action.
 
   - id: ORCH-002
     epic: ORCH

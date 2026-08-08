@@ -3,13 +3,14 @@ use std::{error::Error, fmt, path::Path};
 use rusqlite::{Connection, OptionalExtension, Transaction, params};
 
 use crate::domain::{
-    CreateWorkItemCommand, EventSequence, MaterializedWorkItem, RecordedWorkItemEvent,
-    RestartReconciliationCommand, SchemaMetadata, TransitionWorkItemCommand, WorkItem,
-    WorkItemEvent, WorkItemEventId, WorkItemEventKind, WorkItemId, WorkItemState,
-    transition_work_item,
+    CreateWorkItemCommand, EventSequence, MaterializedWorkItem, PolicyDecision, PolicyDecisionId,
+    PolicyDecisionKind, ProjectId, RecordedWorkItemEvent, RestartReconciliationCommand,
+    SchemaMetadata, TransitionWorkItemCommand, WorkItem, WorkItemEvent, WorkItemEventId,
+    WorkItemEventKind, WorkItemId, WorkItemState, transition_work_item,
 };
+use crate::policy::ProtectedGitApproval;
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 1;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 3;
 const RESTART_UNCERTAINTY_REASON: &str =
     "The daemon restarted before a live execution could be confirmed.";
 
@@ -197,6 +198,107 @@ impl SqliteEventStore {
         .collect()
     }
 
+    pub fn record_policy_decision(
+        &mut self,
+        decision: PolicyDecision,
+    ) -> Result<PolicyDecision, EventStoreError> {
+        if let Some(recorded_decision) = self.policy_decision_by_id(&decision.id)? {
+            return idempotent_policy_decision(recorded_decision, &decision);
+        }
+
+        let decision_json = serde_json::to_string(&decision)?;
+        self.connection.execute(
+            "INSERT INTO policy_decisions (
+                decision_id,
+                project_id,
+                work_item_id,
+                decided_at,
+                decision_json
+             ) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                decision.id.0,
+                decision.project_id.0,
+                decision
+                    .work_item_id
+                    .as_ref()
+                    .map(|work_item_id| work_item_id.0.as_str()),
+                decision.decided_at,
+                decision_json,
+            ],
+        )?;
+
+        Ok(decision)
+    }
+
+    pub fn policy_decisions_for_project(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<Vec<PolicyDecision>, EventStoreError> {
+        let mut statement = self.connection.prepare(
+            "SELECT decision_json
+             FROM policy_decisions
+             WHERE project_id = ?1
+             ORDER BY decided_at, decision_id",
+        )?;
+        let rows = statement.query_map([project_id.0.as_str()], |row| row.get::<_, String>(0))?;
+
+        rows.map(|row| Ok(serde_json::from_str(&row?)?)).collect()
+    }
+
+    pub fn record_protected_git_approval(
+        &mut self,
+        approval: ProtectedGitApproval,
+    ) -> Result<ProtectedGitApproval, EventStoreError> {
+        if let Some(recorded_approval) = self.protected_git_approval_by_id(&approval.decision_id)? {
+            return idempotent_protected_git_approval(recorded_approval, &approval);
+        }
+
+        let approval_decision = self
+            .policy_decision_by_id(&approval.decision_id)?
+            .ok_or_else(|| EventStoreError::PolicyApprovalDecisionNotFound {
+                decision_id: approval.decision_id.clone(),
+            })?;
+        if !policy_decision_matches_protected_git_approval(&approval_decision, &approval) {
+            return Err(EventStoreError::PolicyApprovalDecisionMismatch {
+                decision_id: approval.decision_id,
+            });
+        }
+
+        let approval_json = serde_json::to_string(&approval)?;
+        self.connection.execute(
+            "INSERT INTO protected_git_approvals (
+                approval_decision_id,
+                project_id,
+                work_item_id,
+                git_action,
+                approved_at,
+                approval_json
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                approval.decision_id.0,
+                approval.project_id.0,
+                approval
+                    .work_item_id
+                    .as_ref()
+                    .map(|work_item_id| work_item_id.0.as_str()),
+                approval.action.to_string(),
+                approval.approved_at,
+                approval_json,
+            ],
+        )?;
+
+        Ok(approval)
+    }
+
+    pub fn has_recorded_protected_git_approval(
+        &self,
+        approval: &ProtectedGitApproval,
+    ) -> Result<bool, EventStoreError> {
+        Ok(self
+            .protected_git_approval_by_id(&approval.decision_id)?
+            .is_some_and(|recorded_approval| recorded_approval == *approval))
+    }
+
     fn from_connection(connection: Connection) -> Result<Self, EventStoreError> {
         let mut store = Self { connection };
         store.apply_migrations()?;
@@ -224,12 +326,19 @@ impl SqliteEventStore {
             });
         }
 
-        if current_version < CURRENT_DATABASE_SCHEMA_VERSION {
+        if current_version < 1 {
             create_initial_schema(&transaction)?;
-            transaction.execute(
-                "INSERT INTO schema_migrations (version) VALUES (?1)",
-                [CURRENT_DATABASE_SCHEMA_VERSION],
-            )?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [1])?;
+        }
+
+        if current_version < 2 {
+            create_policy_audit_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [2])?;
+        }
+
+        if current_version < 3 {
+            create_protected_git_approval_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [3])?;
         }
 
         transaction.commit()?;
@@ -253,6 +362,40 @@ impl SqliteEventStore {
 
         stored_event
             .map(|(sequence, event_json)| deserialize_recorded_event(&event_json, sequence))
+            .transpose()
+    }
+
+    fn policy_decision_by_id(
+        &self,
+        decision_id: &PolicyDecisionId,
+    ) -> Result<Option<PolicyDecision>, EventStoreError> {
+        self.connection
+            .query_row(
+                "SELECT decision_json
+                 FROM policy_decisions
+                 WHERE decision_id = ?1",
+                [decision_id.0.as_str()],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .map(|decision_json| Ok(serde_json::from_str(&decision_json)?))
+            .transpose()
+    }
+
+    fn protected_git_approval_by_id(
+        &self,
+        decision_id: &PolicyDecisionId,
+    ) -> Result<Option<ProtectedGitApproval>, EventStoreError> {
+        self.connection
+            .query_row(
+                "SELECT approval_json
+                 FROM protected_git_approvals
+                 WHERE approval_decision_id = ?1",
+                [decision_id.0.as_str()],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .map(|approval_json| Ok(serde_json::from_str(&approval_json)?))
             .transpose()
     }
 
@@ -334,6 +477,37 @@ fn create_initial_schema(transaction: &Transaction<'_>) -> Result<(), rusqlite::
     )
 }
 
+fn create_policy_audit_schema(transaction: &Transaction<'_>) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS policy_decisions (
+            decision_id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            work_item_id TEXT,
+            decided_at TEXT NOT NULL,
+            decision_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS policy_decisions_by_project
+            ON policy_decisions (project_id, decided_at, decision_id);",
+    )
+}
+
+fn create_protected_git_approval_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS protected_git_approvals (
+            approval_decision_id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            work_item_id TEXT,
+            git_action TEXT NOT NULL,
+            approved_at TEXT NOT NULL,
+            approval_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS protected_git_approvals_by_project
+            ON protected_git_approvals (project_id, approved_at, approval_decision_id);",
+    )
+}
+
 fn idempotent_creation(
     recorded_event: RecordedWorkItemEvent,
     command: &CreateWorkItemCommand,
@@ -376,6 +550,47 @@ fn idempotent_transition(
     }
 }
 
+fn idempotent_policy_decision(
+    recorded_decision: PolicyDecision,
+    decision: &PolicyDecision,
+) -> Result<PolicyDecision, EventStoreError> {
+    if recorded_decision == *decision {
+        Ok(recorded_decision)
+    } else {
+        Err(EventStoreError::PolicyDecisionIdConflict {
+            decision_id: decision.id.clone(),
+        })
+    }
+}
+
+fn idempotent_protected_git_approval(
+    recorded_approval: ProtectedGitApproval,
+    approval: &ProtectedGitApproval,
+) -> Result<ProtectedGitApproval, EventStoreError> {
+    if recorded_approval == *approval {
+        Ok(recorded_approval)
+    } else {
+        Err(EventStoreError::ProtectedGitApprovalIdConflict {
+            decision_id: approval.decision_id.clone(),
+        })
+    }
+}
+
+fn policy_decision_matches_protected_git_approval(
+    decision: &PolicyDecision,
+    approval: &ProtectedGitApproval,
+) -> bool {
+    decision.id == approval.decision_id
+        && decision.project_id == approval.project_id
+        && decision.work_item_id == approval.work_item_id
+        && decision.action
+            == Some(crate::domain::PolicyAction::ProtectedGit {
+                action: approval.action,
+            })
+        && decision.decision == PolicyDecisionKind::Allow
+        && decision.actor == approval.approved_by
+}
+
 fn is_uncertain_after_restart(state: WorkItemState) -> bool {
     matches!(state, WorkItemState::Running | WorkItemState::AwaitingInput)
 }
@@ -412,6 +627,10 @@ pub enum EventStoreError {
     WorkItemAlreadyExists { work_item_id: WorkItemId },
     WorkItemNotFound { work_item_id: WorkItemId },
     EventIdConflict { event_id: WorkItemEventId },
+    PolicyDecisionIdConflict { decision_id: PolicyDecisionId },
+    ProtectedGitApprovalIdConflict { decision_id: PolicyDecisionId },
+    PolicyApprovalDecisionNotFound { decision_id: PolicyDecisionId },
+    PolicyApprovalDecisionMismatch { decision_id: PolicyDecisionId },
     MissingTransitionReason { event_id: WorkItemEventId },
     MissingRecoveryEventId { work_item_id: WorkItemId },
     InvalidEventSequence { value: i64 },
@@ -439,6 +658,26 @@ impl fmt::Display for EventStoreError {
                     event_id.0
                 )
             }
+            Self::PolicyDecisionIdConflict { decision_id } => write!(
+                formatter,
+                "policy decision id {} conflicts with a recorded decision",
+                decision_id.0
+            ),
+            Self::ProtectedGitApprovalIdConflict { decision_id } => write!(
+                formatter,
+                "protected Git approval id {} conflicts with a recorded approval",
+                decision_id.0
+            ),
+            Self::PolicyApprovalDecisionNotFound { decision_id } => write!(
+                formatter,
+                "protected Git approval requires recorded policy decision {}",
+                decision_id.0
+            ),
+            Self::PolicyApprovalDecisionMismatch { decision_id } => write!(
+                formatter,
+                "policy decision {} does not authorize the protected Git approval",
+                decision_id.0
+            ),
             Self::MissingTransitionReason { event_id } => {
                 write!(
                     formatter,
@@ -474,6 +713,10 @@ impl Error for EventStoreError {
             Self::WorkItemAlreadyExists { .. }
             | Self::WorkItemNotFound { .. }
             | Self::EventIdConflict { .. }
+            | Self::PolicyDecisionIdConflict { .. }
+            | Self::ProtectedGitApprovalIdConflict { .. }
+            | Self::PolicyApprovalDecisionNotFound { .. }
+            | Self::PolicyApprovalDecisionMismatch { .. }
             | Self::MissingTransitionReason { .. }
             | Self::MissingRecoveryEventId { .. }
             | Self::InvalidEventSequence { .. }
@@ -497,6 +740,21 @@ impl From<serde_json::Error> for EventStoreError {
 impl From<crate::domain::TransitionError> for EventStoreError {
     fn from(error: crate::domain::TransitionError) -> Self {
         Self::StateTransition(error)
+    }
+}
+
+impl crate::policy::PolicyAuditStore for SqliteEventStore {
+    type Error = EventStoreError;
+
+    fn record_policy_decision(&mut self, decision: PolicyDecision) -> Result<(), Self::Error> {
+        SqliteEventStore::record_policy_decision(self, decision).map(|_| ())
+    }
+
+    fn has_recorded_protected_git_approval(
+        &self,
+        approval: &ProtectedGitApproval,
+    ) -> Result<bool, Self::Error> {
+        SqliteEventStore::has_recorded_protected_git_approval(self, approval)
     }
 }
 

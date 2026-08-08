@@ -1,0 +1,51 @@
+work_item: ORCH-001
+scope:
+  - src-tauri/src/domain/model.rs
+  - src-tauri/src/domain/mod.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/policy/
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - docs/architecture/overview.md
+  - docs/decisions/0007-daemon-enforced-policy-and-audit.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T15:04:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Policy audit and work-item event persistence share the SqliteEventStore boundary.
+        resolution: accepted
+        rationale: Both are authoritative local daemon records with the same reliability and recovery actor. The pure policy gate owns no SQLite dependency; the store implements its narrow audit port, preserving the dependency direction while avoiding a premature second database abstraction.
+        decision_reference: ADR-0007
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A protected Git approval could otherwise be supplied by a request without durable verification.
+    change: The gate now checks the audit-store port before allowing a protected action, and the SQLite implementation verifies an exact persisted approval record.
+  - finding: Approval matching initially depended on formatted audit-summary text.
+    change: Added a typed optional action to PolicyDecision, safe for legacy records, and require the action, actor, project, and work item to match before recording an approval.
+  - finding: Project and work-item limits could diverge from a policy decision.
+    change: The policy gate consistently applies the stricter configured agent-turn, duration, and cost cap and blocks new executions at the concurrency limit.
+  - finding: Policy audit and approval persistence needed restart, migration, idempotency, conflict, and authorization-boundary coverage.
+    change: Added focused pure-policy and SQLite tests for each decision outcome, budget boundary, approval mismatch, version-one migration, durable reopen, and capability issuance.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 100.00
+      statements: 100.00
+      functions: 100.00
+      branches: 100.00
+    rust_core:
+      lines: 97.13
+      statements: 94.54
+      functions: 96.79
+      branches: 92.00
+    threshold_met: true
+exceptions: []

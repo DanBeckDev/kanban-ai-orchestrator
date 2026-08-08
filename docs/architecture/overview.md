@@ -58,3 +58,9 @@ Adapters may use a structured protocol when available and a constrained PTY fall
 ## Persistence and recovery
 
 The daemon persists append-only domain events and materialized state transactionally. On launch it reconciles recorded state against Git worktrees and live agent processes, then marks uncertain runs as `Interrupted` with recovery options. It must not move cards to a terminal state simply because the desktop UI or terminal stream disconnected.
+
+## Policy enforcement and audit
+
+Before a scheduler or worker boundary performs a side effect, the daemon sends a typed action and current usage through the policy gate. The gate limits tool scopes, new-execution concurrency, agent turns, duration, and cost; it uses the stricter project or work-item budget. An allow result carries the capability required by the execution boundary. A denied or approval-required request has no such capability, regardless of the agent's prompt text.
+
+Protected Git actions require a durable, exact approval for the project, work item, and action. The policy decision and approval records live alongside durable task state in SQLite. A policy-audit write failure prevents authorization, so the board can always explain whether the action was allowed, denied, or waiting for a person.

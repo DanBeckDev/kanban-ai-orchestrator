@@ -258,11 +258,11 @@ tasks:
   - id: QUAL-004
     epic: QUAL
     title: Remove all temporary oversized-source exceptions
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [QUAL-002]
     acceptance_criteria:
       - Every file listed in docs/quality/code-structure-exceptions.json is split into cohesive production or focused test modules with no behavior change.
       - npm run structure:check and CI reject an oversized changed source file without a valid, unexpired exception.
-      - The exceptions list is empty and the full quality gate passes after each refactor.
-    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. The P0 task removes the temporary migration records rather than normalizing them.
+      - The exceptions list is empty when QUAL-004 is complete, and the full quality gate passes after each refactor.
+    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. The P0 task removes the temporary migration records rather than normalizing them. The domain model record was split into focused modules on 2026-08-08, removing its first exception.

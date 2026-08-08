@@ -1,0 +1,45 @@
+work_item: QUAL-004
+scope:
+  - src-tauri/src/domain/model.rs
+  - src-tauri/src/domain/model/mod.rs
+  - src-tauri/src/domain/model/schema.rs
+  - src-tauri/src/domain/model/project.rs
+  - src-tauri/src/domain/model/work_item.rs
+  - src-tauri/src/domain/model/execution.rs
+  - src-tauri/src/domain/model/policy.rs
+  - src-tauri/src/domain/model/external_link.rs
+  - src-tauri/src/domain/model/tests.rs
+  - docs/quality/code-structure-exceptions.json
+  - docs/quality/code-requirements.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T16:19:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Domain schema, IDs, project records, work-item records, execution records, policy records, connector links, and all tests were co-located in a 487-meaningful-line file.
+    change: Split the record families into focused modules while retaining the existing crate-level domain re-exports and serialization contracts.
+  - finding: The legacy domain-model source exception was no longer needed after the split.
+    change: Removed src-tauri/src/domain/model.rs from the structural-exception ledger.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml domain::model
+      result: passed (5 tests)
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run structure:check
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 96.14
+    statements: 93.23
+    functions: 95.78
+    branches: 93.44
+    threshold_met: true
+exceptions: []

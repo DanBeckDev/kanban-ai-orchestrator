@@ -3,6 +3,14 @@
 work_item: EXAMPLE-123
 scope:
   - path/to/changed/file
+source_structure:
+  # Required whenever the work changes source under src/, src-tauri/src/, or scripts/.
+  # Record every changed source file with the exact count reported by the structure gate.
+  reviewed_files:
+    # - path: path/to/changed/source-file
+    #   meaningful_lines: 123
+    #   responsibilities: "The one cohesive reason this file changes."
+    #   decision: kept cohesive # kept cohesive | split
 review:
   skill: clean-code-review
   reviewer: agent-or-human-identifier

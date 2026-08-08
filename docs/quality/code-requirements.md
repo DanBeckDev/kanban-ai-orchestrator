@@ -11,7 +11,7 @@ A task that changes executable code, runtime/build configuration, tests, or CI i
 3. Every actionable finding has been fixed in the same task: all `Must Fix`, `Should Fix`, and concrete correctness, security, reliability, data-integrity, or build findings outside the book rubric.
 4. Each `Consider` is explicitly resolved as `accepted`, `implemented`, or `not-applicable` in the quality-review receipt. An accepted trade-off needs a reason and, when enduring, an ADR.
 5. Lint, format, source-structure, static/security analysis, type checks, tests, and coverage commands all pass with no ignored errors or warnings.
-6. A quality-review receipt records the scope, reviewer, findings, changes made, verification commands, and coverage result.
+6. A quality-review receipt records the scope, reviewer, findings, changes made, verification commands, and coverage result. For every changed source file, it must also record the exact meaningful-line count, its cohesive responsibility, and the review decision. The receipt validator compares each recorded count with the current source; a source file cannot be omitted from the review evidence.
 
 The Clean Code skill remains deliberately non-dogmatic: it distinguishes defects from genuine trade-offs. This policy makes **actionable** defects blocking; it does not pretend every design consideration has one objectively correct answer.
 

@@ -3,6 +3,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  meaningfulLineCount,
+  sourceFileLimit,
+} from "./check-code-structure.mjs";
+
 export function projectRootFor(moduleUrl, workingDirectory) {
   return moduleUrl.startsWith("file:")
     ? resolve(fileURLToPath(new URL("..", moduleUrl)))
@@ -59,11 +64,70 @@ export function validateReceiptContent(content) {
     .map(([description]) => description);
 }
 
-function validateReceiptPaths(receiptPaths, readFile) {
-  const errors = receiptPaths.flatMap((receiptPath) =>
-    validateReceiptContent(
-      readFile(resolve(projectRoot, receiptPath), "utf8"),
-    ).map((requirement) => `${receiptPath} is missing ${requirement}.`),
+function escapeRegularExpression(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasSourceStructureEntry(content, path, meaningfulLines) {
+  const entry = new RegExp(
+    `^\\s*-\\s*path:\\s*${escapeRegularExpression(path)}\\s*\\n` +
+      `\\s*meaningful_lines:\\s*${meaningfulLines}\\s*\\n` +
+      "\\s*responsibilities:\\s*\\S[^\\n]*\\n" +
+      "\\s*decision:\\s*\\S[^\\n]*\\s*$",
+    "m",
+  );
+
+  return entry.test(content);
+}
+
+export function validateSourceStructureEvidence({
+  receiptContents,
+  sourcePaths,
+  readSourceFile = readFileSync,
+}) {
+  if (sourcePaths.length === 0) {
+    return [];
+  }
+
+  const hasInventory = receiptContents.some((content) =>
+    /^source_structure:\s*\n\s*reviewed_files:\s*$/m.test(content),
+  );
+  const errors = hasInventory
+    ? []
+    : [
+        "Code-bearing work requires a source_structure.reviewed_files inventory in its quality-review receipt.",
+      ];
+
+  return [
+    ...errors,
+    ...sourcePaths.flatMap((path) => {
+      const source = readSourceFile(resolve(projectRoot, path), "utf8");
+      const meaningfulLines = meaningfulLineCount(source);
+      const isRecorded = receiptContents.some((content) =>
+        hasSourceStructureEntry(content, path, meaningfulLines),
+      );
+
+      return isRecorded
+        ? []
+        : [
+            `${path} must appear in source_structure.reviewed_files with its actual ${meaningfulLines} meaningful lines, responsibilities, and decision.`,
+          ];
+    }),
+  ];
+}
+
+function receiptContentsFor(receiptPaths, readFile) {
+  return receiptPaths.map((receiptPath) => ({
+    content: readFile(resolve(projectRoot, receiptPath), "utf8"),
+    receiptPath,
+  }));
+}
+
+function validateReceiptPaths(receiptContents) {
+  const errors = receiptContents.flatMap(({ content, receiptPath }) =>
+    validateReceiptContent(content).map(
+      (requirement) => `${receiptPath} is missing ${requirement}.`,
+    ),
   );
 
   if (errors.length > 0) {
@@ -76,6 +140,7 @@ export function verifyQualityReceipts({
   mode,
   readDirectory = readdirSync,
   readFile = readFileSync,
+  readSourceFile = readFileSync,
 }) {
   const codeBearingPaths = changedPaths.filter(isCodeBearingPath);
 
@@ -99,7 +164,24 @@ export function verifyQualityReceipts({
     );
   }
 
-  validateReceiptPaths(receiptPaths, readFile);
+  const receiptContents = receiptContentsFor(receiptPaths, readFile);
+  validateReceiptPaths(receiptContents);
+
+  if (mode !== "all") {
+    const sourcePaths = codeBearingPaths.filter(
+      (path) => sourceFileLimit(path) !== undefined,
+    );
+    const sourceStructureErrors = validateSourceStructureEvidence({
+      readSourceFile,
+      receiptContents: receiptContents.map(({ content }) => content),
+      sourcePaths,
+    });
+
+    if (sourceStructureErrors.length > 0) {
+      throw new Error(sourceStructureErrors.join("\n"));
+    }
+  }
+
   return `Validated ${receiptPaths.length} quality-review receipt(s).`;
 }
 

@@ -324,3 +324,15 @@ tasks:
       - npm run structure:verify and CI reject any oversized source file and any non-empty exception ledger.
       - The exceptions list is empty when QUAL-004 is complete, and the full quality gate passes after each refactor.
     notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. Completed on 2026-08-08: every listed module was split into focused source and test modules, the exception ledger is empty, and the full-repository gate now rejects any future exception.
+
+  - id: QUAL-005
+    epic: QUAL
+    title: Require structural review evidence for every changed source file
+    status: done
+    priority: P0
+    depends_on: [QUAL-004]
+    acceptance_criteria:
+      - Every changed source file is listed in the quality-review receipt with its exact meaningful-line count, cohesive responsibility, and review decision.
+      - The receipt validator rejects missing or stale source-structure evidence while retaining validation of historical receipts.
+      - Focused tests prove a receipt cannot omit a changed source file and a complete inventory passes.
+    notes: Completed on 2026-08-08. Quality-review receipts now inventory every changed source file with its verified meaningful-line count, cohesive responsibility, and decision; the validator rejects omissions and stale counts while historical receipts remain readable.

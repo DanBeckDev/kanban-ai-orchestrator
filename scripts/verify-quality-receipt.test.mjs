@@ -7,6 +7,7 @@ import {
   projectRootFor,
   runReceiptVerification,
   validateReceiptContent,
+  validateSourceStructureEvidence,
   verifyQualityReceipts,
 } from "./verify-quality-receipt.mjs";
 
@@ -23,6 +24,16 @@ verification:
   coverage:
     threshold_met: true
 `;
+
+const sourceStructureReceipt = `${validReceipt}source_structure:
+  reviewed_files:
+    - path: src/App.tsx
+      meaningful_lines: 1
+      responsibilities: Renders the desktop application shell.
+      decision: kept cohesive
+`;
+
+const oneMeaningfulLine = "export const app = true;\n";
 
 describe("quality-review receipt gate", () => {
   it("resolves its root in Node and virtual test-module environments", () => {
@@ -66,7 +77,8 @@ describe("quality-review receipt gate", () => {
       verifyQualityReceipts({
         changedPaths: ["src/App.tsx", "docs/quality/reviews/QUAL-002.yaml"],
         mode: "staged",
-        readFile: () => validReceipt,
+        readFile: () => sourceStructureReceipt,
+        readSourceFile: () => oneMeaningfulLine,
       }),
     ).toBe("Validated 1 quality-review receipt(s).");
 
@@ -75,6 +87,7 @@ describe("quality-review receipt gate", () => {
         changedPaths: ["src/App.tsx", "docs/quality/reviews/QUAL-002.yaml"],
         mode: "staged",
         readFile: () => "work_item: QUAL-002",
+        readSourceFile: () => oneMeaningfulLine,
       }),
     ).toThrow("is missing the Clean Code review skill");
   });
@@ -87,6 +100,37 @@ describe("quality-review receipt gate", () => {
         readFile: () => validReceipt,
       }),
     ).toBe("No code-bearing changes; no quality-review receipt is required.");
+  });
+
+  it("requires the receipt to prove every changed source file was inspected", () => {
+    expect(
+      validateSourceStructureEvidence({
+        receiptContents: [validReceipt],
+        readSourceFile: () => oneMeaningfulLine,
+        sourcePaths: ["src/App.tsx"],
+      }),
+    ).toEqual([
+      "Code-bearing work requires a source_structure.reviewed_files inventory in its quality-review receipt.",
+      "src/App.tsx must appear in source_structure.reviewed_files with its actual 1 meaningful lines, responsibilities, and decision.",
+    ]);
+
+    expect(
+      validateSourceStructureEvidence({
+        receiptContents: [sourceStructureReceipt],
+        readSourceFile: () => oneMeaningfulLine,
+        sourcePaths: ["src/App.tsx"],
+      }),
+    ).toEqual([]);
+
+    expect(
+      validateSourceStructureEvidence({
+        receiptContents: [sourceStructureReceipt],
+        readSourceFile: () => `${oneMeaningfulLine}${oneMeaningfulLine}`,
+        sourcePaths: ["src/App.tsx"],
+      }),
+    ).toEqual([
+      "src/App.tsx must appear in source_structure.reviewed_files with its actual 2 meaningful lines, responsibilities, and decision.",
+    ]);
   });
 
   it("validates the recorded receipts outside a pull request", () => {

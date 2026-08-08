@@ -22,10 +22,11 @@ This repository is being developed incrementally by people and AI agents. Preser
 For every change to executable code, tests, configuration that changes runtime behavior, or build/CI logic:
 
 1. Use the installed `clean-code-review` skill to review the completed diff and the code it plausibly touches. Load the concurrency reference whenever the change contains async work, shared state, queues, workers, locking, process management, or request handling.
-2. Fix every actionable finding before handoff: every `Must Fix`, `Should Fix`, and concrete finding outside the Clean Code rubric, including apparently small defects. Do not defer or suppress one merely to keep a task small.
-3. Record every genuine `Consider` trade-off in a review receipt with a decision. A `Consider` is not a defect, but it must not disappear without an explicit resolution.
-4. Run the repository's full quality command. It must pass linting, formatting, type checks, security/static analysis where configured, tests, and coverage.
-5. Maintain at least 80% line, branch, function, and statement coverage in **each executable package**. New or changed executable behavior needs focused tests; never lower thresholds, add broad exclusions, or use a repository-wide aggregate to hide a weak package without an accepted ADR.
+2. Inspect every changed source file for vertical density and responsibility boundaries. The source-structure gate limits production and test files to 400 meaningful lines; split distinct responsibilities before the quality review rather than treating a large file as presumptively cohesive.
+3. Fix every actionable finding before handoff: every `Must Fix`, `Should Fix`, and concrete finding outside the Clean Code rubric, including apparently small defects. Do not defer or suppress one merely to keep a task small.
+4. Record every genuine `Consider` trade-off in a review receipt with a decision. A `Consider` is not a defect, but it must not disappear without an explicit resolution.
+5. Run the repository's full quality command. It must pass linting, formatting, source-structure checks, type checks, security/static analysis where configured, tests, and coverage.
+6. Maintain at least 80% line, branch, function, and statement coverage in **each executable package**. New or changed executable behavior needs focused tests; never lower thresholds, add broad exclusions, or use a repository-wide aggregate to hide a weak package without an accepted ADR.
 
 Never use `--no-verify`, skip a required check, or claim completion based only on an agent's self-assessment. See `docs/quality/code-requirements.md` for the authoritative policy and `docs/quality/review-receipt.template.yaml` for the required evidence format.
 

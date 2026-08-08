@@ -10,7 +10,7 @@ A task that changes executable code, runtime/build configuration, tests, or CI i
 2. The completed diff has been reviewed with the `clean-code-review` skill, including its concurrency reference whenever applicable.
 3. Every actionable finding has been fixed in the same task: all `Must Fix`, `Should Fix`, and concrete correctness, security, reliability, data-integrity, or build findings outside the book rubric.
 4. Each `Consider` is explicitly resolved as `accepted`, `implemented`, or `not-applicable` in the quality-review receipt. An accepted trade-off needs a reason and, when enduring, an ADR.
-5. Lint, format, static/security analysis, type checks, tests, and coverage commands all pass with no ignored errors or warnings.
+5. Lint, format, source-structure, static/security analysis, type checks, tests, and coverage commands all pass with no ignored errors or warnings.
 6. A quality-review receipt records the scope, reviewer, findings, changes made, verification commands, and coverage result.
 
 The Clean Code skill remains deliberately non-dogmatic: it distinguishes defects from genuine trade-offs. This policy makes **actionable** defects blocking; it does not pretend every design consideration has one objectively correct answer.
@@ -34,6 +34,12 @@ Rules:
 - A low-coverage or untestable area is a design signal. Prefer refactoring toward clear, cohesive code with injectable boundaries rather than padding coverage with low-value tests.
 - For critical scheduling, policy, worktree, persistence, and connector-sync logic, target 90% branch coverage. The hard release floor is still 80%.
 - Use mutation testing selectively for high-risk code when line/branch coverage is high but confidence remains low.
+
+## Source structure policy
+
+Every changed production and test source file must stay within the repository's 400-meaningful-line limit. The gate applies to Rust, TypeScript/TSX, JavaScript/MJS, and quality scripts under the product source roots. It is intentionally stricter than a subjective review because a long file hides unrelated responsibilities and makes review ineffective.
+
+An exception is only a time-bounded migration record for a pre-existing oversized file. It must identify an owner work item and expiry date in `docs/quality/code-structure-exceptions.json`; no new exception is allowed without product-owner approval and an ADR. See [source-structure gate](code-structure.md).
 
 ## Required verification layers
 
@@ -61,6 +67,7 @@ The first technology-stack task must add these commands and wire them into the h
 
 - `quality:changed` — fast checks for a local commit;
 - `quality:verify` — full format, lint, static/security analysis, type checks, tests, and coverage thresholds;
+- `structure:check` — source-structure validation for the current working-tree change;
 - `test:coverage` — machine-readable per-package coverage report.
 
 The exact tools may differ between TypeScript and Rust, but the policy may not. The delivery backlog tracks this work as `QUAL-002`.

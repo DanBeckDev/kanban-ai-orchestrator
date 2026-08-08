@@ -1,12 +1,24 @@
 work_item: ORCH-002
 scope:
   - src-tauri/src/orchestration/mod.rs
-  - src-tauri/src/orchestration/tests.rs
+  - src-tauri/src/orchestration/plan.rs
+  - src-tauri/src/orchestration/scheduler.rs
+  - src-tauri/src/orchestration/tests/mod.rs
+  - src-tauri/src/orchestration/tests/plan_tests.rs
+  - src-tauri/src/orchestration/tests/scheduler_tests.rs
   - src-tauri/src/domain/model.rs
   - src-tauri/src/domain/mod.rs
   - src-tauri/src/lib.rs
+  - scripts/check-code-structure.mjs
+  - scripts/check-code-structure.test.mjs
+  - package.json
+  - .github/workflows/quality.yml
+  - AGENTS.md
   - docs/architecture/overview.md
   - docs/decisions/0009-confirmed-plan-scheduler.md
+  - docs/decisions/0010-source-structure-gate.md
+  - docs/quality/code-structure.md
+  - docs/quality/code-structure-exceptions.json
   - docs/planning/backlog.yaml
 review:
   skill: clean-code-review
@@ -21,6 +33,10 @@ review:
         resolution: accepted
         rationale: The use case deliberately has no SQLite, UI, or agent-provider dependency so scheduling can be tested at the application boundary. ADR 0009 requires the application daemon to persist an accepted plan and confirmation before it offers restart-resume for planned work.
         decision_reference: ADR-0009
+      - finding: Seven pre-existing source files exceed the new source-structure limit.
+        resolution: implemented
+        rationale: The repository now rejects new oversized source and records only time-bounded, owned migration entries. QUAL-004 removes every entry instead of treating the legacy size as acceptable.
+        decision_reference: ADR-0010
   unresolved_actionable_findings: 0
 remediation:
   - finding: Repository capacity was implicit in policy parallelism.
@@ -31,17 +47,23 @@ remediation:
     change: Split invalid-confirmation, malformed-decision, and proposal-validation scenarios into independently named tests.
   - finding: Clippy reported an opaque conditional chain in the budget summary.
     change: Replaced it with an explicit if/else branch.
+  - finding: The original Clean Code review did not challenge a 573-line orchestration module or its 669-line test module.
+    change: Split plan validation, scheduling, shared fixtures, plan tests, and scheduler tests into 14–323-line modules; added a source-structure gate to the local and CI quality workflow.
+  - finding: The source-structure gate attempted to read a source file that was deleted in the current working tree during a base-branch comparison.
+    change: Made deletion an explicit no-op and added a regression test alongside validation of exception ownership and expiry.
 verification:
   commands:
     - command: cargo test --manifest-path src-tauri/Cargo.toml orchestration
       result: passed (18 tests)
     - command: npm run quality:verify
       result: passed
+    - command: npm run structure:check
+      result: passed
   coverage:
     package_or_crate: kanban-ai-orchestrator
-    lines: 96.34
-    statements: 93.61
-    functions: 95.85
+    lines: 96.35
+    statements: 93.62
+    functions: 95.86
     branches: 93.44
     threshold_met: true
 exceptions: []

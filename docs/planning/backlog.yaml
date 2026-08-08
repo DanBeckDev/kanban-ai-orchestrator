@@ -141,7 +141,7 @@ tasks:
       - A proposed plan lists tasks, criteria, dependencies, critical path, parallelism, budgets, and unresolved assumptions.
       - User confirmation is required before launch.
       - Scheduling continues correctly while the UI is hidden or disconnected.
-    notes: Completed on 2026-08-08 with a provider-neutral daemon scheduling use case. It produces a deterministic typed plan preview, rejects invalid or unconfirmed plans, evaluates hard dependencies from daemon progress, separately defers for repository capacity, and returns only policy-authorized starts. Tests prove scheduling does not require UI state, and ADR 0009 requires durable plan-confirmation persistence when application-level restart-resume is wired.
+    notes: Completed on 2026-08-08 with a provider-neutral daemon scheduling use case. It produces a deterministic typed plan preview, rejects invalid or unconfirmed plans, evaluates hard dependencies from daemon progress, separately defers for repository capacity, and returns only policy-authorized starts. Tests prove scheduling does not require UI state, and ADR 0009 requires durable plan-confirmation persistence when application-level restart-resume is wired. After review feedback, plan validation, scheduling, shared fixtures, and focused test scenarios were split into 14–323-line modules and are protected by the ADR 0010 source-structure gate.
 
   - id: ORCH-003
     epic: ORCH
@@ -254,3 +254,15 @@ tasks:
       - The task state machine cannot transition from review to done without successful quality-gate evidence.
       - The orchestrator schedules an independent Clean Code review for substantial or high-risk work.
       - Actionable review findings return the task to implementation until resolved.
+
+  - id: QUAL-004
+    epic: QUAL
+    title: Remove all temporary oversized-source exceptions
+    status: ready
+    priority: P0
+    depends_on: [QUAL-002]
+    acceptance_criteria:
+      - Every file listed in docs/quality/code-structure-exceptions.json is split into cohesive production or focused test modules with no behavior change.
+      - npm run structure:check and CI reject an oversized changed source file without a valid, unexpired exception.
+      - The exceptions list is empty and the full quality gate passes after each refactor.
+    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. The P0 task removes the temporary migration records rather than normalizing them.

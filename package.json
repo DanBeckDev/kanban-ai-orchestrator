@@ -19,7 +19,8 @@
     "rust:lint": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "rust:coverage": "node scripts/check-rust-coverage.mjs",
-    "quality:changed": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run rust:format && npm run rust:lint && npm run rust:coverage",
+    "structure:check": "node scripts/check-code-structure.mjs",
+    "quality:changed": "npm run format:check && npm run lint && npm run typecheck && npm run structure:check && npm run test:coverage && npm run rust:format && npm run rust:lint && npm run rust:coverage",
     "quality:receipt:staged": "node scripts/verify-quality-receipt.mjs --staged",
     "quality:verify": "npm run quality:changed && npm run build && npm run rust:check"
   },

@@ -24,6 +24,8 @@ verification:
   commands:
     # - command: npm run quality:verify
     #   result: passed
+    # - command: npm run structure:check
+    #   result: passed
   coverage:
     package_or_crate: example
     lines: 0

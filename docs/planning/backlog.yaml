@@ -227,7 +227,7 @@ tasks:
   - id: QUAL-002
     epic: QUAL
     title: Implement local hook and required CI quality gate
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [FDN-002, QUAL-001]
     acceptance_criteria:
@@ -235,7 +235,7 @@ tasks:
       - The installable pre-commit hook runs quality:changed for code-bearing changes.
       - Required CI runs quality:verify and fails if any executable package/crate falls below 80% coverage in any required metric.
       - CI validates a zero-unresolved-findings review receipt for code-bearing work.
-    notes: Local hook, quality commands, receipt validator, and GitHub Actions workflow are implemented and verified on 2026-08-08. This repository currently has no Git remote or commit, so enabling the quality workflow as a required branch-protection status remains an external repository-administrator step.
+    notes: Local hook, quality commands, receipt validator, and GitHub Actions workflow were implemented and verified on 2026-08-08. The public repository was created, the quality workflow passed on GitHub Actions, and main now requires an up-to-date passing quality status check for all users including administrators.
 
   - id: QUAL-003
     epic: QUAL

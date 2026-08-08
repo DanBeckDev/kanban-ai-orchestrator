@@ -113,13 +113,14 @@ tasks:
   - id: EXEC-003
     epic: EXEC
     title: Add initial Codex CLI, Claude Code, and third-agent adapters
-    status: ready
+    status: in_progress
     priority: P1
     depends_on: [EXEC-001, EXEC-002]
     acceptance_criteria:
       - Three adapters pass the common conformance suite.
       - Unsupported capabilities are visible before task start.
       - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
+    notes: In progress on 2026-08-08. The generic structured-process boundary now receives a task brief over stdin and emits bounded JSON-lines lifecycle events without a shell or raw transcript retention. It explicitly reports resume, feedback, and process-tree interruption as unsupported until a provider/platform adapter can implement them safely. Codex CLI, Claude Code, and a third concrete wrapper still need conformance coverage and execution-controller integration.
 
   - id: ORCH-001
     epic: ORCH

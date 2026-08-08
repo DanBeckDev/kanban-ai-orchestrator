@@ -55,6 +55,8 @@ Normalized events include `activity`, `approval_requested`, `awaiting_input`, `a
 
 Adapters may use a structured protocol when available and a constrained PTY fallback otherwise. They must preserve a resumable session identifier where the agent supports it, report unsupported capabilities explicitly, and never rely on terminal text alone to infer successful completion.
 
+The first concrete local process boundary accepts an executable plus structured arguments, sends task briefs over stdin, and reads bounded JSON-lines events from stdout. It avoids a production shell, discards raw stderr, rejects malformed/oversized/out-of-order output as a normalized failure, and does not claim process-tree interruption until a platform adapter implements it. See [ADR 0013](../decisions/0013-structured-process-agent-adapter.md).
+
 Adapter events are sequenced and deduplicated before they are offered to the daemon. `completed` and `awaiting_review` request the work item's `Review` state; no adapter event can request `Done`. The daemon still applies its guarded transition and evidence policy.
 
 ## Persistence and recovery

@@ -1,8 +1,11 @@
 use std::{error::Error, fmt};
 
+use serde::{Deserialize, Serialize};
+
 use crate::domain::TransitionError;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentCapabilities {
     pub supports_feedback: bool,
     pub supports_interrupt: bool,
@@ -10,20 +13,23 @@ pub struct AgentCapabilities {
     pub streams_structured_events: bool,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentSession {
     pub id: String,
     pub resumable: bool,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StartAgentRequest {
     pub work_item_id: String,
     pub workspace_path: String,
     pub task_brief: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum NormalizedAgentEventKind {
     Activity {
         summary: String,
@@ -53,9 +59,11 @@ pub enum NormalizedAgentEventKind {
     },
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NormalizedAgentEvent {
     pub sequence: u64,
+    #[serde(flatten)]
     pub kind: NormalizedAgentEventKind,
 }
 
@@ -77,10 +85,36 @@ pub trait AgentAdapter {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AgentAdapterError {
-    CapabilityUnsupported { capability: &'static str },
-    DuplicateEvent { sequence: u64 },
-    EventOutOfOrder { expected: u64, received: u64 },
-    UnknownSession { session_id: String },
+    CapabilityUnsupported {
+        capability: &'static str,
+    },
+    DuplicateEvent {
+        sequence: u64,
+    },
+    EventOutOfOrder {
+        expected: u64,
+        received: u64,
+    },
+    UnknownSession {
+        session_id: String,
+    },
+    ProcessExited {
+        session_id: String,
+        exit_code: Option<i32>,
+    },
+    ProcessInput {
+        session_id: String,
+        reason: String,
+    },
+    ProcessLaunch {
+        adapter_name: String,
+        reason: String,
+    },
+    ProcessRuntime {
+        session_id: String,
+        operation: &'static str,
+        reason: String,
+    },
     InvalidWorkItemTransition(TransitionError),
 }
 
@@ -106,6 +140,35 @@ impl fmt::Display for AgentAdapterError {
                     "agent session {session_id} is not known to this adapter"
                 )
             }
+            Self::ProcessExited {
+                session_id,
+                exit_code,
+            } => write!(
+                formatter,
+                "agent process for session {session_id} exited before it emitted a terminal lifecycle event (exit code {})",
+                exit_code.map_or_else(|| "unknown".to_owned(), |code| code.to_string())
+            ),
+            Self::ProcessInput { session_id, reason } => {
+                write!(
+                    formatter,
+                    "could not send the task brief to agent session {session_id}: {reason}"
+                )
+            }
+            Self::ProcessLaunch {
+                adapter_name,
+                reason,
+            } => write!(
+                formatter,
+                "could not launch agent adapter {adapter_name}: {reason}"
+            ),
+            Self::ProcessRuntime {
+                session_id,
+                operation,
+                reason,
+            } => write!(
+                formatter,
+                "agent session {session_id} could not {operation}: {reason}"
+            ),
             Self::InvalidWorkItemTransition(error) => {
                 write!(
                     formatter,
@@ -123,7 +186,11 @@ impl Error for AgentAdapterError {
             Self::CapabilityUnsupported { .. }
             | Self::DuplicateEvent { .. }
             | Self::EventOutOfOrder { .. }
-            | Self::UnknownSession { .. } => None,
+            | Self::UnknownSession { .. }
+            | Self::ProcessExited { .. }
+            | Self::ProcessInput { .. }
+            | Self::ProcessLaunch { .. }
+            | Self::ProcessRuntime { .. } => None,
         }
     }
 }

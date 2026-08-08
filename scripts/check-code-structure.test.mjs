@@ -149,6 +149,33 @@ describe("source structure gate", () => {
       return "scripts/check-code-structure.mjs\n";
     });
     expect(sourcePaths).toEqual(["scripts/check-code-structure.mjs"]);
+
+    const workingTreePaths = changedPathsFor(
+      { mode: "working-tree" },
+      (command, args) => {
+        expect(command).toBe("git");
+        if (args[0] === "diff") {
+          expect(args).toEqual([
+            "diff",
+            "--name-only",
+            "--diff-filter=ACMR",
+            "HEAD",
+          ]);
+          return "src/changed.ts\n";
+        }
+        expect(args).toEqual([
+          "ls-files",
+          "--others",
+          "--exclude-standard",
+          "--",
+          "src",
+          "src-tauri/src",
+          "scripts",
+        ]);
+        return "src/changed.ts\nsrc/untracked.ts\n";
+      },
+    );
+    expect(workingTreePaths).toEqual(["src/changed.ts", "src/untracked.ts"]);
   });
 
   it("requires the ledger to declare an empty exceptions array", () => {

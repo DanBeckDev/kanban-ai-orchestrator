@@ -94,6 +94,11 @@ fn creates_a_durable_board_task_and_guarded_transition_through_the_use_case() {
         WorkItemState::Planned
     );
     assert_eq!(planned_snapshot.board.id.0, "board-1");
+    assert_eq!(planned_snapshot.activity.len(), 2);
+    assert_eq!(
+        planned_snapshot.activity[1].summary,
+        "State changed from inbox to planned: The user requested the lifecycle update."
+    );
 }
 
 #[test]
@@ -163,6 +168,54 @@ fn preserves_done_evidence_requirements_at_the_command_use_case() {
         completed_snapshot.work_items[0].work_item.state,
         WorkItemState::Done
     );
+    assert_eq!(
+        completed_snapshot
+            .activity
+            .last()
+            .expect("completion activity should be retained")
+            .completion_evidence,
+        Some(CompletionEvidence {
+            checks_passed: true,
+            completion_report_present: true,
+            review_accepted: true,
+        })
+    );
+}
+
+#[test]
+fn bounds_snapshot_activity_without_discarding_durable_event_history() {
+    let mut service = service();
+    create_board(&mut service);
+    service
+        .create_work_item(create_work_item_request("task-1"))
+        .expect("work item should be created");
+
+    service
+        .transition_work_item(transition_request(
+            "transition-planned",
+            "task-1",
+            WorkItemState::Planned,
+            None,
+        ))
+        .expect("the task should enter planning");
+    let transitions = [
+        WorkItemState::Ready,
+        WorkItemState::Running,
+        WorkItemState::Failed,
+    ];
+    for (index, next_state) in transitions.iter().cycle().take(24).enumerate() {
+        let event_id = format!("transition-{index}");
+        service
+            .transition_work_item(transition_request(&event_id, "task-1", *next_state, None))
+            .expect("recovery transition should be valid");
+    }
+
+    let snapshot = service
+        .snapshot(&crate::domain::BoardId::from("board-1"))
+        .expect("board snapshot should load");
+    assert_eq!(snapshot.activity.len(), 20);
+    assert_eq!(snapshot.activity[0].sequence, 7);
+    assert_eq!(snapshot.activity[19].sequence, 26);
 }
 
 #[test]

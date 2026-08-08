@@ -114,6 +114,8 @@ fn persists_a_board_snapshot_across_reopen() {
         .board_snapshot(&BoardId::from("board-1"))
         .expect("board snapshot should load");
     assert_eq!(snapshot.work_items.len(), 2);
+    assert_eq!(snapshot.activity.len(), 2);
+    assert_eq!(snapshot.activity[0].summary, "Task created.");
     assert_eq!(
         snapshot.dependencies,
         vec![dependency("task-1-blocks-task-2", "task-1", "task-2")]

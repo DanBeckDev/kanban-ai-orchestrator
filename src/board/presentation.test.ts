@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   blockersFor,
+  activityFor,
   boardColumns,
   budgetSummary,
   nextTransitionStates,
@@ -60,6 +61,14 @@ const snapshot: BoardSnapshot = {
       nextAction: "Monitor.",
     },
   ],
+  activity: [
+    {
+      workItemId: "ui",
+      sequence: 3,
+      recordedAt: "2026-08-08T00:00:00Z",
+      summary: "State changed from inbox to planned: Approved.",
+    },
+  ],
 };
 
 describe("board presentation", () => {
@@ -76,6 +85,9 @@ describe("board presentation", () => {
       "api-blocks-ui",
     ]);
     expect(blockersFor(snapshot, "api")).toEqual([]);
+    expect(activityFor(snapshot, "ui").map(({ sequence }) => sequence)).toEqual(
+      [3],
+    );
     expect(boardColumns.map(({ label }) => label)).toEqual([
       "Plan",
       "Ready",
@@ -112,6 +124,8 @@ describe("board presentation", () => {
 
     expect(nextTransitionStates("review")).toContain("done");
     expect(nextTransitionStates("done")).toEqual([]);
+    expect(nextTransitionStates("failed")).toEqual(["ready", "cancelled"]);
+    expect(nextTransitionStates("awaiting_input")).toContain("interrupted");
     expect(
       states.every((state) => Array.isArray(nextTransitionStates(state))),
     ).toBe(true);

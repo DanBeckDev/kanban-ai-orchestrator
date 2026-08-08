@@ -280,6 +280,31 @@ legend,
   font-size: 0.8rem;
 }
 
+.decision-history {
+  margin: 0 0 0.75rem;
+  color: #c5ceda;
+  font-size: 0.76rem;
+}
+
+.decision-history ol {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.decision-history p,
+.decision-history time,
+.decision-history span {
+  display: block;
+  margin: 0;
+}
+
+.decision-history time,
+.decision-history span {
+  color: #aebbd0;
+}
+
 .dependency-notice {
   margin: 0.8rem 0;
   padding: 0.65rem;

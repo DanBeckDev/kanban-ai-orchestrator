@@ -15,11 +15,15 @@ import type {
   TransitionWorkItemRequest,
 } from "./types";
 
-function snapshot(workItems: BoardSnapshot["workItems"] = []): BoardSnapshot {
+function snapshot(
+  workItems: BoardSnapshot["workItems"] = [],
+  activity: BoardSnapshot["activity"] = [],
+): BoardSnapshot {
   return {
     board: { id: "board-1", projectId: "project-1", name: "MVP" },
     workItems,
     dependencies: [],
+    activity,
   };
 }
 
@@ -210,8 +214,31 @@ describe("board workspace", () => {
   });
 
   it("submits lifecycle transition evidence and presents command errors", async () => {
-    const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
+    const boardGateway = gateway(
+      snapshot(
+        [workItem("review-task", "review")],
+        [
+          {
+            workItemId: "review-task",
+            sequence: 1,
+            recordedAt: "2026-08-08T00:00:00Z",
+            summary: "State changed from running to review: Ready for review.",
+            completionEvidence: {
+              checksPassed: true,
+              completionReportPresent: true,
+              reviewAccepted: true,
+            },
+          },
+        ],
+      ),
+    );
     await createBoard(boardGateway);
+    fireEvent.click(screen.getByText("Recent decision history (1)"));
+    expect(
+      screen.getByText(
+        "Evidence: checks passed, report present, review accepted.",
+      ),
+    ).toBeVisible();
     const transitionForm = screen.getByRole("form", {
       name: "Transition Task review-task",
     });

@@ -3,6 +3,7 @@ pub(crate) mod board_store;
 mod board_store_error;
 mod event_store_error;
 mod event_store_policy;
+mod event_store_queries;
 mod event_store_recovery;
 mod event_store_schema;
 mod event_store_support;

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import {
+  activityFor,
   blockersFor,
   budgetSummary,
   nextTransitionStates,
@@ -38,6 +39,7 @@ export function WorkItemCard({
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState(emptyEvidence);
   const dependencies = blockersFor(snapshot, workItem.id);
+  const activity = activityFor(snapshot, workItem.id);
   const options = nextTransitionStates(workItem.state);
 
   async function submitTransition(event: FormEvent<HTMLFormElement>) {
@@ -70,6 +72,7 @@ export function WorkItemCard({
           <li key={criterion}>{criterion}</li>
         ))}
       </ul>
+      {activity.length > 0 && <DecisionHistory activity={activity} />}
       {dependencies.length > 0 && (
         <section className="dependency-notice">
           <strong>Dependency gate</strong>
@@ -123,6 +126,41 @@ export function WorkItemCard({
         </form>
       )}
     </article>
+  );
+}
+
+function DecisionHistory({
+  activity,
+}: Readonly<{ activity: ReturnType<typeof activityFor> }>) {
+  return (
+    <details className="decision-history">
+      <summary>Recent decision history ({activity.length})</summary>
+      <ol>
+        {activity.map((entry) => (
+          <li key={entry.sequence}>
+            <p>{entry.summary}</p>
+            <time dateTime={entry.recordedAt}>{entry.recordedAt}</time>
+            {entry.completionEvidence && (
+              <span>
+                Evidence: checks{" "}
+                {entry.completionEvidence.checksPassed
+                  ? "passed"
+                  : "not passed"}
+                , report{" "}
+                {entry.completionEvidence.completionReportPresent
+                  ? "present"
+                  : "missing"}
+                , review{" "}
+                {entry.completionEvidence.reviewAccepted
+                  ? "accepted"
+                  : "pending"}
+                .
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

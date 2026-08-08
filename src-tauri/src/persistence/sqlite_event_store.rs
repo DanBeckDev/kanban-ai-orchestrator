@@ -17,8 +17,7 @@ use super::{
     },
     event_store_schema::{create_initial_schema, create_policy_audit_schema},
     event_store_support::{
-        deserialize_materialized_work_item, deserialize_recorded_event, event_sequence,
-        idempotent_creation, idempotent_transition,
+        deserialize_recorded_event, event_sequence, idempotent_creation, idempotent_transition,
     },
 };
 
@@ -113,49 +112,6 @@ impl SqliteEventStore {
         };
 
         self.persist_event(event, updated_work_item)
-    }
-
-    pub fn materialized_work_item(
-        &self,
-        work_item_id: &WorkItemId,
-    ) -> Result<Option<MaterializedWorkItem>, EventStoreError> {
-        let stored_work_item = self
-            .connection
-            .query_row(
-                "SELECT work_item_json, last_event_sequence
-                 FROM materialized_work_items
-                 WHERE work_item_id = ?1",
-                [work_item_id.0.as_str()],
-                |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
-            )
-            .optional()?;
-
-        stored_work_item
-            .map(|(work_item_json, last_event_sequence)| {
-                deserialize_materialized_work_item(&work_item_json, last_event_sequence)
-            })
-            .transpose()
-    }
-
-    pub fn work_item_events(
-        &self,
-        work_item_id: &WorkItemId,
-    ) -> Result<Vec<RecordedWorkItemEvent>, EventStoreError> {
-        let mut statement = self.connection.prepare(
-            "SELECT sequence, event_json
-             FROM work_item_events
-             WHERE work_item_id = ?1
-             ORDER BY sequence",
-        )?;
-        let rows = statement.query_map([work_item_id.0.as_str()], |row| {
-            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
-        })?;
-
-        rows.map(|row| {
-            let (sequence, event_json) = row?;
-            deserialize_recorded_event(&event_json, sequence)
-        })
-        .collect()
     }
 
     pub fn record_policy_decision(
@@ -373,25 +329,6 @@ impl SqliteEventStore {
                 work_item_id: work_item_id.clone(),
             }
         })
-    }
-
-    pub(crate) fn all_materialized_work_items(
-        &self,
-    ) -> Result<Vec<MaterializedWorkItem>, EventStoreError> {
-        let mut statement = self.connection.prepare(
-            "SELECT work_item_json, last_event_sequence
-             FROM materialized_work_items
-             ORDER BY work_item_id",
-        )?;
-        let rows = statement.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        })?;
-
-        rows.map(|row| {
-            let (work_item_json, last_event_sequence) = row?;
-            deserialize_materialized_work_item(&work_item_json, last_event_sequence)
-        })
-        .collect()
     }
 
     fn persist_event(

@@ -14,6 +14,7 @@ export function projectRootFor(moduleUrl, workingDirectory) {
 
 const projectRoot = projectRootFor(import.meta.url, process.cwd());
 const exceptionsPath = "docs/quality/code-structure-exceptions.json";
+const sourceRoots = ["src", "src-tauri/src", "scripts"];
 
 export function sourceFileLimit(path) {
   const isSourceFile =
@@ -62,6 +63,10 @@ export function parseOptions(args) {
 }
 
 export function changedPathsFor(options, execute = execFileSync) {
+  const executeGit = (args) =>
+    execute("git", args, { cwd: projectRoot, encoding: "utf8" })
+      .split("\n")
+      .filter(Boolean);
   let args;
   if (options.mode === "all") {
     args = [
@@ -70,9 +75,7 @@ export function changedPathsFor(options, execute = execFileSync) {
       "--others",
       "--exclude-standard",
       "--",
-      "src",
-      "src-tauri/src",
-      "scripts",
+      ...sourceRoots,
     ];
   } else if (options.mode === "staged") {
     args = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
@@ -83,13 +86,20 @@ export function changedPathsFor(options, execute = execFileSync) {
       "--diff-filter=ACMR",
       `${options.baseRef}...HEAD`,
     ];
-  } else {
+  } else if (options.mode === "working-tree") {
     args = ["diff", "--name-only", "--diff-filter=ACMR", "HEAD"];
+    const modifiedPaths = executeGit(args);
+    const untrackedPaths = executeGit([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--",
+      ...sourceRoots,
+    ]);
+    return [...new Set([...modifiedPaths, ...untrackedPaths])];
   }
 
-  return execute("git", args, { cwd: projectRoot, encoding: "utf8" })
-    .split("\n")
-    .filter(Boolean);
+  return executeGit(args);
 }
 
 export function loadExceptions(readFile = readFileSync) {

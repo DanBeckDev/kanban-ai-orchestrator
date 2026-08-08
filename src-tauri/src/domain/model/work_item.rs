@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 use super::{BoardId, DependencyId, SchemaMetadata, VersionedSchema, WorkItemId};
@@ -25,6 +27,25 @@ impl WorkItemState {
 
     pub const fn is_recoverable(self) -> bool {
         matches!(self, Self::Blocked | Self::Failed | Self::Interrupted)
+    }
+}
+
+impl fmt::Display for WorkItemState {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::Inbox => "inbox",
+            Self::Planned => "planned",
+            Self::Ready => "ready",
+            Self::Running => "running",
+            Self::AwaitingInput => "awaiting input",
+            Self::Review => "review",
+            Self::Done => "done",
+            Self::Blocked => "blocked",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+            Self::Interrupted => "interrupted",
+        };
+        formatter.write_str(name)
     }
 }
 

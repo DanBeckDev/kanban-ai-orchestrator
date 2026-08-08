@@ -1,0 +1,65 @@
+work_item: ORCH-003
+scope:
+  - src-tauri/src/application/board_snapshot.rs
+  - src-tauri/src/application/board_service.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/mod.rs
+  - src-tauri/src/domain/model/work_item.rs
+  - src-tauri/src/persistence/board_store.rs
+  - src-tauri/src/persistence/board_store_tests.rs
+  - src-tauri/src/persistence/event_store_queries.rs
+  - src-tauri/src/persistence/mod.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src/board/types.ts
+  - src/board/presentation.ts
+  - src/board/presentation.test.ts
+  - src/board/WorkItemCard.tsx
+  - src/board/BoardWorkspace.test.tsx
+  - src/styles.css
+  - docs/architecture/overview.md
+  - docs/decisions/0011-zero-exception-source-structure-gate.md
+  - docs/planning/backlog.yaml
+  - docs/quality/code-requirements.md
+  - docs/quality/code-structure.md
+  - scripts/check-code-structure.mjs
+  - scripts/check-code-structure.test.mjs
+  - package.json
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T17:40:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The board showed current state but did not let a reviewer inspect the durable decision trail that produced it.
+    change: Added ordered activity entries derived from append-only events to the board snapshot and rendered them per card with timing and completion evidence.
+  - finding: Current-state data and activity-history projection would otherwise be mixed into the board service.
+    change: Kept the snapshot/activity projection in a focused application module and made persistence collect and globally order only the board's task events.
+  - finding: Loading every historical event for every card could grow without bound and degrade a busy board.
+    change: Added a focused recent-event query and bounded board snapshots to the latest 20 events per task; a direct persistence test proves the query returns chronological recent events without truncating the full append-only history.
+  - finding: The board's advisory recovery menu had drifted from the daemon state machine.
+    change: Matched every displayed transition option to the guarded Rust lifecycle and added recovery-transition assertions.
+  - finding: The local quality command relied on an incremental source-structure scan, which could omit an untracked or unchanged oversized source file.
+    change: Made the local gate run the whole-repository structural scan, made the incremental scanner include untracked source, and added a unit test for that path union.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml application::board_service_tests
+      result: passed (5 tests)
+    - command: npm test -- --run src/board
+      result: passed (7 tests)
+    - command: cargo test --manifest-path src-tauri/Cargo.toml persistence::event_store_queries::tests
+      result: passed (1 test)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 89.04
+    statements: 85.23
+    functions: 87.96
+    branches: 88.33
+    threshold_met: true
+exceptions: []

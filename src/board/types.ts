@@ -57,10 +57,19 @@ export type Dependency = Readonly<{
   nextAction: string;
 }>;
 
+export type BoardActivity = Readonly<{
+  workItemId: string;
+  sequence: number;
+  recordedAt: string;
+  summary: string;
+  completionEvidence?: CompletionEvidence;
+}>;
+
 export type BoardSnapshot = Readonly<{
   board: Board;
   workItems: readonly MaterializedWorkItem[];
   dependencies: readonly Dependency[];
+  activity: readonly BoardActivity[];
 }>;
 
 export type CreateProjectRequest = Readonly<{

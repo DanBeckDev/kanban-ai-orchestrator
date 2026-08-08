@@ -47,7 +47,7 @@ The implementing agent performs a Clean Code review and remediation pass before 
 
 ### 2. Local Git hook
 
-The repository will provide an installable pre-commit hook after the technology stack is selected. It runs the fast changed-code quality command and rejects code changes when required checks or a review receipt are missing. It is early feedback, not the authority: Git hooks can be bypassed.
+The repository provides an installable pre-commit hook. It runs the local quality command and rejects code changes when required checks or a review receipt are missing. Its source-structure check scans the whole repository, including untracked files, so legacy or newly added oversized files cannot hide outside the staged diff. It is early feedback, not the authority: Git hooks can be bypassed.
 
 ### 3. Required CI status check
 
@@ -63,7 +63,7 @@ The only permitted exception is an explicit product-owner decision for a real tr
 
 The first technology-stack task must add these commands and wire them into the hook and CI:
 
-- `quality:changed` — fast checks for a local commit;
+- `quality:changed` — local commit checks, including a whole-repository source-structure scan;
 - `quality:verify` — full format, lint, static/security analysis, type checks, tests, and coverage thresholds;
 - `structure:check` — source-structure validation for the current working-tree change;
 - `test:coverage` — machine-readable per-package coverage report.

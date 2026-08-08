@@ -149,13 +149,14 @@ tasks:
   - id: ORCH-003
     epic: ORCH
     title: Build evidence-first review and recovery flows
-    status: ready
+    status: in_progress
     priority: P1
     depends_on: [CORE-003, EXEC-001, EXEC-002, ORCH-001]
     acceptance_criteria:
       - Review shows task criteria, diff/commit, checks, agent summary, and decision history.
       - Failure and interruption present retry, inspect, recover, and cancel actions.
       - A task cannot reach done without the configured evidence and approval.
+    notes: In progress on 2026-08-08. Board snapshots now carry a compact ordered trail of the most recent 20 durable task creation and state-decision events per task, including completion evidence, and cards render that history after reopening without loading unbounded history. Agent session identity, checks, commit/diff metadata, review decisions, and actionable recovery controls remain to be connected to the execution controller.
 
   - id: APP-001
     epic: APP

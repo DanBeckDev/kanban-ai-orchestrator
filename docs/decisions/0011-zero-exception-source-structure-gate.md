@@ -11,7 +11,7 @@ ADR 0010 correctly introduced a deterministic 400-meaningful-line guard, but its
 
 - Keep the 400-meaningful-line limit for every production and test source file.
 - Require the exception ledger to be empty; any entry is a quality failure.
-- Run a whole-repository structural scan in `quality:verify`, including untracked source files, in addition to the fast changed-file scan.
+- Run a whole-repository structural scan, including untracked source files, in both the local `quality:changed` gate and `quality:verify` (which invokes it). The scan is cheap enough that an incremental-only structural check is not a justified trade-off.
 - Treat an over-limit file as an actionable Clean Code finding that blocks handoff, review, merge, and task completion.
 
 ## Consequences

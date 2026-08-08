@@ -65,7 +65,7 @@ The daemon persists append-only domain events and materialized state transaction
 
 ## Local board command boundary
 
-The desktop initializes one local SQLite-backed board service in the application data directory. Typed Tauri commands create projects, boards, and work items; add validated dependencies; transition work items through the authoritative state machine; and return a board snapshot. The React client can render this snapshot and request a command, but cannot write SQLite directly, bypass ownership checks, create a hard-dependency cycle, or mark a task done without the required evidence. The service lock only protects synchronous local state work and never surrounds external network or agent I/O. See [ADR 0012](../decisions/0012-local-board-command-boundary.md).
+The desktop initializes one local SQLite-backed board service in the application data directory. Typed Tauri commands create projects, boards, and work items; add validated dependencies; transition work items through the authoritative state machine; and return a board snapshot. Each snapshot includes an ordered, bounded activity trail of the most recent 20 durable events per task, so reopening the board preserves useful creation and decision history without exposing raw transcripts or loading an unbounded terminal/history view. The React client can render this snapshot and request a command, but cannot write SQLite directly, bypass ownership checks, create a hard-dependency cycle, or mark a task done without the required evidence. The service lock only protects synchronous local state work and never surrounds external network or agent I/O. See [ADR 0012](../decisions/0012-local-board-command-boundary.md).
 
 ## Policy enforcement and audit
 

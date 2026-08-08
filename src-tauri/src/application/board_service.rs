@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::domain::{
     Board, BoardId, CompletionEvidence, CreateWorkItemCommand, Dependency, DependencyId,
@@ -9,13 +9,7 @@ use crate::domain::{
     WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BoardSnapshot {
-    pub board: Board,
-    pub work_items: Vec<MaterializedWorkItem>,
-    pub dependencies: Vec<Dependency>,
-}
+use super::BoardSnapshot;
 
 pub trait BoardRepository {
     type Error: Error;

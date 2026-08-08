@@ -1,4 +1,5 @@
 import type {
+  BoardActivity,
   BoardSnapshot,
   Dependency,
   WorkItem,
@@ -48,6 +49,15 @@ export function blockersFor(
   );
 }
 
+export function activityFor(
+  snapshot: BoardSnapshot,
+  workItemId: string,
+): readonly BoardActivity[] {
+  return snapshot.activity.filter(
+    (activity) => activity.workItemId === workItemId,
+  );
+}
+
 export function isHardDependency(dependency: Dependency): boolean {
   return dependency.kind === "blocks" || dependency.kind === "review_required";
 }
@@ -78,22 +88,36 @@ export function nextTransitionStates(
   const transitions: Readonly<Record<WorkItemState, readonly WorkItemState[]>> =
     {
       inbox: ["planned", "cancelled"],
-      planned: ["ready", "cancelled"],
+      planned: ["ready", "blocked", "cancelled"],
       ready: ["running", "blocked", "cancelled"],
       running: [
         "awaiting_input",
         "review",
+        "blocked",
         "failed",
         "interrupted",
         "cancelled",
       ],
-      awaiting_input: ["running", "cancelled"],
-      review: ["done", "running", "failed", "cancelled"],
+      awaiting_input: [
+        "running",
+        "blocked",
+        "failed",
+        "interrupted",
+        "cancelled",
+      ],
+      review: [
+        "done",
+        "running",
+        "blocked",
+        "failed",
+        "interrupted",
+        "cancelled",
+      ],
       done: [],
       blocked: ["ready", "cancelled"],
-      failed: ["planned", "cancelled"],
+      failed: ["ready", "cancelled"],
       cancelled: [],
-      interrupted: ["planned", "cancelled"],
+      interrupted: ["ready", "cancelled"],
     };
   return transitions[state];
 }

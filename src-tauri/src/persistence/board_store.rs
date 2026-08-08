@@ -1,12 +1,14 @@
 use rusqlite::{OptionalExtension, Transaction, params};
 
-use crate::application::BoardSnapshot;
+use crate::application::{BoardSnapshot, board_activity};
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyGraph, DependencyId,
     MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
 };
 
 use super::{BoardStoreError, SqliteEventStore};
+
+const RECENT_ACTIVITY_LIMIT_PER_WORK_ITEM: u32 = 20;
 
 impl SqliteEventStore {
     pub fn create_project(&mut self, project: Project) -> Result<Project, BoardStoreError> {
@@ -135,9 +137,11 @@ impl SqliteEventStore {
     }
 
     pub fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, BoardStoreError> {
+        let work_items = self.work_items_for_board(board_id)?;
         Ok(BoardSnapshot {
             board: self.require_board(board_id)?,
-            work_items: self.work_items_for_board(board_id)?,
+            activity: self.activity_for(&work_items)?,
+            work_items,
             dependencies: self.dependencies_for_board(board_id)?,
         })
     }
@@ -165,6 +169,25 @@ impl SqliteEventStore {
             .into_iter()
             .filter(|materialized_work_item| materialized_work_item.work_item.board_id == *board_id)
             .collect())
+    }
+
+    fn activity_for(
+        &self,
+        work_items: &[MaterializedWorkItem],
+    ) -> Result<Vec<crate::application::BoardActivity>, BoardStoreError> {
+        let mut activity = Vec::new();
+        for materialized_work_item in work_items {
+            activity.extend(
+                self.recent_work_item_events(
+                    &materialized_work_item.work_item.id,
+                    RECENT_ACTIVITY_LIMIT_PER_WORK_ITEM,
+                )?
+                .into_iter()
+                .map(board_activity),
+            );
+        }
+        activity.sort_by_key(|entry| entry.sequence);
+        Ok(activity)
     }
 
     fn dependency(

@@ -8,7 +8,7 @@ scope:
   - src-tauri/src/persistence/sqlite_event_store.rs
   - src-tauri/src/persistence/sqlite_event_store_tests.rs
   - docs/architecture/overview.md
-  - docs/decisions/0007-daemon-enforced-policy-and-audit.md
+  - docs/decisions/0008-daemon-enforced-policy-and-audit.md
   - docs/planning/backlog.yaml
 review:
   skill: clean-code-review
@@ -22,7 +22,7 @@ review:
       - finding: Policy audit and work-item event persistence share the SqliteEventStore boundary.
         resolution: accepted
         rationale: Both are authoritative local daemon records with the same reliability and recovery actor. The pure policy gate owns no SQLite dependency; the store implements its narrow audit port, preserving the dependency direction while avoiding a premature second database abstraction.
-        decision_reference: ADR-0007
+        decision_reference: ADR-0008
   unresolved_actionable_findings: 0
 remediation:
   - finding: A protected Git approval could otherwise be supplied by a request without durable verification.

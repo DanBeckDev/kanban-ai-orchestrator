@@ -1,4 +1,4 @@
-# ADR 0007: Daemon-enforced policy capabilities and durable audit
+# ADR 0008: Daemon-enforced policy capabilities and durable audit
 
 - Status: Accepted
 - Date: 2026-08-08

@@ -25,7 +25,7 @@ scope:
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T15:55:00Z
+  reviewed_at: 2026-08-08T16:02:00Z
   findings:
     must_fix: []
     should_fix: []
@@ -53,6 +53,8 @@ remediation:
     change: Split plan validation, scheduling, shared fixtures, plan tests, and scheduler tests into 14–323-line modules; added a source-structure gate to the local and CI quality workflow.
   - finding: The source-structure gate attempted to read a source file that was deleted in the current working tree during a base-branch comparison.
     change: Made deletion an explicit no-op and added a regression test alongside validation of exception ownership and expiry.
+  - finding: A temporary legacy-file exception could have allowed its file to grow before expiry.
+    change: Added a fixed meaningful-line ceiling to every exception and made the gate reject any growth above that ceiling.
 verification:
   commands:
     - command: cargo test --manifest-path src-tauri/Cargo.toml orchestration

@@ -93,11 +93,13 @@ export function loadExceptions(readFile = readFileSync) {
       (exception) =>
         typeof exception.path !== "string" ||
         typeof exception.work_item !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(exception.expires_on),
+        !/^\d{4}-\d{2}-\d{2}$/.test(exception.expires_on) ||
+        !Number.isInteger(exception.maximum_meaningful_lines) ||
+        exception.maximum_meaningful_lines <= MAX_TEST_SOURCE_LINES,
     )
   ) {
     throw new Error(
-      `${exceptionsPath} must contain exceptions with a path, work item, and YYYY-MM-DD expiry.`,
+      `${exceptionsPath} must contain exceptions with a path, work item, YYYY-MM-DD expiry, and a maximum meaningful-line count over ${MAX_TEST_SOURCE_LINES}.`,
     );
   }
 
@@ -133,12 +135,20 @@ export function validateSourceStructure({
       throw error;
     }
     const lineCount = meaningfulLineCount(source);
-    if (lineCount <= limit || activeException(path, exceptions, currentDate)) {
+    const exception = activeException(path, exceptions, currentDate);
+    if (
+      lineCount <= limit ||
+      (exception && lineCount <= exception.maximum_meaningful_lines)
+    ) {
       return [];
     }
 
+    const ceiling = exception
+      ? `the temporary exception ceiling is ${exception.maximum_meaningful_lines}`
+      : `the limit is ${limit}`;
+
     return [
-      `${path} has ${lineCount} meaningful lines; the limit is ${limit}. Split independent responsibilities into cohesive modules before merging.`,
+      `${path} has ${lineCount} meaningful lines; ${ceiling}. Split independent responsibilities into cohesive modules before merging.`,
     ];
   });
 }

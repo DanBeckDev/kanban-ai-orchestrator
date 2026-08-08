@@ -12,7 +12,7 @@ Clean Code review requires judgment: a line-count limit alone cannot decide whet
 - Enforce a 400-meaningful-line maximum for every changed Rust, TypeScript/TSX, JavaScript/MJS, and quality-script source file under the product source roots. Blank lines and whole-line comments do not count.
 - Keep the check in `quality:changed`, so the local hook and every implementing agent encounter it before commit. CI compares every pull request with its base branch and applies the same rule.
 - Treat the limit as a prompt to split independently understandable responsibilities, not as an instruction to fragment a single cohesive algorithm. The Clean Code skill must explicitly assess a changed file over the limit before calling it cohesive.
-- Use only time-bounded exceptions for pre-existing legacy modules. Each exception has a work-item owner and expiry. New exceptions require product-owner approval and an ADR. `QUAL-004` removes every inherited exception rather than preserving them as normal.
+- Use only time-bounded exceptions for pre-existing legacy modules. Each exception has a work-item owner, expiry, and a fixed maximum meaningful-line count, so legacy code cannot grow under its exception. New exceptions require product-owner approval and an ADR. `QUAL-004` removes every inherited exception rather than preserving them as normal.
 
 ## Consequences
 

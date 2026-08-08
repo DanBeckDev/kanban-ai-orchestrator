@@ -85,7 +85,7 @@ describe("source structure gate", () => {
     ).toEqual([]);
   });
 
-  it("permits a temporary, owned exception only until its expiry", () => {
+  it("permits a temporary, owned exception only until its expiry and ceiling", () => {
     const path = "src-tauri/src/legacy.rs";
     const source = `${"let value = 1;\n".repeat(MAX_PRODUCTION_SOURCE_LINES + 1)}`;
     const exceptions = [
@@ -93,6 +93,7 @@ describe("source structure gate", () => {
         path,
         work_item: "QUAL-004",
         expires_on: "2026-08-22",
+        maximum_meaningful_lines: MAX_PRODUCTION_SOURCE_LINES + 1,
       },
     ];
 
@@ -104,6 +105,17 @@ describe("source structure gate", () => {
         currentDate: "2026-08-08",
       }),
     ).toEqual([]);
+    expect(
+      validateSourceStructure({
+        paths: [path],
+        readFile: () =>
+          `${"let value = 1;\n".repeat(MAX_PRODUCTION_SOURCE_LINES + 2)}`,
+        exceptions,
+        currentDate: "2026-08-08",
+      }),
+    ).toEqual([
+      `${path} has ${MAX_PRODUCTION_SOURCE_LINES + 2} meaningful lines; the temporary exception ceiling is ${MAX_PRODUCTION_SOURCE_LINES + 1}. Split independent responsibilities into cohesive modules before merging.`,
+    ]);
     expect(
       validateSourceStructure({
         paths: [path],
@@ -154,7 +166,7 @@ describe("source structure gate", () => {
     expect(sourcePaths).toEqual(["scripts/check-code-structure.mjs"]);
   });
 
-  it("requires exceptions to have an owner and expiry", () => {
+  it("requires exceptions to have an owner, expiry, and fixed ceiling", () => {
     expect(() => loadExceptions(() => JSON.stringify({}))).toThrow(
       "must contain exceptions",
     );
@@ -165,7 +177,7 @@ describe("source structure gate", () => {
         }),
       ),
     ).toThrow("YYYY-MM-DD expiry");
-    expect(
+    expect(() =>
       loadExceptions(() =>
         JSON.stringify({
           exceptions: [
@@ -177,11 +189,26 @@ describe("source structure gate", () => {
           ],
         }),
       ),
+    ).toThrow("maximum meaningful-line count");
+    expect(
+      loadExceptions(() =>
+        JSON.stringify({
+          exceptions: [
+            {
+              path: "legacy.rs",
+              work_item: "QUAL-004",
+              expires_on: "2026-08-22",
+              maximum_meaningful_lines: 401,
+            },
+          ],
+        }),
+      ),
     ).toEqual([
       {
         path: "legacy.rs",
         work_item: "QUAL-004",
         expires_on: "2026-08-22",
+        maximum_meaningful_lines: 401,
       },
     ]);
   });

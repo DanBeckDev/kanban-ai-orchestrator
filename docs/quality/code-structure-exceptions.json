@@ -1,11 +1,11 @@
 {
   "exceptions": [
-    {"path":"src-tauri/src/agent/mod.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/domain/dependency_graph.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/domain/model.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/persistence/sqlite_event_store.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/persistence/sqlite_event_store_tests.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/workspace/mod.rs","work_item":"QUAL-004","expires_on":"2026-08-22"},
-    {"path":"src-tauri/src/workspace/tests.rs","work_item":"QUAL-004","expires_on":"2026-08-22"}
+    {"path":"src-tauri/src/agent/mod.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":558},
+    {"path":"src-tauri/src/domain/dependency_graph.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":860},
+    {"path":"src-tauri/src/domain/model.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":487},
+    {"path":"src-tauri/src/persistence/sqlite_event_store.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":695},
+    {"path":"src-tauri/src/persistence/sqlite_event_store_tests.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":748},
+    {"path":"src-tauri/src/workspace/mod.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":567},
+    {"path":"src-tauri/src/workspace/tests.rs","work_item":"QUAL-004","expires_on":"2026-08-22","maximum_meaningful_lines":504}
   ]
 }

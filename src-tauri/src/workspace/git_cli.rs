@@ -260,10 +260,14 @@ impl GitCli {
 
 #[cfg(windows)]
 fn git_path_argument(path: &Path) -> Cow<'_, Path> {
-    if let Ok(network_path) = path.strip_prefix(r"\\?\UNC\") {
-        Cow::Owned(Path::new(r"\\").join(network_path))
+    let path_text = path.to_string_lossy();
+
+    if let Some(network_path) = path_text.strip_prefix(r"\\?\UNC\") {
+        Cow::Owned(PathBuf::from(format!(r"\\{network_path}")))
+    } else if let Some(disk_path) = path_text.strip_prefix(r"\\?\") {
+        Cow::Owned(PathBuf::from(disk_path))
     } else {
-        Cow::Borrowed(path.strip_prefix(r"\\?\").unwrap_or(path))
+        Cow::Borrowed(path)
     }
 }
 

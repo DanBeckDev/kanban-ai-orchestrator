@@ -34,7 +34,7 @@ source_structure:
       responsibilities: "Covers quality-receipt validation and command behavior."
       decision: kept cohesive
     - path: src-tauri/src/workspace/git_cli.rs
-      meaningful_lines: 326
+      meaningful_lines: 329
       responsibilities: "Wraps Git CLI operations behind a repository-context-safe process boundary."
       decision: kept cohesive
     - path: src-tauri/src/workspace/git_cli/tests.rs
@@ -44,7 +44,7 @@ source_structure:
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T23:04:19Z
+  reviewed_at: 2026-08-08T23:14:54Z
   findings:
     must_fix: []
     should_fix: []
@@ -58,7 +58,7 @@ remediation:
   - finding: "Windows rejected the POSIX-only file URL used by three script tests."
     change: "Extracted one root-resolution helper and changed each test to construct a platform-native file URL."
   - finding: "Windows Git rejected canonical verbatim paths when creating or attaching a worktree."
-    change: "Translated only Git process arguments from verbatim disk and UNC paths, retained canonical paths for authorization comparisons, and isolated the Git tests from the production adapter."
+    change: "Translated only Git process arguments from verbatim disk and UNC paths, retained canonical paths for authorization comparisons, and isolated the Git tests from the production adapter. The adapter now recognizes the literal Windows verbatim marker before Windows Path parsing can normalize it away."
 verification:
   commands:
     - command: npm run test:platform

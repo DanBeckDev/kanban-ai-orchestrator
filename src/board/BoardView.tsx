@@ -1,6 +1,7 @@
 import { AgentProfileForm } from "./AgentProfileForm";
 import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
+import { LinearImportForm } from "./LinearImportForm";
 import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
@@ -8,6 +9,8 @@ import type {
   AgentProfile,
   BoardSnapshot,
   CreateWorkItemRequest,
+  ImportLinearBlockerRequest,
+  ImportLinearIssueRequest,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -19,6 +22,8 @@ type BoardViewProps = Readonly<{
   snapshot: BoardSnapshot;
   onAddDependency: (request: AddDependencyRequest) => Promise<void>;
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
+  onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
+  onImportLinearIssue: (request: ImportLinearIssueRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
@@ -32,6 +37,8 @@ export function BoardView({
   snapshot,
   onAddDependency,
   onCreateWorkItem,
+  onImportLinearBlocker,
+  onImportLinearIssue,
   onSaveAgentProfile,
   onStartExecution,
   onStopExecution,
@@ -95,6 +102,12 @@ export function BoardView({
             busy={busy}
             profiles={agentProfiles}
             onSave={onSaveAgentProfile}
+          />
+          <LinearImportForm
+            busy={busy}
+            workItems={workItems}
+            onImportBlocker={onImportLinearBlocker}
+            onImportIssue={onImportLinearIssue}
           />
         </aside>
       </div>

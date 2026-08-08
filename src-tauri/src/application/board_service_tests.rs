@@ -9,7 +9,7 @@ use crate::domain::{
 };
 use crate::persistence::{BoardStoreError, EventStoreError, SqliteEventStore};
 
-fn service() -> BoardService<SqliteEventStore> {
+pub(super) fn service() -> BoardService<SqliteEventStore> {
     BoardService::new(SqliteEventStore::in_memory().expect("event store should open"))
 }
 
@@ -31,7 +31,7 @@ fn create_board_request() -> CreateBoardRequest {
     }
 }
 
-fn create_work_item_request(id: &str) -> CreateWorkItemRequest {
+pub(super) fn create_work_item_request(id: &str) -> CreateWorkItemRequest {
     CreateWorkItemRequest {
         event_id: format!("create-{id}"),
         work_item_id: id.to_owned(),
@@ -81,7 +81,7 @@ fn evidence_request(work_item_id: &str) -> RecordEvidenceRequest {
     }
 }
 
-fn create_board(service: &mut BoardService<SqliteEventStore>) {
+pub(super) fn create_board(service: &mut BoardService<SqliteEventStore>) {
     service
         .create_project(create_project_request())
         .expect("project should be created");

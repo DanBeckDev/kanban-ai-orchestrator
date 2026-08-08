@@ -22,6 +22,7 @@ export function snapshot(
     activity,
     executions,
     evidence,
+    externalLinks: [],
   };
 }
 
@@ -148,6 +149,50 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
             result: request.passed ? "passed" : "failed",
             summary: request.summary,
             recordedAt: request.recordedAt,
+          },
+        ],
+      };
+      return current;
+    }),
+    importLinearIssue: vi.fn().mockImplementation(async (request) => {
+      current = {
+        ...current,
+        externalLinks: [
+          ...current.externalLinks,
+          {
+            id: request.externalLinkId,
+            workItemId: request.workItemId,
+            connectorId: "linear",
+            provenance: "imported",
+            externalId: request.issueId,
+            displayIdentifier: request.displayIdentifier,
+            url: request.url,
+            connectionMode: request.connectionMode,
+          },
+        ],
+      };
+      return current;
+    }),
+    importLinearBlocker: vi.fn().mockImplementation(async (request) => {
+      const upstream = current.externalLinks.find(
+        (link) => link.externalId === request.upstreamIssueId,
+      );
+      const downstream = current.externalLinks.find(
+        (link) => link.externalId === request.downstreamIssueId,
+      );
+      current = {
+        ...current,
+        dependencies: [
+          ...current.dependencies,
+          {
+            id: request.dependencyId,
+            upstreamWorkItemId: upstream?.workItemId ?? request.upstreamIssueId,
+            downstreamWorkItemId:
+              downstream?.workItemId ?? request.downstreamIssueId,
+            kind: "blocks",
+            reason: request.reason,
+            owner: request.owner,
+            nextAction: request.nextAction,
           },
         ],
       };

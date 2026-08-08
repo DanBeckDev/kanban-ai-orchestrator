@@ -1632,6 +1632,8 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tempfile",
+ "url",
+ "uuid",
 ]
 
 [[package]]

@@ -61,3 +61,20 @@ pub(super) fn create_agent_profile_schema(
         );",
     )
 }
+
+pub(super) fn create_external_link_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS external_links (
+            external_link_id TEXT PRIMARY KEY,
+            work_item_id TEXT NOT NULL,
+            connector_id TEXT NOT NULL,
+            external_id TEXT NOT NULL,
+            link_json TEXT NOT NULL,
+            UNIQUE(connector_id, external_id)
+        );
+        CREATE INDEX IF NOT EXISTS external_links_by_work_item
+            ON external_links (work_item_id, external_link_id);",
+    )
+}

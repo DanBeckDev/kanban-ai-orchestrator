@@ -198,13 +198,14 @@ tasks:
   - id: LIN-002
     epic: LIN
     title: Implement Linear issue/project links and provenance-aware import
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [CORE-001, CORE-002, LIN-001]
     acceptance_criteria:
       - Links use immutable Linear IDs and retain source/provenance.
       - Linear blockers import into the typed dependency graph without bypassing cycle validation.
       - Read-only and linked-execution connection modes work independently.
+    notes: An offline, locally durable import foundation was implemented on 2026-08-08 under the MVP direction before LIN-001 is complete: immutable Linear UUID links, explicit provenance and connection mode, safe HTTPS Linear URLs, and imported blocks all pass through the existing typed-cycle validation. This is an accepted sequencing exception because it makes no remote API call and stores no credentials. OAuth/PKCE, keychain token storage, refresh, live project selection, and any remote write/sync behavior remain incomplete in LIN-001 and LIN-003; the board must not represent this manual import as a connected Linear account.
 
   - id: LIN-003
     epic: LIN

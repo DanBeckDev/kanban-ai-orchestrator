@@ -10,6 +10,14 @@ pub enum ExternalLinkProvenance {
     Synchronized,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExternalConnectionMode {
+    #[default]
+    ReadOnly,
+    LinkedExecution,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExternalLink {
@@ -19,7 +27,11 @@ pub struct ExternalLink {
     pub connector_id: String,
     pub provenance: ExternalLinkProvenance,
     pub external_id: String,
+    #[serde(default)]
+    pub display_identifier: String,
     pub url: String,
+    #[serde(default)]
+    pub connection_mode: ExternalConnectionMode,
 }
 
 impl VersionedSchema for ExternalLink {

@@ -8,6 +8,8 @@ mod execution_launch;
 mod execution_policy_service;
 mod execution_service;
 mod execution_start_request;
+mod linear_import_request;
+mod linear_import_service;
 mod review_check_request;
 mod review_service;
 
@@ -24,10 +26,14 @@ pub use execution_launch::{
     ExecutionLaunchError, ExecutionLaunchPreparation, prepare_execution_launch,
 };
 pub use execution_start_request::StartExecutionRequest;
+pub use linear_import_request::{ImportLinearBlockerRequest, ImportLinearIssueRequest};
 pub use review_check_request::RecordReviewCheckRequest;
 
 #[cfg(test)]
 mod board_service_tests;
+
+#[cfg(test)]
+mod linear_import_service_tests;
 
 #[cfg(test)]
 mod execution_event_controller_tests;

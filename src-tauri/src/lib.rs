@@ -46,6 +46,8 @@ pub fn run() {
             desktop::start_execution,
             desktop::stop_execution,
             desktop::record_review_check,
+            desktop::import_linear_issue,
+            desktop::import_linear_blocker,
             desktop::board_snapshot,
         ])
         .run(tauri::generate_context!())

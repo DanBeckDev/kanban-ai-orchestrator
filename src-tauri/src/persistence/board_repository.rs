@@ -1,6 +1,6 @@
 use crate::domain::{
-    Board, BoardId, CreateWorkItemCommand, Dependency, Evidence, Execution, MaterializedWorkItem,
-    Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
+    Board, BoardId, CreateWorkItemCommand, Dependency, Evidence, Execution, ExternalLink,
+    MaterializedWorkItem, Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
 };
 use crate::{
     agent::AgentProfile,
@@ -89,6 +89,27 @@ impl BoardRepository for SqliteEventStore {
 
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error> {
         SqliteEventStore::record_evidence(self, evidence).map_err(BoardStoreError::from)
+    }
+
+    fn record_external_link(&mut self, link: ExternalLink) -> Result<ExternalLink, Self::Error> {
+        SqliteEventStore::record_external_link(self, link).map_err(BoardStoreError::from)
+    }
+
+    fn external_link_for_connector_resource(
+        &self,
+        connector_id: &str,
+        external_id: &str,
+    ) -> Result<Option<ExternalLink>, Self::Error> {
+        SqliteEventStore::external_link_for_connector_resource(self, connector_id, external_id)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn external_links_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ExternalLink>, Self::Error> {
+        SqliteEventStore::external_links_for_work_items(self, work_item_ids)
+            .map_err(BoardStoreError::from)
     }
 
     fn evidence_for_work_item(

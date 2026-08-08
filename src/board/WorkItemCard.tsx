@@ -5,6 +5,7 @@ import {
   blockersFor,
   budgetSummary,
   evidenceFor,
+  externalLinksFor,
   executionsFor,
   manualTransitionStates,
   stateLabel,
@@ -12,6 +13,7 @@ import {
 } from "./presentation";
 import { ReviewCheckForm } from "./ReviewCheckForm";
 import { ExecutionControl } from "./ExecutionControl";
+import { ExternalLinks } from "./ExternalLinks";
 import { RecoveryActions } from "./RecoveryActions";
 import type {
   BoardSnapshot,
@@ -58,6 +60,7 @@ export function WorkItemCard({
   const activity = activityFor(snapshot, workItem.id);
   const executions = executionsFor(snapshot, workItem.id);
   const evidenceRecords = evidenceFor(snapshot, workItem.id);
+  const externalLinks = externalLinksFor(snapshot, workItem.id);
   const options = manualTransitionStates(workItem.state);
 
   async function submitTransition(event: FormEvent<HTMLFormElement>) {
@@ -90,6 +93,7 @@ export function WorkItemCard({
           <li key={criterion}>{criterion}</li>
         ))}
       </ul>
+      <ExternalLinks links={externalLinks} />
       {executions.length > 0 && <ExecutionHistory executions={executions} />}
       {evidenceRecords.length > 0 && (
         <EvidenceHistory evidence={evidenceRecords} />

@@ -160,7 +160,7 @@ impl SqliteEventStore {
     }
 }
 
-fn query_records_for_work_items<Record>(
+pub(super) fn query_records_for_work_items<Record>(
     connection: &rusqlite::Connection,
     table: &str,
     json_column: &str,

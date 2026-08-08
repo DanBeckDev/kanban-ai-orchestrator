@@ -101,6 +101,19 @@ export type EvidenceKind =
 
 export type EvidenceResult = "recorded" | "passed" | "failed";
 
+export type ExternalConnectionMode = "read_only" | "linked_execution";
+
+export type ExternalLink = Readonly<{
+  id: string;
+  workItemId: string;
+  connectorId: string;
+  provenance: "imported" | "user_linked" | "synchronized";
+  externalId: string;
+  displayIdentifier: string;
+  url: string;
+  connectionMode: ExternalConnectionMode;
+}>;
+
 export type Evidence = Readonly<{
   id: string;
   workItemId: string;
@@ -117,6 +130,7 @@ export type BoardSnapshot = Readonly<{
   activity: readonly BoardActivity[];
   executions: readonly Execution[];
   evidence: readonly Evidence[];
+  externalLinks: readonly ExternalLink[];
 }>;
 
 export type CreateProjectRequest = Readonly<{
@@ -187,6 +201,25 @@ export type RecordReviewCheckRequest = Readonly<{
   recordedAt: string;
 }>;
 
+export type ImportLinearIssueRequest = Readonly<{
+  externalLinkId: string;
+  workItemId: string;
+  issueId: string;
+  displayIdentifier: string;
+  url: string;
+  connectionMode: ExternalConnectionMode;
+}>;
+
+export type ImportLinearBlockerRequest = Readonly<{
+  dependencyId: string;
+  upstreamIssueId: string;
+  downstreamIssueId: string;
+  reason: string;
+  owner: string;
+  nextAction: string;
+  createdAt: string;
+}>;
+
 export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
@@ -200,5 +233,9 @@ export interface BoardGateway {
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
+  importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot>;
+  importLinearBlocker(
+    request: ImportLinearBlockerRequest,
+  ): Promise<BoardSnapshot>;
   boardSnapshot(boardId: string): Promise<BoardSnapshot>;
 }

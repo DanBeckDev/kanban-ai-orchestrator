@@ -1,0 +1,71 @@
+work_item: LIN-002
+scope:
+  - src-tauri/Cargo.toml
+  - src-tauri/Cargo.lock
+  - src-tauri/src/application/board_service.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/board_snapshot.rs
+  - src-tauri/src/application/linear_import_request.rs
+  - src-tauri/src/application/linear_import_service.rs
+  - src-tauri/src/application/linear_import_service_tests.rs
+  - src-tauri/src/application/mod.rs
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/domain/mod.rs
+  - src-tauri/src/domain/model/external_link.rs
+  - src-tauri/src/domain/model/mod.rs
+  - src-tauri/src/domain/model/tests.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/persistence/board_repository.rs
+  - src-tauri/src/persistence/board_store.rs
+  - src-tauri/src/persistence/event_store_error.rs
+  - src-tauri/src/persistence/event_store_schema.rs
+  - src-tauri/src/persistence/execution_store.rs
+  - src-tauri/src/persistence/external_link_store.rs
+  - src-tauri/src/persistence/mod.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.test.tsx
+  - src/board/BoardWorkspace.tsx
+  - src/board/ExternalLinks.test.tsx
+  - src/board/ExternalLinks.tsx
+  - src/board/LinearImportForm.test.tsx
+  - src/board/LinearImportForm.tsx
+  - src/board/WorkItemCard.tsx
+  - src/board/gateway.ts
+  - src/board/presentation.ts
+  - src/board/types.ts
+  - src/styles.css
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T18:55:34Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The import use case described an immutable Linear UUID but only accepted any nonblank string.
+    change: Added UUID parsing at the Rust application boundary, including a rejection test that verifies no invalid link is written.
+  - finding: An arbitrary URL could be durably stored and later opened by the board UI.
+    change: Accepted only HTTPS linear.app URLs at the authoritative boundary; the form now also gives the browser URL semantics.
+  - finding: A newly rendered task-select option made an existing text-only UI assertion ambiguous.
+    change: Scoped the assertion to the task heading so it verifies the intended card rather than incidental text anywhere on the page.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: cargo test --manifest-path src-tauri/Cargo.toml application::linear_import_service_tests --lib
+      result: passed (3 tests)
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 86.32
+    statements: 81.92
+    functions: 85.92
+    branches: 81.43
+    threshold_met: true
+exceptions: []

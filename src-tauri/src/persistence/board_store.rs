@@ -176,6 +176,7 @@ impl SqliteEventStore {
                 &work_item_ids,
                 RECENT_EVIDENCE_LIMIT_PER_WORK_ITEM,
             )?,
+            external_links: self.external_links_for_work_items(&work_item_ids)?,
         })
     }
 

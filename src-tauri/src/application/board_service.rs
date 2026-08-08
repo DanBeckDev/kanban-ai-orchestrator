@@ -3,9 +3,9 @@ use std::{error::Error, fmt};
 use crate::agent::AgentProfile;
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
-    EvidenceKind, EvidenceResult, Execution, ExecutionId, MaterializedWorkItem, Project, ProjectId,
-    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
-    WorkItemEventId, WorkItemId, WorkItemState,
+    EvidenceKind, EvidenceResult, Execution, ExecutionId, ExternalLink, MaterializedWorkItem,
+    Project, ProjectId, RecordedWorkItemEvent, SchemaMetadata, TransitionConfig,
+    TransitionWorkItemCommand, WorkItem, WorkItemEventId, WorkItemId, WorkItemState,
 };
 
 use super::{
@@ -46,6 +46,16 @@ pub trait BoardRepository {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error>;
+    fn record_external_link(&mut self, link: ExternalLink) -> Result<ExternalLink, Self::Error>;
+    fn external_link_for_connector_resource(
+        &self,
+        connector_id: &str,
+        external_id: &str,
+    ) -> Result<Option<ExternalLink>, Self::Error>;
+    fn external_links_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ExternalLink>, Self::Error>;
     fn evidence_for_work_item(
         &self,
         work_item_id: &WorkItemId,
@@ -266,6 +276,10 @@ pub enum BoardServiceError<RepositoryError> {
         field: &'static str,
     },
     InvalidAcceptanceCriteria,
+    InvalidExternalIdentifier {
+        field: &'static str,
+    },
+    InvalidExternalUrl,
     ProjectNotFound {
         project_id: ProjectId,
     },
@@ -290,6 +304,10 @@ pub enum BoardServiceError<RepositoryError> {
         work_item_id: WorkItemId,
         state: WorkItemState,
     },
+    ExternalResourceNotLinked {
+        connector_id: &'static str,
+        external_id: String,
+    },
     MissingRecordedEvidence {
         work_item_id: WorkItemId,
         kind: EvidenceKind,
@@ -307,6 +325,12 @@ where
             Self::MissingRequiredField { field } => write!(formatter, "{field} is required"),
             Self::InvalidAcceptanceCriteria => {
                 formatter.write_str("at least one non-empty acceptance criterion is required")
+            }
+            Self::InvalidExternalIdentifier { field } => {
+                write!(formatter, "{field} must be a valid UUID")
+            }
+            Self::InvalidExternalUrl => {
+                formatter.write_str("Linear issue URL must be an HTTPS linear.app URL")
             }
             Self::ProjectNotFound { project_id } => {
                 write!(formatter, "project {} was not found", project_id.0)
@@ -344,6 +368,13 @@ where
                 "work item {} cannot record review evidence because it is {state:?}",
                 work_item_id.0
             ),
+            Self::ExternalResourceNotLinked {
+                connector_id,
+                external_id,
+            } => write!(
+                formatter,
+                "external resource {connector_id}:{external_id} is not linked to a local task"
+            ),
             Self::MissingRecordedEvidence {
                 work_item_id,
                 kind,
@@ -366,6 +397,8 @@ where
             Self::Repository(error) => Some(error),
             Self::MissingRequiredField { .. }
             | Self::InvalidAcceptanceCriteria
+            | Self::InvalidExternalIdentifier { .. }
+            | Self::InvalidExternalUrl
             | Self::ProjectNotFound { .. }
             | Self::BoardNotFound { .. }
             | Self::WorkItemNotFound { .. }
@@ -373,6 +406,7 @@ where
             | Self::ExecutionNotPending { .. }
             | Self::WorkItemNotReady { .. }
             | Self::WorkItemNotInReview { .. }
+            | Self::ExternalResourceNotLinked { .. }
             | Self::MissingRecordedEvidence { .. } => None,
         }
     }

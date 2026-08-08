@@ -3,6 +3,7 @@ import type {
   BoardSnapshot,
   Dependency,
   Evidence,
+  ExternalLink,
   Execution,
   WorkItem,
   WorkItemState,
@@ -75,6 +76,15 @@ export function evidenceFor(
 ): readonly Evidence[] {
   return snapshot.evidence.filter(
     (evidence) => evidence.workItemId === workItemId,
+  );
+}
+
+export function externalLinksFor(
+  snapshot: BoardSnapshot,
+  workItemId: string,
+): readonly ExternalLink[] {
+  return snapshot.externalLinks.filter(
+    (link) => link.workItemId === workItemId,
   );
 }
 

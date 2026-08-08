@@ -84,7 +84,7 @@ describe("board workspace", () => {
       target: { value: "24" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
-    await screen.findByText("UI");
+    await screen.findByRole("heading", { name: "UI" });
     expect(screen.getByText("Max turns: 24")).toBeVisible();
     fireEvent.change(screen.getByLabelText("Upstream task"), {
       target: { value: "api" },

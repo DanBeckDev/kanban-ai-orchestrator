@@ -1,10 +1,10 @@
 use super::{
     Board, BoardId, Dependency, DependencyId, DependencyKind, DependencySource, Evidence,
     EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus,
-    ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PolicyAction,
-    PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId, ProtectedGitAction,
-    SchemaMetadata, ToolScope, VersionedSchema, WorkItem, WorkItemBudget, WorkItemId,
-    WorkItemState,
+    ExecutionUsage, ExternalConnectionMode, ExternalLink, ExternalLinkId, ExternalLinkProvenance,
+    PolicyAction, PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId,
+    ProtectedGitAction, SchemaMetadata, ToolScope, VersionedSchema, WorkItem, WorkItemBudget,
+    WorkItemId, WorkItemState,
 };
 
 #[test]
@@ -101,7 +101,9 @@ fn versioned_domain_records_start_at_the_current_schema() {
         connector_id: "linear".to_owned(),
         provenance: ExternalLinkProvenance::Imported,
         external_id: "LIN-1".to_owned(),
+        display_identifier: "LIN-1".to_owned(),
         url: "https://linear.app/example/issue/LIN-1".to_owned(),
+        connection_mode: ExternalConnectionMode::ReadOnly,
     };
 
     assert!(project.uses_current_schema());

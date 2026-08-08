@@ -271,7 +271,9 @@ legend,
 .profile-list,
 .review-check-form,
 .recovery-actions,
-.execution-control {
+.execution-control,
+.linear-import-panel,
+.linear-import-panel form {
   display: grid;
   gap: 0.65rem;
   margin: 0.8rem 0;
@@ -402,7 +404,23 @@ legend,
 }
 
 .execution-control p,
-.recovery-actions p {
+.recovery-actions p,
+.linear-import-panel > p {
+  color: #aebbd0;
+  font-size: 0.78rem;
+}
+
+.external-links ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 0 0.75rem;
+  padding-left: 1.15rem;
+}
+
+.external-links li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
   color: #aebbd0;
   font-size: 0.78rem;
 }

@@ -7,6 +7,8 @@ import type {
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
+  ImportLinearBlockerRequest,
+  ImportLinearIssueRequest,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -44,6 +46,14 @@ export const tauriBoardGateway: BoardGateway = {
   },
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot> {
     return invoke("record_review_check", { request });
+  },
+  importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot> {
+    return invoke("import_linear_issue", { request });
+  },
+  importLinearBlocker(
+    request: ImportLinearBlockerRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("import_linear_blocker", { request });
   },
   boardSnapshot(boardId: string): Promise<BoardSnapshot> {
     return invoke("board_snapshot", { boardId });

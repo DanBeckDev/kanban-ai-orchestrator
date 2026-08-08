@@ -2,7 +2,9 @@ use std::{error::Error, fmt};
 
 use crate::{
     agent::AgentProfileError,
-    domain::{EvidenceId, ExecutionId, PolicyDecisionId, WorkItemEventId, WorkItemId},
+    domain::{
+        EvidenceId, ExecutionId, ExternalLinkId, PolicyDecisionId, WorkItemEventId, WorkItemId,
+    },
 };
 
 #[derive(Debug)]
@@ -29,6 +31,13 @@ pub enum EventStoreError {
     InvalidAgentProfile(AgentProfileError),
     EvidenceAlreadyExists {
         evidence_id: EvidenceId,
+    },
+    ExternalLinkIdConflict {
+        link_id: ExternalLinkId,
+    },
+    ExternalResourceAlreadyLinked {
+        connector_id: String,
+        external_id: String,
     },
     EventIdConflict {
         event_id: WorkItemEventId,
@@ -92,6 +101,20 @@ impl fmt::Display for EventStoreError {
             Self::EvidenceAlreadyExists { evidence_id } => {
                 write!(formatter, "evidence {} already exists", evidence_id.0)
             }
+            Self::ExternalLinkIdConflict { link_id } => {
+                write!(
+                    formatter,
+                    "external link {} conflicts with an existing link",
+                    link_id.0
+                )
+            }
+            Self::ExternalResourceAlreadyLinked {
+                connector_id,
+                external_id,
+            } => write!(
+                formatter,
+                "external resource {connector_id}:{external_id} is already linked"
+            ),
             Self::EventIdConflict { event_id } => write!(
                 formatter,
                 "event id {} conflicts with a recorded event",

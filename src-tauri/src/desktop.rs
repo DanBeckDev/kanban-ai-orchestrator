@@ -11,8 +11,9 @@ use crate::{
     agent::AgentProfile,
     application::{
         AddDependencyRequest, BoardService, BoardSnapshot, CreateBoardRequest,
-        CreateProjectRequest, CreateWorkItemRequest, RecordReviewCheckRequest,
-        StartExecutionRequest, TransitionWorkItemRequest,
+        CreateProjectRequest, CreateWorkItemRequest, ImportLinearBlockerRequest,
+        ImportLinearIssueRequest, RecordReviewCheckRequest, StartExecutionRequest,
+        TransitionWorkItemRequest,
     },
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
@@ -146,6 +147,26 @@ pub(crate) fn record_review_check(
 ) -> Result<BoardSnapshot, String> {
     lock_service(&state)?
         .record_review_check(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn import_linear_issue(
+    state: State<'_, BoardDaemonState>,
+    request: ImportLinearIssueRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .import_linear_issue(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn import_linear_blocker(
+    state: State<'_, BoardDaemonState>,
+    request: ImportLinearBlockerRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .import_linear_blocker(request)
         .map_err(error_message)
 }
 

@@ -8,7 +8,7 @@ mod work_item;
 pub use execution::{
     Evidence, EvidenceKind, EvidenceResult, Execution, ExecutionStatus, ExecutionUsage,
 };
-pub use external_link::{ExternalLink, ExternalLinkProvenance};
+pub use external_link::{ExternalConnectionMode, ExternalLink, ExternalLinkProvenance};
 pub use policy::{PolicyAction, PolicyDecision, PolicyDecisionKind, ProtectedGitAction, ToolScope};
 pub use project::{Board, Project};
 pub use schema::{

@@ -120,7 +120,7 @@ fn persists_an_append_only_event_history_and_materialized_snapshot_across_reopen
         store
             .database_schema_version()
             .expect("database schema version should load"),
-        6
+        7
     );
     assert_eq!(created.sequence, 1);
     assert_eq!(planned.sequence, 2);

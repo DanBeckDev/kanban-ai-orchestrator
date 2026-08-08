@@ -8,6 +8,8 @@ import type {
   BoardGateway,
   BoardSnapshot,
   CreateWorkItemRequest,
+  ImportLinearBlockerRequest,
+  ImportLinearIssueRequest,
   RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -106,6 +108,14 @@ export function BoardWorkspace({
     await run(() => gateway.recordReviewCheck(request));
   }
 
+  async function importLinearIssue(request: ImportLinearIssueRequest) {
+    await run(() => gateway.importLinearIssue(request));
+  }
+
+  async function importLinearBlocker(request: ImportLinearBlockerRequest) {
+    await run(() => gateway.importLinearBlocker(request));
+  }
+
   const boardId = snapshot?.board.id;
   useEffect(() => {
     if (boardId === undefined) return undefined;
@@ -134,6 +144,8 @@ export function BoardWorkspace({
           agentProfiles={agentProfiles}
           onAddDependency={addDependency}
           onCreateWorkItem={createWorkItem}
+          onImportLinearBlocker={importLinearBlocker}
+          onImportLinearIssue={importLinearIssue}
           onSaveAgentProfile={saveAgentProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}

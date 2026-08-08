@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     path::PathBuf,
     sync::{Arc, Mutex},
     thread,
@@ -30,10 +30,11 @@ use crate::desktop_execution_runtime_support::{
 
 #[derive(Clone)]
 pub(crate) struct ExecutionRuntime {
-    service: Arc<Mutex<LocalBoardService>>,
-    workspace_root: PathBuf,
+    pub(crate) service: Arc<Mutex<LocalBoardService>>,
+    pub(crate) workspace_root: PathBuf,
     launch_gate: Arc<Mutex<()>>,
-    agents: Arc<Mutex<BTreeMap<String, ProcessAgentAdapter>>>,
+    pub(crate) agents: Arc<Mutex<BTreeMap<String, ProcessAgentAdapter>>>,
+    pub(crate) stop_requests: Arc<Mutex<BTreeSet<String>>>,
 }
 
 impl ExecutionRuntime {
@@ -43,6 +44,7 @@ impl ExecutionRuntime {
             workspace_root,
             launch_gate: Arc::new(Mutex::new(())),
             agents: Arc::new(Mutex::new(BTreeMap::new())),
+            stop_requests: Arc::new(Mutex::new(BTreeSet::new())),
         }
     }
 
@@ -227,6 +229,10 @@ impl ExecutionRuntime {
                 Ok(execution) => execution,
                 Err(_) => return self.stop_agent(&execution_id, &session_id),
             };
+            if self.take_stop_request(&execution_id) {
+                self.interrupt_execution(&execution, &session_id);
+                return;
+            }
             if execution.status == ExecutionStatus::AwaitingInput {
                 self.record_monitor_failure(
                     &execution_id,
@@ -258,6 +264,7 @@ impl ExecutionRuntime {
                     return self.stop_agent(&execution_id, &session_id);
                 }
                 if is_terminal {
+                    self.record_review_artifacts(&execution);
                     return self.stop_agent(&execution_id, &session_id);
                 }
             }
@@ -272,7 +279,7 @@ impl ExecutionRuntime {
         }
     }
 
-    fn execution(&self, execution_id: &str) -> Result<Execution, ExecutionRuntimeError> {
+    pub(crate) fn execution(&self, execution_id: &str) -> Result<Execution, ExecutionRuntimeError> {
         lock(&self.service, "board service")?
             .execution(&ExecutionId::from(execution_id))
             .map_err(ExecutionRuntimeError::Board)
@@ -307,7 +314,7 @@ impl ExecutionRuntime {
             .map_err(ExecutionRuntimeError::Agent)
     }
 
-    fn record_event(
+    pub(crate) fn record_event(
         &self,
         execution_id: &str,
         event: NormalizedAgentEvent,
@@ -322,7 +329,7 @@ impl ExecutionRuntime {
         .map_err(ExecutionRuntimeError::Activation)
     }
 
-    fn record_monitor_failure(&self, execution_id: &str, reason: &str) {
+    pub(crate) fn record_monitor_failure(&self, execution_id: &str, reason: &str) {
         let Ok(execution) = self.execution(execution_id) else {
             return;
         };
@@ -368,13 +375,14 @@ impl ExecutionRuntime {
         });
     }
 
-    fn stop_agent(&self, execution_id: &str, session_id: &str) {
+    pub(crate) fn stop_agent(&self, execution_id: &str, session_id: &str) {
         let adapter = lock(&self.agents, "agent runtime")
             .ok()
             .and_then(|mut agents| agents.remove(execution_id));
         if let Some(mut adapter) = adapter {
             let _ = adapter.terminate(session_id);
         }
+        self.clear_stop_request(execution_id);
     }
 }
 

@@ -93,6 +93,7 @@ export type Execution = Readonly<{
 export type EvidenceKind =
   | "agent_report"
   | "check"
+  | "diff"
   | "commit"
   | "pull_request"
   | "completion_report"
@@ -178,6 +179,14 @@ export type StartExecutionRequest = Readonly<{
   taskBrief: string;
 }>;
 
+export type RecordReviewCheckRequest = Readonly<{
+  evidenceId: string;
+  workItemId: string;
+  summary: string;
+  passed: boolean;
+  recordedAt: string;
+}>;
+
 export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
@@ -189,5 +198,7 @@ export interface BoardGateway {
   saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
   agentProfiles(): Promise<readonly AgentProfile[]>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
+  stopExecution(executionId: string): Promise<BoardSnapshot>;
+  recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
   boardSnapshot(boardId: string): Promise<BoardSnapshot>;
 }

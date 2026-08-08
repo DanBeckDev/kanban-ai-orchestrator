@@ -8,143 +8,8 @@ import {
 import { describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
-import type {
-  BoardGateway,
-  BoardSnapshot,
-  CreateWorkItemRequest,
-  AgentProfile,
-  TransitionWorkItemRequest,
-} from "./types";
-
-function snapshot(
-  workItems: BoardSnapshot["workItems"] = [],
-  activity: BoardSnapshot["activity"] = [],
-  executions: BoardSnapshot["executions"] = [],
-  evidence: BoardSnapshot["evidence"] = [],
-): BoardSnapshot {
-  return {
-    board: { id: "board-1", projectId: "project-1", name: "MVP" },
-    workItems,
-    dependencies: [],
-    activity,
-    executions,
-    evidence,
-  };
-}
-
-function workItem(
-  id: string,
-  state: "inbox" | "ready" | "review" = "inbox",
-): BoardSnapshot["workItems"][number] {
-  return {
-    lastEventSequence: 1,
-    workItem: {
-      id,
-      boardId: "board-1",
-      title: `Task ${id}`,
-      description: "A bounded task.",
-      acceptanceCriteria: ["Tests pass."],
-      budget: {},
-      state,
-      requiresHumanReview: state === "review",
-    },
-  };
-}
-
-function gateway(initialSnapshot = snapshot()): BoardGateway {
-  let current = initialSnapshot;
-  let profiles: readonly AgentProfile[] = [];
-  return {
-    createProject: vi.fn().mockResolvedValue(undefined),
-    createBoard: vi.fn().mockImplementation(async () => current),
-    createWorkItem: vi
-      .fn()
-      .mockImplementation(async (request: CreateWorkItemRequest) => {
-        current = snapshot([
-          ...current.workItems,
-          {
-            lastEventSequence: current.workItems.length + 1,
-            workItem: {
-              id: request.workItemId,
-              boardId: request.boardId,
-              title: request.title,
-              description: request.description,
-              acceptanceCriteria: request.acceptanceCriteria,
-              budget: request.budget,
-              state: "inbox",
-              requiresHumanReview: request.requiresHumanReview,
-            },
-          },
-        ]);
-        return current;
-      }),
-    addDependency: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        dependencies: [
-          ...current.dependencies,
-          {
-            id: request.dependencyId,
-            upstreamWorkItemId: request.upstreamWorkItemId,
-            downstreamWorkItemId: request.downstreamWorkItemId,
-            kind: request.kind,
-            reason: request.reason,
-            owner: request.owner,
-            nextAction: request.nextAction,
-          },
-        ],
-      };
-      return current;
-    }),
-    transitionWorkItem: vi
-      .fn()
-      .mockImplementation(async (request: TransitionWorkItemRequest) => {
-        current = {
-          ...current,
-          workItems: current.workItems.map((materializedWorkItem) =>
-            materializedWorkItem.workItem.id === request.workItemId
-              ? {
-                  ...materializedWorkItem,
-                  workItem: {
-                    ...materializedWorkItem.workItem,
-                    state: request.nextState,
-                  },
-                }
-              : materializedWorkItem,
-          ),
-        };
-        return current;
-      }),
-    saveAgentProfile: vi
-      .fn()
-      .mockImplementation(async (profile: AgentProfile) => {
-        profiles = [
-          ...profiles.filter(({ name }) => name !== profile.name),
-          profile,
-        ];
-        return profile;
-      }),
-    agentProfiles: vi.fn().mockImplementation(async () => profiles),
-    startExecution: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        workItems: current.workItems.map((materializedWorkItem) =>
-          materializedWorkItem.workItem.id === request.workItemId
-            ? {
-                ...materializedWorkItem,
-                workItem: {
-                  ...materializedWorkItem.workItem,
-                  state: "running",
-                },
-              }
-            : materializedWorkItem,
-        ),
-      };
-      return current;
-    }),
-    boardSnapshot: vi.fn().mockImplementation(async () => current),
-  };
-}
+import { gateway, snapshot, workItem } from "./BoardWorkspace.test.fixtures";
+import type { BoardGateway } from "./types";
 
 async function createBoard(boardGateway: BoardGateway) {
   render(<App gateway={boardGateway} />);
@@ -314,6 +179,106 @@ describe("board workspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Open board" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("not found");
+  });
+
+  it("records a durable check while a task is awaiting review", async () => {
+    const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
+
+    await createBoard(boardGateway);
+    const form = screen.getByRole("form", {
+      name: "Record review check for Task review-task",
+    });
+    fireEvent.change(within(form).getByLabelText("Result summary"), {
+      target: { value: "Unit tests passed." },
+    });
+    fireEvent.click(within(form).getByRole("button", { name: "Record check" }));
+
+    await waitFor(() =>
+      expect(boardGateway.recordReviewCheck).toHaveBeenCalledOnce(),
+    );
+    expect(boardGateway.recordReviewCheck).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workItemId: "review-task",
+        passed: true,
+        summary: "Unit tests passed.",
+      }),
+    );
+  });
+
+  it("offers inspect, recovery, and cancellation actions after an interrupted attempt", async () => {
+    const boardGateway = gateway(
+      snapshot(
+        [workItem("interrupted-task", "interrupted")],
+        [],
+        [
+          {
+            id: "execution-1",
+            workItemId: "interrupted-task",
+            adapterName: "codex-cli",
+            status: "interrupted",
+            workspacePath: "/workspaces/interrupted-task",
+            usage: { inputTokens: 42, outputTokens: 24 },
+            lastEventSequence: 3,
+          },
+        ],
+      ),
+    );
+
+    await createBoard(boardGateway);
+    const actions = screen.getByRole("region", {
+      name: "Recovery actions for Task interrupted-task",
+    });
+    fireEvent.click(
+      within(actions).getByRole("button", { name: "Inspect last attempt" }),
+    );
+    expect(
+      within(actions).getByText("/workspaces/interrupted-task"),
+    ).toBeVisible();
+    fireEvent.click(
+      within(actions).getByRole("button", { name: "Recover to Ready" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.transitionWorkItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workItemId: "interrupted-task",
+          nextState: "ready",
+        }),
+      ),
+    );
+  });
+
+  it("uses direct process control instead of a lifecycle cancellation for active work", async () => {
+    const boardGateway = gateway(
+      snapshot(
+        [workItem("active-task", "running")],
+        [],
+        [
+          {
+            id: "execution-1",
+            workItemId: "active-task",
+            adapterName: "codex-cli",
+            status: "running",
+            workspacePath: "/workspaces/active-task",
+            usage: { inputTokens: 42, outputTokens: 24 },
+            lastEventSequence: 3,
+          },
+        ],
+      ),
+    );
+
+    await createBoard(boardGateway);
+    const transition = screen.getByRole("form", {
+      name: "Transition Task active-task",
+    });
+    expect(
+      within(transition).queryByRole("option", { name: "cancelled" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Stop agent" }));
+
+    await waitFor(() =>
+      expect(boardGateway.stopExecution).toHaveBeenCalledWith("execution-1"),
+    );
   });
 
   it("shows durable agent attempts and review evidence for the selected task", async () => {

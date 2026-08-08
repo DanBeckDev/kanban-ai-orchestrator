@@ -147,8 +147,15 @@ export function manualTransitionStates(
   state: WorkItemState,
 ): readonly WorkItemState[] {
   return nextTransitionStates(state).filter(
-    (nextState) => nextState !== "running" && nextState !== "awaiting_input",
+    (nextState) =>
+      nextState !== "running" &&
+      nextState !== "awaiting_input" &&
+      !(isActive(state) && nextState === "cancelled"),
   );
+}
+
+function isActive(state: WorkItemState): boolean {
+  return state === "running" || state === "awaiting_input";
 }
 
 export function timestamp(): string {

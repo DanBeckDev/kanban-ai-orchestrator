@@ -8,6 +8,7 @@ import type {
   AgentProfile,
   BoardSnapshot,
   CreateWorkItemRequest,
+  RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -20,6 +21,8 @@ type BoardViewProps = Readonly<{
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
+  onStopExecution: (executionId: string) => Promise<void>;
+  onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
 }>;
 
@@ -31,6 +34,8 @@ export function BoardView({
   onCreateWorkItem,
   onSaveAgentProfile,
   onStartExecution,
+  onStopExecution,
+  onRecordReviewCheck,
   onTransition,
 }: BoardViewProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -67,6 +72,8 @@ export function BoardView({
                     onTransition={onTransition}
                     agentProfiles={agentProfiles}
                     onStartExecution={onStartExecution}
+                    onStopExecution={onStopExecution}
+                    onRecordReviewCheck={onRecordReviewCheck}
                   />
                 ))}
               </div>

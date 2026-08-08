@@ -13,6 +13,8 @@ pub mod workspace;
 mod desktop;
 mod desktop_execution_policy;
 mod desktop_execution_runtime;
+mod desktop_execution_runtime_control;
+mod desktop_execution_runtime_review;
 mod desktop_execution_runtime_support;
 mod foundation;
 
@@ -42,6 +44,8 @@ pub fn run() {
             desktop::save_agent_profile,
             desktop::agent_profiles,
             desktop::start_execution,
+            desktop::stop_execution,
+            desktop::record_review_check,
             desktop::board_snapshot,
         ])
         .run(tauri::generate_context!())

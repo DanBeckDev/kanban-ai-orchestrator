@@ -8,6 +8,7 @@ import type {
   BoardGateway,
   BoardSnapshot,
   CreateWorkItemRequest,
+  RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -97,6 +98,14 @@ export function BoardWorkspace({
     await run(() => gateway.startExecution(request));
   }
 
+  async function stopExecution(executionId: string) {
+    await run(() => gateway.stopExecution(executionId));
+  }
+
+  async function recordReviewCheck(request: RecordReviewCheckRequest) {
+    await run(() => gateway.recordReviewCheck(request));
+  }
+
   const boardId = snapshot?.board.id;
   useEffect(() => {
     if (boardId === undefined) return undefined;
@@ -127,6 +136,8 @@ export function BoardWorkspace({
           onCreateWorkItem={createWorkItem}
           onSaveAgentProfile={saveAgentProfile}
           onStartExecution={startExecution}
+          onStopExecution={stopExecution}
+          onRecordReviewCheck={recordReviewCheck}
           onTransition={transitionWorkItem}
           snapshot={snapshot}
         />

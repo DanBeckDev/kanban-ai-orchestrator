@@ -3,9 +3,9 @@ use std::{error::Error, fmt};
 use crate::agent::AgentProfile;
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
-    Execution, ExecutionId, MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
-    SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem, WorkItemEventId,
-    WorkItemId, WorkItemState,
+    EvidenceKind, EvidenceResult, Execution, ExecutionId, MaterializedWorkItem, Project, ProjectId,
+    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
+    WorkItemEventId, WorkItemId, WorkItemState,
 };
 
 use super::{
@@ -46,6 +46,10 @@ pub trait BoardRepository {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error>;
+    fn evidence_for_work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<Vec<Evidence>, Self::Error>;
     fn save_agent_profile(&mut self, profile: AgentProfile) -> Result<AgentProfile, Self::Error>;
     fn agent_profile(&self, name: &str) -> Result<Option<AgentProfile>, Self::Error>;
     fn agent_profiles(&self) -> Result<Vec<AgentProfile>, Self::Error>;
@@ -190,6 +194,7 @@ where
                 work_item_id: work_item_id.clone(),
             })?;
         let board_id = materialized_work_item.work_item.board_id.clone();
+        self.require_recorded_completion_evidence(&work_item_id, &request)?;
         self.repository
             .transition_work_item(TransitionWorkItemCommand {
                 event_id: WorkItemEventId::from(request.event_id.as_str()),
@@ -281,6 +286,15 @@ pub enum BoardServiceError<RepositoryError> {
         work_item_id: WorkItemId,
         state: WorkItemState,
     },
+    WorkItemNotInReview {
+        work_item_id: WorkItemId,
+        state: WorkItemState,
+    },
+    MissingRecordedEvidence {
+        work_item_id: WorkItemId,
+        kind: EvidenceKind,
+        result: EvidenceResult,
+    },
 }
 
 impl<RepositoryError> fmt::Display for BoardServiceError<RepositoryError>
@@ -322,6 +336,23 @@ where
                 "work item {} cannot start because it is {state:?}",
                 work_item_id.0
             ),
+            Self::WorkItemNotInReview {
+                work_item_id,
+                state,
+            } => write!(
+                formatter,
+                "work item {} cannot record review evidence because it is {state:?}",
+                work_item_id.0
+            ),
+            Self::MissingRecordedEvidence {
+                work_item_id,
+                kind,
+                result,
+            } => write!(
+                formatter,
+                "work item {} requires recorded {result:?} {kind:?} evidence before Done",
+                work_item_id.0
+            ),
         }
     }
 }
@@ -340,7 +371,9 @@ where
             | Self::WorkItemNotFound { .. }
             | Self::ExecutionNotFound { .. }
             | Self::ExecutionNotPending { .. }
-            | Self::WorkItemNotReady { .. } => None,
+            | Self::WorkItemNotReady { .. }
+            | Self::WorkItemNotInReview { .. }
+            | Self::MissingRecordedEvidence { .. } => None,
         }
     }
 }

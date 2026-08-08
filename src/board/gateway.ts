@@ -7,6 +7,7 @@ import type {
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
+  RecordReviewCheckRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -37,6 +38,12 @@ export const tauriBoardGateway: BoardGateway = {
   },
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
     return invoke("start_execution", { request });
+  },
+  stopExecution(executionId: string): Promise<BoardSnapshot> {
+    return invoke("stop_execution", { executionId });
+  },
+  recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot> {
+    return invoke("record_review_check", { request });
   },
   boardSnapshot(boardId: string): Promise<BoardSnapshot> {
     return invoke("board_snapshot", { boardId });

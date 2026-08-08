@@ -12,7 +12,7 @@ use crate::{
         AgentProfileServiceError, BoardServiceError, ExecutionEventControllerError,
         ExecutionLaunchError, StartExecutionRequest,
     },
-    domain::{WorkItemId, WorkItemState},
+    domain::{ExecutionStatus, WorkItemId, WorkItemState},
     persistence::{BoardStoreError, EventStoreError},
     workspace::WorkspaceError,
 };
@@ -98,6 +98,10 @@ pub(crate) enum ExecutionRuntimeError {
     MissingLiveExecution {
         execution_id: String,
     },
+    ExecutionNotStoppable {
+        execution_id: String,
+        status: ExecutionStatus,
+    },
     DuplicateLiveExecution {
         execution_id: String,
         session_id: String,
@@ -144,6 +148,13 @@ impl fmt::Display for ExecutionRuntimeError {
                     "no live agent is registered for execution {execution_id}"
                 )
             }
+            Self::ExecutionNotStoppable {
+                execution_id,
+                status,
+            } => write!(
+                formatter,
+                "execution {execution_id} cannot stop because it is {status:?}"
+            ),
             Self::DuplicateLiveExecution {
                 execution_id,
                 session_id,
@@ -174,6 +185,7 @@ impl Error for ExecutionRuntimeError {
             | Self::UnsupportedPolicySet { .. }
             | Self::WorkItemNotReady { .. }
             | Self::MissingLiveExecution { .. }
+            | Self::ExecutionNotStoppable { .. }
             | Self::DuplicateLiveExecution { .. }
             | Self::MonitorSpawn(_)
             | Self::Synchronization { .. } => None,

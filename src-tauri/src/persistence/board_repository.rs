@@ -91,6 +91,14 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::record_evidence(self, evidence).map_err(BoardStoreError::from)
     }
 
+    fn evidence_for_work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<Vec<Evidence>, Self::Error> {
+        SqliteEventStore::evidence_for_work_items(self, std::slice::from_ref(work_item_id))
+            .map_err(BoardStoreError::from)
+    }
+
     fn save_agent_profile(&mut self, profile: AgentProfile) -> Result<AgentProfile, Self::Error> {
         SqliteEventStore::save_agent_profile(self, profile).map_err(BoardStoreError::from)
     }

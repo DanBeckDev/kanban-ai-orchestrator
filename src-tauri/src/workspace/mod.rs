@@ -42,6 +42,13 @@ pub struct WorkspaceAssignment {
     dependency_sharing: DependencySharingStrategy,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ReviewArtifacts {
+    pub head_commit: Option<String>,
+    pub committed_diff_stat: Option<String>,
+    pub working_diff_stat: Option<String>,
+}
+
 impl WorkspaceAssignment {
     pub fn work_item_id(&self) -> &WorkItemId {
         &self.work_item_id
@@ -98,16 +105,7 @@ impl WorkspaceManager {
         &self,
         request: WorkspaceProvisionRequest,
     ) -> Result<WorkspaceAssignment, WorkspaceError> {
-        let workspace_name = workspace_name(&request.work_item_id)?.to_owned();
-        let branch_name = format!("{TASK_BRANCH_PREFIX}/{workspace_name}");
-        self.git
-            .validate_branch_name(&self.repository_root, &branch_name)?;
-        let assignment = WorkspaceAssignment {
-            work_item_id: request.work_item_id,
-            branch_name,
-            path: self.workspace_root.join(&workspace_name),
-            dependency_sharing: request.dependency_sharing,
-        };
+        let assignment = self.assignment_for(&request.work_item_id, request.dependency_sharing)?;
         let worktrees = self.git.worktrees(&self.repository_root)?;
         for existing_worktree in &worktrees {
             if paths_match(&existing_worktree.path, &assignment.path)? {
@@ -190,6 +188,25 @@ impl WorkspaceManager {
         self.verify_assignment_identity(assignment)
     }
 
+    pub fn collect_review_artifacts(
+        &self,
+        execution: &Execution,
+    ) -> Result<ReviewArtifacts, WorkspaceError> {
+        let assignment = self.assignment_for(
+            &execution.work_item_id,
+            DependencySharingStrategy::IsolatedInstall,
+        )?;
+        self.verify_execution_workspace(execution, &assignment)?;
+        self.git
+            .review_artifacts(&assignment.path, &self.base_ref)
+            .map(|artifacts| ReviewArtifacts {
+                head_commit: artifacts.head_commit,
+                committed_diff_stat: artifacts.committed_diff_stat,
+                working_diff_stat: artifacts.working_diff_stat,
+            })
+            .map_err(WorkspaceError::Git)
+    }
+
     pub fn authorize_path(
         &self,
         assignment: &WorkspaceAssignment,
@@ -230,6 +247,23 @@ impl WorkspaceManager {
         Ok(())
     }
 
+    fn assignment_for(
+        &self,
+        work_item_id: &WorkItemId,
+        dependency_sharing: DependencySharingStrategy,
+    ) -> Result<WorkspaceAssignment, WorkspaceError> {
+        let workspace_name = workspace_name(work_item_id)?.to_owned();
+        let branch_name = format!("{TASK_BRANCH_PREFIX}/{workspace_name}");
+        self.git
+            .validate_branch_name(&self.repository_root, &branch_name)?;
+        Ok(WorkspaceAssignment {
+            work_item_id: work_item_id.clone(),
+            branch_name,
+            path: self.workspace_root.join(workspace_name),
+            dependency_sharing,
+        })
+    }
+
     fn verify_assignment_belongs_to_manager(
         &self,
         assignment: &WorkspaceAssignment,
@@ -246,6 +280,9 @@ impl WorkspaceManager {
 
 #[cfg(test)]
 pub(crate) mod tests;
+
+#[cfg(test)]
+mod review_artifact_tests;
 
 #[cfg(test)]
 mod error_tests;

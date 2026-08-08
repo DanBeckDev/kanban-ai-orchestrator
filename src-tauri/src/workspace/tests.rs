@@ -38,7 +38,7 @@ pub(crate) fn repository() -> (TempDir, PathBuf) {
     (temporary_directory, repository_path)
 }
 
-fn run_git(directory: &Path, arguments: &[&str]) {
+pub(crate) fn run_git(directory: &Path, arguments: &[&str]) {
     let arguments = arguments.iter().map(OsString::from).collect::<Vec<_>>();
     let output = GitCli
         .command(directory, &arguments)
@@ -75,7 +75,7 @@ pub(crate) fn request(work_item_id: &str) -> WorkspaceProvisionRequest {
     }
 }
 
-fn execution(work_item_id: &str, workspace_path: &Path) -> Execution {
+pub(crate) fn execution(work_item_id: &str, workspace_path: &Path) -> Execution {
     Execution {
         schema: SchemaMetadata::current(),
         id: ExecutionId::from("execution-1"),

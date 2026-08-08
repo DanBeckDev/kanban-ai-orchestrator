@@ -81,6 +81,7 @@ impl VersionedSchema for Execution {
 pub enum EvidenceKind {
     AgentReport,
     Check,
+    Diff,
     Commit,
     PullRequest,
     CompletionReport,

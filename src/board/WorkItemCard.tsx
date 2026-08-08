@@ -10,12 +10,16 @@ import {
   stateLabel,
   timestamp,
 } from "./presentation";
+import { ReviewCheckForm } from "./ReviewCheckForm";
+import { ExecutionControl } from "./ExecutionControl";
+import { RecoveryActions } from "./RecoveryActions";
 import type {
   BoardSnapshot,
   AgentProfile,
   CompletionEvidence,
   TransitionWorkItemRequest,
   StartExecutionRequest,
+  RecordReviewCheckRequest,
   WorkItem,
   WorkItemState,
 } from "./types";
@@ -27,6 +31,8 @@ type WorkItemCardProps = Readonly<{
   workItem: WorkItem;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
+  onStopExecution: (executionId: string) => Promise<void>;
+  onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
 }>;
 
 const emptyEvidence: CompletionEvidence = {
@@ -42,6 +48,8 @@ export function WorkItemCard({
   workItem,
   onTransition,
   onStartExecution,
+  onStopExecution,
+  onRecordReviewCheck,
 }: WorkItemCardProps) {
   const [nextState, setNextState] = useState<WorkItemState | "">("");
   const [reason, setReason] = useState("");
@@ -108,6 +116,26 @@ export function WorkItemCard({
           onStart={onStartExecution}
         />
       )}
+      <ExecutionControl
+        busy={busy}
+        executions={executions}
+        onStop={onStopExecution}
+      />
+      {workItem.state === "review" && (
+        <ReviewCheckForm
+          busy={busy}
+          workItem={workItem}
+          onRecord={onRecordReviewCheck}
+        />
+      )}
+      {isRecoveryState(workItem.state) && (
+        <RecoveryActions
+          busy={busy}
+          executions={executions}
+          workItem={workItem}
+          onTransition={onTransition}
+        />
+      )}
       {options.length > 0 && (
         <form
           aria-label={`Transition ${workItem.title}`}
@@ -149,6 +177,10 @@ export function WorkItemCard({
       )}
     </article>
   );
+}
+
+function isRecoveryState(state: WorkItemState): boolean {
+  return state === "blocked" || state === "failed" || state === "interrupted";
 }
 
 function StartAgentForm({

@@ -3,7 +3,7 @@
 use std::{
     sync::{Arc, Mutex},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -112,7 +112,8 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
         WorkItemState::Running
     );
 
-    for _ in 0..50 {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
         let service = service.lock().expect("service should remain available");
         let execution = service
             .execution(&ExecutionId::from("execution-1"))
@@ -125,9 +126,11 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
             return;
         }
         drop(service);
+        if Instant::now() >= deadline {
+            panic!("the detached runtime should record the agent completion event");
+        }
         thread::sleep(Duration::from_millis(20));
     }
-    panic!("the detached runtime should record the agent completion event");
 }
 
 #[test]
@@ -250,4 +253,51 @@ fn fails_a_feedback_request_from_a_profile_that_cannot_resume() {
         thread::sleep(Duration::from_millis(20));
     }
     panic!("a generic profile must not remain falsely awaiting unavailable feedback");
+}
+
+#[test]
+fn stops_a_live_direct_process_and_records_an_interrupted_attempt() {
+    let (_temporary_directory, service, runtime) = prepared_runtime("standard");
+    service
+        .lock()
+        .expect("service should remain available")
+        .save_agent_profile(AgentProfile {
+            name: "long-running-script".to_owned(),
+            program: "sh".to_owned(),
+            arguments: vec![
+                "-c".to_owned(),
+                "IFS= read -r brief; [ \"$brief\" = \"Stop the task.\" ] || exit 7; sleep 5"
+                    .to_owned(),
+            ],
+        })
+        .expect("long-running profile should persist");
+
+    runtime
+        .start(StartExecutionRequest {
+            execution_id: "execution-stop".to_owned(),
+            work_item_id: "task-1".to_owned(),
+            agent_profile_name: "long-running-script".to_owned(),
+            task_brief: "Stop the task.".to_owned(),
+        })
+        .expect("runtime should start the worker");
+    runtime
+        .request_stop("execution-stop")
+        .expect("a live direct process should accept a stop request");
+
+    for _ in 0..50 {
+        let service = service.lock().expect("service should remain available");
+        let execution = service
+            .execution(&ExecutionId::from("execution-stop"))
+            .expect("execution should persist");
+        let work_item = service
+            .work_item(&crate::domain::WorkItemId::from("task-1"))
+            .expect("work item should persist");
+        if execution.status == crate::domain::ExecutionStatus::Interrupted {
+            assert_eq!(work_item.work_item.state, WorkItemState::Interrupted);
+            return;
+        }
+        drop(service);
+        thread::sleep(Duration::from_millis(20));
+    }
+    panic!("the stop request should record an interrupted outcome");
 }

@@ -11,8 +11,8 @@ use crate::{
     agent::AgentProfile,
     application::{
         AddDependencyRequest, BoardService, BoardSnapshot, CreateBoardRequest,
-        CreateProjectRequest, CreateWorkItemRequest, StartExecutionRequest,
-        TransitionWorkItemRequest,
+        CreateProjectRequest, CreateWorkItemRequest, RecordReviewCheckRequest,
+        StartExecutionRequest, TransitionWorkItemRequest,
     },
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
@@ -126,6 +126,27 @@ pub(crate) fn start_execution(
     request: StartExecutionRequest,
 ) -> Result<BoardSnapshot, String> {
     state.runtime.start(request).map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn stop_execution(
+    state: State<'_, BoardDaemonState>,
+    execution_id: String,
+) -> Result<BoardSnapshot, String> {
+    state
+        .runtime
+        .request_stop(&execution_id)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn record_review_check(
+    state: State<'_, BoardDaemonState>,
+    request: RecordReviewCheckRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .record_review_check(request)
+        .map_err(error_message)
 }
 
 #[tauri::command]

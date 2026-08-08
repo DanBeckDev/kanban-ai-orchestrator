@@ -27,6 +27,13 @@ pub(super) struct GitWorktree {
     pub branch: Option<String>,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub(super) struct GitReviewArtifacts {
+    pub head_commit: Option<String>,
+    pub committed_diff_stat: Option<String>,
+    pub working_diff_stat: Option<String>,
+}
+
 impl GitCli {
     pub fn repository_root(&self, directory: &Path) -> Result<PathBuf, GitError> {
         Ok(PathBuf::from(self.successful_text(
@@ -151,6 +158,50 @@ impl GitCli {
         )?;
 
         Ok((root, branch))
+    }
+
+    pub fn review_artifacts(
+        &self,
+        directory: &Path,
+        base_ref: &str,
+    ) -> Result<GitReviewArtifacts, GitError> {
+        let has_committed_changes = !self.references_match(directory, base_ref, "HEAD")?;
+        let committed_diff_stat = has_committed_changes
+            .then(|| {
+                self.successful_text(
+                    directory,
+                    "summarize committed task changes",
+                    &[
+                        "diff".into(),
+                        "--stat".into(),
+                        "--no-ext-diff".into(),
+                        "--stat-width=80".into(),
+                        "--stat-count=20".into(),
+                        format!("{base_ref}...HEAD").into(),
+                    ],
+                )
+            })
+            .transpose()?;
+        let working_diff_stat = self.successful_text(
+            directory,
+            "summarize uncommitted task changes",
+            &[
+                "diff".into(),
+                "--stat".into(),
+                "--no-ext-diff".into(),
+                "--stat-width=80".into(),
+                "--stat-count=20".into(),
+                "HEAD".into(),
+            ],
+        )?;
+
+        Ok(GitReviewArtifacts {
+            head_commit: has_committed_changes
+                .then(|| self.reference_commit(directory, "HEAD"))
+                .transpose()?,
+            committed_diff_stat: committed_diff_stat.filter(|stat| !stat.is_empty()),
+            working_diff_stat: (!working_diff_stat.is_empty()).then_some(working_diff_stat),
+        })
     }
 
     fn successful_text(

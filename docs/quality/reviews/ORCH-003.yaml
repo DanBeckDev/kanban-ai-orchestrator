@@ -1,57 +1,40 @@
 work_item: ORCH-003
 scope:
-  - docs/architecture/overview.md
-  - docs/decisions/0013-structured-process-agent-adapter.md
-  - docs/planning/backlog.yaml
-  - src-tauri/Cargo.lock
-  - src-tauri/Cargo.toml
-  - src-tauri/src/agent/mod.rs
-  - src-tauri/src/agent/process_adapter.rs
-  - src-tauri/src/agent/process_adapter_tests.rs
-  - src-tauri/src/agent/profile.rs
-  - src-tauri/src/application/agent_profile_service.rs
   - src-tauri/src/application/board_service.rs
-  - src-tauri/src/application/execution_event_controller.rs
-  - src-tauri/src/application/execution_event_controller_tests.rs
-  - src-tauri/src/application/execution_launch.rs
-  - src-tauri/src/application/execution_launch_tests.rs
-  - src-tauri/src/application/execution_policy_service.rs
-  - src-tauri/src/application/execution_service.rs
-  - src-tauri/src/application/execution_start_request.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/completion_evidence_service.rs
+  - src-tauri/src/application/review_check_request.rs
+  - src-tauri/src/application/review_service.rs
   - src-tauri/src/application/mod.rs
   - src-tauri/src/desktop.rs
-  - src-tauri/src/desktop_execution_policy.rs
   - src-tauri/src/desktop_execution_runtime.rs
+  - src-tauri/src/desktop_execution_runtime_control.rs
+  - src-tauri/src/desktop_execution_runtime_review.rs
   - src-tauri/src/desktop_execution_runtime_support.rs
   - src-tauri/src/desktop_execution_runtime_tests.rs
+  - src-tauri/src/domain/model/execution.rs
   - src-tauri/src/lib.rs
-  - src-tauri/src/persistence/agent_profile_store.rs
   - src-tauri/src/persistence/board_repository.rs
-  - src-tauri/src/persistence/board_store.rs
-  - src-tauri/src/persistence/event_store_error.rs
-  - src-tauri/src/persistence/event_store_schema.rs
-  - src-tauri/src/persistence/execution_activation_store.rs
-  - src-tauri/src/persistence/execution_store.rs
-  - src-tauri/src/persistence/mod.rs
-  - src-tauri/src/persistence/sqlite_event_store.rs
-  - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
-  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - src-tauri/src/workspace/git_cli.rs
   - src-tauri/src/workspace/mod.rs
+  - src-tauri/src/workspace/review_artifact_tests.rs
   - src-tauri/src/workspace/tests.rs
-  - src/board/AgentProfileForm.tsx
   - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
   - src/board/BoardWorkspace.test.tsx
   - src/board/BoardWorkspace.tsx
+  - src/board/ExecutionControl.tsx
+  - src/board/RecoveryActions.tsx
+  - src/board/ReviewCheckForm.tsx
   - src/board/WorkItemCard.tsx
   - src/board/gateway.ts
-  - src/board/presentation.test.ts
   - src/board/presentation.ts
   - src/board/types.ts
   - src/styles.css
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T18:12:39Z
+  reviewed_at: 2026-08-08T18:35:34Z
   findings:
     must_fix: []
     should_fix: []
@@ -59,33 +42,29 @@ review:
     considers: []
   unresolved_actionable_findings: 0
 remediation:
-  - finding: Direct local workers needed a durable provider-neutral profile and a runtime that could continue independently of the React window.
-    change: Added validated SQLite-backed direct-program profiles, typed desktop commands, a dedicated process monitor, bounded normalized events, and a board polling projection. The runtime keeps database locks narrow and never holds one across Git or process I/O.
-  - finding: Attaching an agent session and showing a task as Running in separate writes could leave durable task and execution state inconsistent after a failure.
-    change: Added one SQLite transaction that updates the pending execution, appends the Running task event, and materializes the task snapshot; a rollback test proves that a failed event write does not attach the session.
-  - finding: The launch path could provision a worktree and start an executable without the existing policy gate recording an authorization decision.
-    change: Added a focused policy-start service and project-wide active-execution count. The desktop MVP recognizes the documented standard policy, records allow and deny decisions before provisioning, and refuses a second active project execution or an unsupported policy set before any worktree/process side effect.
-  - finding: A generic process profile that reported awaiting input could be terminated while the board continued to display an interactive Awaiting Input state.
-    change: The monitor now records the input request, then records a clear failed report and terminates the direct child because this profile explicitly has no feedback/resume capability. The end-to-end test proves the task and execution become Failed rather than falsely waiting.
-  - finding: The general transition form and legacy raw desktop IPC commands could manufacture agent-owned execution state without a live worker.
-    change: Removed raw execution/evidence update commands from the desktop gateway, removed Running and Awaiting Input from manual transition choices, and made the remaining IPC command reject both states. Only the audited runtime activation and normalized agent events may enter them.
-  - finding: The runtime registration error returned a large tuple containing a live process adapter, and the launch preflight passed an unnecessary reference layer.
-    change: Made live-agent registration own child cleanup on its failure path and simplified the workspace preflight reference; strict clippy now passes with warnings denied.
+  - finding: A completed worker entered Review without durable Git commit or diff evidence for a reviewer to inspect.
+    change: Collected verified-worktree commit and bounded diff statistics after each terminal worker event, including staged changes, and recorded them as typed evidence. Dedicated runtime evidence-mapping and workspace tests cover committed and staged output.
+  - finding: A reviewer could claim checks or a completion report existed while moving a card to Done without matching durable records.
+    change: Added a review-only check command and application-boundary validation that requires a recorded passing Check and recorded CompletionReport for the same work item before Done can be persisted.
+  - finding: A live direct worker could be visually cancelled through a generic state transition without stopping its process.
+    change: Replaced active-card cancellation with a direct-process stop request that records an Interrupted attempt; the Recovery column now supplies explicit inspection, recover-to-Ready/retry, and cancellation actions.
+  - finding: Focused board and workspace test modules exceeded the repository's 400-meaningful-line source limit while adding review and Git-artifact coverage.
+    change: Extracted cohesive board fixtures and review-artifact scenarios into dedicated test modules. The whole-repository structural scan now passes with no exceptions.
+  - finding: The asynchronous worker review test used a fixed one-second polling window and failed under coverage instrumentation despite the worker eventually completing.
+    change: Replaced the attempt-count timeout with a monotonic five-second deadline, retaining fast polling while making the assertion reliable under the slower coverage build.
 verification:
   commands:
-    - command: cargo test --manifest-path src-tauri/Cargo.toml desktop_execution_runtime_tests --lib
-      result: passed (4 tests)
     - command: cargo test --manifest-path src-tauri/Cargo.toml --lib
-      result: passed (139 tests)
+      result: passed (142 tests)
     - command: npm test -- --run
-      result: passed (36 tests)
+      result: passed (39 tests)
     - command: npm run quality:verify
       result: passed
   coverage:
     package_or_crate: minimum across React frontend and Rust core
-    lines: 86.79
-    statements: 82.11
-    functions: 86.18
-    branches: 82.79
+    lines: 86.68
+    statements: 82.24
+    functions: 86.22
+    branches: 82.17
     threshold_met: true
 exceptions: []

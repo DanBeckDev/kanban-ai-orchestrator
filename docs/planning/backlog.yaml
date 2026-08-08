@@ -86,7 +86,7 @@ tasks:
   - id: EXEC-001
     epic: EXEC
     title: Implement project boundary and safe worktree provisioning
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, CORE-003]
     acceptance_criteria:
@@ -94,6 +94,7 @@ tasks:
       - An execution is verified to be in its assigned worktree before launch.
       - Base repository mutation and undeclared path access are denied or require a recorded approval.
       - Dependency sharing has explicit strategies; no symlink behavior is forced.
+    notes: External Git worktree provisioning, path authorization, and launch verification were implemented and verified on 2026-08-08. The manager validates that the declared project base ref resolves to a commit, derives task branches from it, reuses registered worktrees safely, recovers only an empty interrupted target, rejects root/branch/path conflicts and symlinks, and permits worker access only inside the assigned worktree. Its structured Git boundary also strips inherited repository-context variables and configuration injection, preventing a caller from redirecting worktree or index state. Dependency sharing is explicit and records no forced link behavior.
 
   - id: EXEC-002
     epic: EXEC

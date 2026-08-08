@@ -1,0 +1,62 @@
+work_item: EXEC-001
+scope:
+  - src-tauri/src/lib.rs
+  - src-tauri/src/workspace/git_cli.rs
+  - src-tauri/src/workspace/mod.rs
+  - src-tauri/src/workspace/tests.rs
+  - docs/architecture/overview.md
+  - docs/decisions/0006-safe-task-worktrees.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T13:16:58Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Recovery removes the exact empty derived workspace directory before reattaching or creating a task worktree.
+        resolution: accepted
+        rationale: The directory is inside the separately declared task-workspace root, named from a validated work-item ID, and removed only when empty. Non-empty paths and symlinks fail closed, which makes retry safe without silently deleting user content.
+        decision_reference: ADR-0006
+      - finding: Explicit project-approved dependency linking is recorded as a strategy but is not materialized by this milestone.
+        resolution: accepted
+        rationale: Installing or linking ignored dependencies is project-specific and can be unsafe. Recording the selected strategy avoids a hidden default while deferring any link operation until policy approval and compatibility checks exist.
+        decision_reference: ADR-0006 and EXEC-001
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A repeated worktree-path comparison initially treated path-resolution failures as a non-match.
+    change: Propagated path-resolution errors so filesystem failures cannot be mistaken for a safe new workspace.
+  - finding: A task provisioning request could select a base ref that differed from the declared project configuration.
+    change: Moved base-ref authority into WorkspaceManager and removed it from the per-task request.
+  - finding: A public workspace assignment could be forged or passed to another manager with a path outside that manager's boundary.
+    change: Made assignment fields private, added read-only accessors, and reject any assignment outside the manager's declared workspace root before authorization or execution verification.
+  - finding: Symlinked, non-empty, conflicting-branch, and malformed-path recovery cases were not all exercised initially.
+    change: Added focused real-Git and filesystem tests for each fail-closed path, including an interrupted empty target that safely recovers.
+  - finding: An unregistered task branch could have diverged from the declared base ref, and recovery initially reclaimed an empty target before checking that branch.
+    change: Verify the branch points to the declared base commit before any target-directory mutation; divergent branches now fail closed and retain the target untouched.
+  - finding: Inherited Git environment variables or configuration injection can redirect a child Git process to a different repository, worktree, index, object store, namespace, or discovery scope. A controlled `GIT_INDEX_FILE=.git/index` Git-worktree probe reproduced the intermittent linked-worktree index failure observed during coverage.
+    change: The Git boundary now removes repository-context environment variables and `GIT_CONFIG_*` injection from every structured child-process command. Its real-Git test fixture uses that same command builder, and deterministic command-construction and classification tests verify the scrubbed set, so real-Git tests remain parallel and repeatable without a process-global environment mutation or suite-wide serialization.
+  - finding: An invalid declared project base ref was not rejected until an attempt to create a worktree, after workspace-root setup had begun.
+    change: Manager initialization resolves the declared base ref to a commit before creating the workspace root, and a focused real-Git test proves an invalid ref leaves the root absent.
+verification:
+  commands:
+    - command: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      result: passed
+    - command: cargo test --manifest-path src-tauri/Cargo.toml
+      result: passed
+    - command: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      result: passed
+    - command: node scripts/check-rust-coverage.mjs
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: kanban-ai-orchestrator
+    lines: 97.06
+    statements: 94.73
+    functions: 96.04
+    branches: 94.59
+    threshold_met: true
+exceptions: []

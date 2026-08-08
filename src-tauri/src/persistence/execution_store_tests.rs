@@ -263,6 +263,15 @@ fn accepts_only_monotonic_execution_progress_with_a_stable_identity() {
         .record_execution(execution("execution-1", "task-1"))
         .expect("pending execution should persist");
 
+    let mut missing_session = execution("execution-1", "task-1");
+    missing_session.status = ExecutionStatus::Running;
+    assert!(matches!(
+        store.update_execution(missing_session),
+        Err(EventStoreError::InvalidExecutionUpdate {
+            reason: "a running execution requires an attached session",
+            ..
+        })
+    ));
     let mut running = execution("execution-1", "task-1");
     running.status = ExecutionStatus::Running;
     running.session_id = Some("session-1".to_owned());

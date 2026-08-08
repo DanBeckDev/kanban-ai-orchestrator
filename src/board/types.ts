@@ -91,6 +91,7 @@ export type Execution = Readonly<{
 }>;
 
 export type EvidenceKind =
+  | "agent_report"
   | "check"
   | "commit"
   | "pull_request"

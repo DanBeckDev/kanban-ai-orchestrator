@@ -19,9 +19,12 @@ impl AgentEventIngestor {
     ) -> Result<WorkItemState, AgentAdapterError> {
         self.validate_sequence(event.sequence)?;
         let next_state = match proposed_work_item_state(&event.kind) {
-            Some(next_state) => transition_work_item(current_state, next_state, config, None)
-                .map_err(AgentAdapterError::InvalidWorkItemTransition)?,
+            Some(next_state) if next_state != current_state => {
+                transition_work_item(current_state, next_state, config, None)
+                    .map_err(AgentAdapterError::InvalidWorkItemTransition)?
+            }
             None => current_state,
+            Some(_) => current_state,
         };
         self.last_sequence = event.sequence;
         Ok(next_state)

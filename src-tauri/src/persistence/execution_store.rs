@@ -1,6 +1,6 @@
 use rusqlite::{OptionalExtension, params, params_from_iter};
 
-use crate::domain::{Evidence, EvidenceId, Execution, ExecutionId, WorkItemId};
+use crate::domain::{Evidence, EvidenceId, Execution, ExecutionId, ExecutionStatus, WorkItemId};
 
 use super::{EventStoreError, SqliteEventStore};
 
@@ -253,6 +253,15 @@ fn validate_execution_update(
         return Err(EventStoreError::InvalidExecutionUpdate {
             execution_id,
             reason: "session identity cannot be replaced or removed",
+        });
+    }
+    if recorded_execution.status == ExecutionStatus::Pending
+        && updated_execution.status == ExecutionStatus::Running
+        && updated_execution.session_id.is_none()
+    {
+        return Err(EventStoreError::InvalidExecutionUpdate {
+            execution_id,
+            reason: "a running execution requires an attached session",
         });
     }
     if !usage_is_monotonic(recorded_execution, updated_execution) {

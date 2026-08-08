@@ -1,9 +1,12 @@
 work_item: ORCH-003
 scope:
+  - src-tauri/src/agent/ingestion.rs
   - src-tauri/src/application/board_snapshot.rs
   - src-tauri/src/application/board_requests.rs
   - src-tauri/src/application/board_service.rs
   - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/execution_event_controller.rs
+  - src-tauri/src/application/execution_event_controller_tests.rs
   - src-tauri/src/application/mod.rs
   - src-tauri/src/domain/model/work_item.rs
   - src-tauri/src/domain/model/execution.rs
@@ -28,7 +31,8 @@ scope:
   - src/board/BoardWorkspace.test.tsx
   - src/styles.css
   - docs/architecture/overview.md
-  - docs/decisions/0011-zero-exception-source-structure-gate.md
+  - docs/decisions/0007-normalized-agent-adapter-contract.md
+  - docs/architecture/overview.md
   - docs/planning/backlog.yaml
   - docs/quality/code-requirements.md
   - docs/quality/code-structure.md
@@ -38,12 +42,16 @@ scope:
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T17:40:00Z
+  reviewed_at: 2026-08-08T18:30:00Z
   findings:
     must_fix: []
     should_fix: []
     outside_clean_code_rubric: []
-    considers: []
+    considers:
+      - finding: An agent event updates a work-item event, evidence record, and execution checkpoint in separate short SQLite transactions.
+        resolution: accepted
+        rationale: Each write has a deterministic execution-and-sequence identifier and is idempotent on retry, so a process crash can replay incomplete work without holding a database lock across adapter I/O. A single long transaction would violate the daemon's no-external-I/O-under-lock boundary.
+        decision_reference: ORCH-003
   unresolved_actionable_findings: 0
 remediation:
   - finding: The board showed current state but did not let a reviewer inspect the durable decision trail that produced it.
@@ -62,6 +70,14 @@ remediation:
     change: Made identity immutable and accepted only monotonic usage/sequence/session progress and valid execution-state transitions; focused tests cover accepted progress and each rejected mutation class.
   - finding: Adding new command DTOs left the board service at 398 meaningful lines, risking a future breach of the repository limit.
     change: Moved boundary request DTOs into a focused application module, reducing the service to 337 meaningful lines while keeping the command vocabulary explicit.
+  - finding: Normalized agent events could be displayed or stored without a durable, ordered execution checkpoint, allowing a provider claim to drift from task state after restart.
+    change: Added a focused execution-event controller that activates only a pending execution with a nonblank session, validates event order, maps every state request through the guarded state machine, stores monotonic usage/status, and preserves significant agent reports as evidence.
+  - finding: A repeated review report for an already-reviewing task would be treated as an illegal state transition rather than retained as additional evidence.
+    change: Made a requested state equal to the current state a no-op in the event ingestor while still advancing the validated sequence and storing the report.
+  - finding: A low-level update could set an execution to running without an attached agent session.
+    change: Added the storage invariant that Pending to Running requires a nonblank attached session, with focused persistence coverage.
+  - finding: Usage-event semantics could be interpreted as deltas, which would make a later valid adapter update look like a decrease and be rejected.
+    change: Specified cumulative usage checkpoints in the normalized adapter contract and added controller coverage for distinct failed and interrupted reports.
 verification:
   commands:
     - command: cargo test --manifest-path src-tauri/Cargo.toml application::board_service_tests
@@ -74,9 +90,9 @@ verification:
       result: passed
   coverage:
     package_or_crate: minimum across React frontend and Rust core
-    lines: 88.94
-    statements: 85.00
-    functions: 87.92
-    branches: 87.79
+    lines: 88.79
+    statements: 84.71
+    functions: 87.53
+    branches: 87.85
     threshold_met: true
 exceptions: []

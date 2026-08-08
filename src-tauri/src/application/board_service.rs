@@ -282,6 +282,30 @@ where
             .map_err(BoardServiceError::Repository)
     }
 
+    pub fn execution(
+        &self,
+        execution_id: &ExecutionId,
+    ) -> Result<Execution, BoardServiceError<Repository::Error>> {
+        self.repository
+            .execution(execution_id)
+            .map_err(BoardServiceError::Repository)?
+            .ok_or_else(|| BoardServiceError::ExecutionNotFound {
+                execution_id: execution_id.clone(),
+            })
+    }
+
+    pub fn work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<MaterializedWorkItem, BoardServiceError<Repository::Error>> {
+        self.repository
+            .materialized_work_item(work_item_id)
+            .map_err(BoardServiceError::Repository)?
+            .ok_or_else(|| BoardServiceError::WorkItemNotFound {
+                work_item_id: work_item_id.clone(),
+            })
+    }
+
     fn board_id_for(
         &self,
         work_item_id: &WorkItemId,

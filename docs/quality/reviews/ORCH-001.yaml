@@ -1,5 +1,6 @@
 work_item: ORCH-001
 scope:
+  - .github/workflows/quality.yml
   - src-tauri/src/domain/model.rs
   - src-tauri/src/domain/mod.rs
   - src-tauri/src/lib.rs
@@ -32,6 +33,8 @@ remediation:
     change: The policy gate consistently applies the stricter configured agent-turn, duration, and cost cap and blocks new executions at the concurrency limit.
   - finding: Policy audit and approval persistence needed restart, migration, idempotency, conflict, and authorization-boundary coverage.
     change: Added focused pure-policy and SQLite tests for each decision outcome, budget boundary, approval mismatch, version-one migration, durable reopen, and capability issuance.
+  - finding: Every feature-branch update started two identical hosted quality runs: one for push and one for pull request.
+    change: Restricted push-triggered quality runs to main; pull requests retain the required quality check before merge.
 verification:
   commands:
     - command: npm run quality:verify

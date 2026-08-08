@@ -1,0 +1,22 @@
+# Platform release evidence
+
+The initial release targets macOS, while the shared React, Rust, SQLite, Git-worktree, and adapter boundaries remain portable to Windows and Linux. This document separates continuously verified portability from release-specific evidence that cannot safely be faked in a generic CI job.
+
+## Continuous verification
+
+The `core` GitHub Actions job runs `npm run test:platform` on fresh Linux, macOS, and Windows runners. That command type-checks the shared TypeScript UI, runs the frontend tests, and runs the Rust suite, including the state machine, dependency graph, SQLite persistence, Linear connector, portable workspace-path validation, and Git worktree boundary tests.
+
+The Linux-only `quality` job retains the full coverage, lint, formatting, source-structure, and receipt checks. Coverage instrumentation does not need to run three times to prove that the core compiles and behaves on each supported operating system.
+
+## Platform boundary coverage
+
+| Concern | Continuous evidence | Release evidence before distribution |
+| --- | --- | --- |
+| Command construction | Worker and planner profiles use direct executable plus structured arguments; briefs use standard input rather than command-line text. Rust tests cover profile validation and process boundaries, and the three-platform core job compiles the same boundary. | Run one real provider profile with a representative long brief on each supported platform. |
+| Credential storage | OAuth, refresh, and credential-store error behavior are unit tested without secrets. The production dependency selects Keychain Services, Credential Manager, or Secret Service by platform. | Connect then disconnect a test Linear OAuth app on the target platform; confirm credentials are not present in SQLite, diagnostics, or logs. |
+| Process and PTY behavior | Provider capability discovery exposes unsupported feedback, resume, and process-tree cancellation instead of silently claiming support. Unix direct-process conformance tests cover the currently implemented process path. | Verify the selected provider's documented lifecycle and cancellation behavior on the target platform before enabling that capability in a release profile. |
+| Packaging | Tauri is configured to produce all native bundle targets from one codebase. | Build and install each target bundle; macOS distribution additionally needs signing and notarization, Windows needs the chosen signing identity, and Linux needs package-format validation for the supported distribution family. |
+
+## Release decision
+
+No release may claim a provider capability or platform package that lacks the corresponding evidence above. A failing cross-platform core job must be resolved before merge; repository branch protection should require all three `core` checks before a release branch can merge. A missing release-specific manual check blocks distribution of that platform artifact, not the portable core.

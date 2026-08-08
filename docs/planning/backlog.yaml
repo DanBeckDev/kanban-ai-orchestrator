@@ -259,13 +259,14 @@ tasks:
   - id: REL-002
     epic: REL
     title: Establish macOS, Windows, and Linux test and packaging matrix
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [FDN-002, CORE-001, EXEC-001]
     acceptance_criteria:
       - CI exercises core domain/workspace tests on all three desktop platforms.
       - Agent command construction avoids OS command-line length limits.
       - Packaging/signing and platform-specific credential/PTY behavior have tracked test coverage.
+    notes: Three-platform core CI and release-evidence documentation are implemented locally; completion awaits the first GitHub Actions matrix run.
 
   - id: REL-003
     epic: REL

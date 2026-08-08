@@ -13,6 +13,7 @@
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:platform": "npm run typecheck && npm test -- --run && npm run rust:test",
     "test:coverage": "vitest run --coverage",
     "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",
     "rust:format": "cargo fmt --manifest-path src-tauri/Cargo.toml --check",

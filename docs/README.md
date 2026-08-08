@@ -11,6 +11,7 @@ This documentation is deliberately small, versioned, and task-oriented. It is de
 | `quality/code-requirements.md` | Mandatory code quality, remediation, coverage, and verification policy | Any quality gate or coverage rule changes |
 | `quality/review-receipt.template.yaml` | Required evidence format for code-bearing work | The quality evidence contract changes |
 | `quality/reliability.md` | Failure modes, reliability targets, and test scenarios | A risk or quality bar changes |
+| `quality/platform-release.md` | Cross-platform CI and release-specific evidence | Modifying packaging, credentials, or provider process behavior |
 | `planning/roadmap.md` | Phase outcomes and release gates | Sequencing changes |
 | `planning/backlog.yaml` | Smallest executable work packages and dependencies | Starting, completing, splitting, or blocking work |
 | `decisions/` | Immutable records of consequential decisions | A durable technical choice is made |

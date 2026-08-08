@@ -50,3 +50,4 @@ The reference project's public issue history is a useful failure-mode catalogue.
 
 - Adapter conformance tests run against each supported agent.
 - Core workspace, state-machine, and connector tests run on macOS, Windows, and Linux in CI from the first implementation milestone.
+- Packaging, credential, and provider process capability evidence is tracked in [platform release evidence](platform-release.md); the product never claims an unverified native capability.

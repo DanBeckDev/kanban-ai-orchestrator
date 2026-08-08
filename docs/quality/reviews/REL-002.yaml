@@ -1,0 +1,39 @@
+work_item: REL-002
+scope:
+  - "Portable core verification command for the shared TypeScript and Rust runtime."
+  - "Linux, macOS, and Windows CI matrix with release-specific evidence boundaries."
+source_structure:
+  reviewed_files: []
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T22:44:51Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The release policy could incorrectly imply that every platform-specific native capability is automated in generic CI."
+    change: "Separated the portable core matrix from explicit target-platform evidence for packaging, credentials, provider lifecycle, signing, and notarization."
+verification:
+  commands:
+    - command: npm run test:platform
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 90.17
+        statements: 89.93
+        functions: 84.43
+        branches: 87.96
+      - package_or_crate: src-tauri-rust
+        lines: 85.39
+        statements: 81.37
+        functions: 84.43
+        branches: 80.20
+    threshold_met: true
+exceptions: []

@@ -1,0 +1,249 @@
+schema_version: 1
+project: Kanban AI Orchestrator
+last_updated: 2026-08-08
+
+# Status values: ready, in_progress, blocked, done.
+# A task starts only after all IDs in depends_on are done unless its notes record an
+# accepted exception. Keep this file as a repository export even after it is imported
+# into the product's own board.
+
+epics:
+  - id: FDN
+    title: Product and engineering foundation
+  - id: CORE
+    title: Durable local task and dependency engine
+  - id: EXEC
+    title: Safe Git workspaces and agent execution
+  - id: ORCH
+    title: Orchestration, policy, and review
+  - id: LIN
+    title: Linear first-class integration
+  - id: REL
+    title: Reliability and cross-platform release
+  - id: QUAL
+    title: Code quality, review, and coverage gates
+
+tasks:
+  - id: FDN-001
+    epic: FDN
+    title: Accept the product documentation and delivery contract
+    status: done
+    priority: P0
+    depends_on: []
+    acceptance_criteria:
+      - Product, architecture, Linear, reliability, roadmap, and ADR documents exist.
+      - Future workers have an explicit working agreement and documentation precedence.
+    notes: Initial source-of-truth documentation created on 2026-08-08.
+
+  - id: FDN-002
+    epic: FDN
+    title: Select and record the desktop/runtime technology stack
+    status: done
+    priority: P0
+    depends_on: [FDN-001]
+    acceptance_criteria:
+      - Desktop shell, UI, local daemon, persistence, PTY, credential storage, and packaging choices are documented in an ADR.
+      - The choice is evaluated on macOS, Windows, Linux, local-first operation, and agent adapter needs.
+      - The selected TypeScript and Rust tooling can enforce per-package line, statement, function, and branch coverage thresholds of at least 80%.
+    notes: Tauri 2, React/TypeScript, Rust, SQLite, Vitest, and cargo-llvm-cov selected in ADR 0005. The desktop bootstrap, icons, per-package coverage gates, and full local verification passed on 2026-08-08.
+
+  - id: CORE-001
+    epic: CORE
+    title: Define executable domain schemas and state-machine transitions
+    status: ready
+    priority: P0
+    depends_on: [FDN-002]
+    acceptance_criteria:
+      - Project, board, work item, execution, evidence, policy decision, and external-link schemas are versioned.
+      - Allowed and disallowed state transitions are unit tested.
+      - Done, failed, interrupted, cancelled, and blocked remain distinct states.
+
+  - id: CORE-002
+    epic: CORE
+    title: Implement the typed dependency graph and eligibility evaluator
+    status: ready
+    priority: P0
+    depends_on: [CORE-001]
+    acceptance_criteria:
+      - All incoming hard blockers must be satisfied before a task becomes eligible.
+      - Cycle insertion is rejected with an actionable explanation.
+      - Critical path, upstream/downstream blockers, and safe parallel tasks can be calculated.
+
+  - id: CORE-003
+    epic: CORE
+    title: Build durable event persistence and restart reconciliation
+    status: ready
+    priority: P0
+    depends_on: [CORE-001]
+    acceptance_criteria:
+      - Events and materialized state are persisted transactionally.
+      - Simulated daemon interruption preserves task history and marks uncertain runs as interrupted.
+      - UI reconnect cannot change task state by itself.
+
+  - id: EXEC-001
+    epic: EXEC
+    title: Implement project boundary and safe worktree provisioning
+    status: ready
+    priority: P0
+    depends_on: [CORE-001, CORE-003]
+    acceptance_criteria:
+      - Provisioning is idempotent and recoverable after interruption.
+      - An execution is verified to be in its assigned worktree before launch.
+      - Base repository mutation and undeclared path access are denied or require a recorded approval.
+      - Dependency sharing has explicit strategies; no symlink behavior is forced.
+
+  - id: EXEC-002
+    epic: EXEC
+    title: Define and test the agent adapter contract
+    status: ready
+    priority: P0
+    depends_on: [CORE-001, CORE-003]
+    acceptance_criteria:
+      - Capability discovery and normalized lifecycle events are specified.
+      - A deterministic fake adapter covers completion, error, approval, interruption, duplicate event, and resume cases.
+      - Adapter event input cannot produce an illegal task transition.
+
+  - id: EXEC-003
+    epic: EXEC
+    title: Add initial Codex CLI, Claude Code, and third-agent adapters
+    status: ready
+    priority: P1
+    depends_on: [EXEC-001, EXEC-002]
+    acceptance_criteria:
+      - Three adapters pass the common conformance suite.
+      - Unsupported capabilities are visible before task start.
+      - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
+
+  - id: ORCH-001
+    epic: ORCH
+    title: Implement policy, budget, and approval decisions
+    status: ready
+    priority: P0
+    depends_on: [CORE-001, CORE-003, EXEC-001]
+    acceptance_criteria:
+      - Policies govern tool scope, parallelism, time/cost limits, and protected Git actions.
+      - Allow, deny, and approval-required decisions have audit records.
+      - The system prevents execution outside policy even when agent prompts conflict.
+
+  - id: ORCH-002
+    epic: ORCH
+    title: Build plan-preview and daemon-owned dependency scheduler
+    status: ready
+    priority: P0
+    depends_on: [CORE-002, EXEC-002, ORCH-001]
+    acceptance_criteria:
+      - A proposed plan lists tasks, criteria, dependencies, critical path, parallelism, budgets, and unresolved assumptions.
+      - User confirmation is required before launch.
+      - Scheduling continues correctly while the UI is hidden or disconnected.
+
+  - id: ORCH-003
+    epic: ORCH
+    title: Build evidence-first review and recovery flows
+    status: ready
+    priority: P1
+    depends_on: [CORE-003, EXEC-001, EXEC-002, ORCH-001]
+    acceptance_criteria:
+      - Review shows task criteria, diff/commit, checks, agent summary, and decision history.
+      - Failure and interruption present retry, inspect, recover, and cancel actions.
+      - A task cannot reach done without the configured evidence and approval.
+
+  - id: LIN-001
+    epic: LIN
+    title: Specify and spike Linear OAuth, local refresh, and token storage
+    status: ready
+    priority: P0
+    depends_on: [FDN-002, CORE-001]
+    acceptance_criteria:
+      - OAuth/PKCE callback design, scopes, token refresh, and keychain storage are verified against Linear's current API.
+      - The local-first refresh approach respects Linear rate-limit guidance.
+      - The public-webhook relay remains optional and is not required for core use.
+
+  - id: LIN-002
+    epic: LIN
+    title: Implement Linear issue/project links and provenance-aware import
+    status: ready
+    priority: P0
+    depends_on: [CORE-001, CORE-002, LIN-001]
+    acceptance_criteria:
+      - Links use immutable Linear IDs and retain source/provenance.
+      - Linear blockers import into the typed dependency graph without bypassing cycle validation.
+      - Read-only and linked-execution connection modes work independently.
+
+  - id: LIN-003
+    epic: LIN
+    title: Implement conflict-safe Linear synchronization and comments
+    status: ready
+    priority: P1
+    depends_on: [CORE-003, ORCH-003, LIN-002]
+    acceptance_criteria:
+      - Outbound changes use a durable idempotent outbox.
+      - Concurrent shared-field edits create reconciliation items instead of overwriting data.
+      - Transcripts, secrets, and private diffs are excluded from outbound comments by default.
+
+  - id: REL-001
+    epic: REL
+    title: Build responsive terminal/activity data paths
+    status: ready
+    priority: P0
+    depends_on: [FDN-002, CORE-003, EXEC-002]
+    acceptance_criteria:
+      - Large output is chunked, bounded, and virtualized.
+      - Switching cards never requires rendering an unbounded terminal snapshot.
+      - Event ingestion does not spawn a heavyweight runtime per event.
+
+  - id: REL-002
+    epic: REL
+    title: Establish macOS, Windows, and Linux test and packaging matrix
+    status: ready
+    priority: P0
+    depends_on: [FDN-002, CORE-001, EXEC-001]
+    acceptance_criteria:
+      - CI exercises core domain/workspace tests on all three desktop platforms.
+      - Agent command construction avoids OS command-line length limits.
+      - Packaging/signing and platform-specific credential/PTY behavior have tracked test coverage.
+
+  - id: REL-003
+    epic: REL
+    title: Automate reliability release-gate scenarios
+    status: ready
+    priority: P1
+    depends_on: [CORE-002, CORE-003, EXEC-003, ORCH-003, LIN-003, REL-001, REL-002]
+    acceptance_criteria:
+      - Restart, cancellation, dependency, worktree-race, connector-conflict, and scope-escape scenarios are automated where practical.
+      - Remaining manual release checks are documented with owner and evidence.
+
+  - id: QUAL-001
+    epic: QUAL
+    title: Define the mandatory review, remediation, and coverage policy
+    status: done
+    priority: P0
+    depends_on: [FDN-001]
+    acceptance_criteria:
+      - Every code-bearing task requires Clean Code review, remediation of actionable findings, and a quality-review receipt.
+      - The repository defines 80% per-package line, statement, function, and branch coverage as a hard floor.
+      - The policy distinguishes actionable defects from documented design trade-offs.
+    notes: Completed on 2026-08-08 in docs/quality/code-requirements.md and ADR 0004.
+
+  - id: QUAL-002
+    epic: QUAL
+    title: Implement local hook and required CI quality gate
+    status: in_progress
+    priority: P0
+    depends_on: [FDN-002, QUAL-001]
+    acceptance_criteria:
+      - The repository provides quality:changed, test:coverage, and quality:verify commands.
+      - The installable pre-commit hook runs quality:changed for code-bearing changes.
+      - Required CI runs quality:verify and fails if any executable package/crate falls below 80% coverage in any required metric.
+      - CI validates a zero-unresolved-findings review receipt for code-bearing work.
+    notes: Local hook, quality commands, receipt validator, and GitHub Actions workflow are implemented and verified on 2026-08-08. This repository currently has no Git remote or commit, so enabling the quality workflow as a required branch-protection status remains an external repository-administrator step.
+
+  - id: QUAL-003
+    epic: QUAL
+    title: Enforce quality evidence in the product's agent workflow
+    status: ready
+    priority: P0
+    depends_on: [CORE-001, ORCH-001, ORCH-003, QUAL-001]
+    acceptance_criteria:
+      - The task state machine cannot transition from review to done without successful quality-gate evidence.
+      - The orchestrator schedules an independent Clean Code review for substantial or high-risk work.
+      - Actionable review findings return the task to implementation until resolved.

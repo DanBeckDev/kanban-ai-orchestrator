@@ -1,0 +1,46 @@
+work_item: FDN-002 and QUAL-002
+scope:
+  - .github/workflows/quality.yml
+  - .nvmrc
+  - githooks/pre-commit
+  - package.json
+  - scripts/
+  - src/
+  - src-tauri/
+  - vitest.config.ts
+review:
+  skill: clean-code-review
+  reviewer: Codex
+  reviewed_at: 2026-08-08T12:00:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Rust's initial foundation has no executable branch sites.
+        resolution: accepted
+        rationale: Zero executable branches are fully covered; the coverage gate calculates and enforces branch coverage as soon as branch sites exist.
+        decision_reference: ADR-0005 and docs/quality/coverage-exclusions.md
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Runtime and build configuration changes were not all classified as code-bearing by the receipt gate.
+    change: Classified the complete src-tauri tree, index.html, and .nvmrc as code-bearing and added focused tests.
+  - finding: Direct pushes only revalidated existing receipts instead of validating the push's code changes.
+    change: Added base-revision receipt validation for non-initial pushes, with safe initial-push and manual-run handling.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 100
+      statements: 100
+      functions: 100
+      branches: 100
+    rust_core:
+      lines: 100
+      statements: 100
+      functions: 100
+      branches: 100
+    threshold_met: true
+exceptions: []

@@ -1,0 +1,45 @@
+{
+  "name": "kanban-ai-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "rust:format": "cargo fmt --manifest-path src-tauri/Cargo.toml --check",
+    "rust:lint": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "rust:coverage": "node scripts/check-rust-coverage.mjs",
+    "quality:changed": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run rust:format && npm run rust:lint && npm run rust:coverage",
+    "quality:receipt:staged": "node scripts/verify-quality-receipt.mjs --staged",
+    "quality:verify": "npm run quality:changed && npm run build && npm run rust:check"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
+    "@tauri-apps/cli": "^2.11.4",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

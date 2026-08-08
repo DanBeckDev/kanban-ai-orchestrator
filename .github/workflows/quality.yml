@@ -1,0 +1,57 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential curl file libayatana-appindicator3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up nightly Rust coverage tooling
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup component add --toolchain nightly llvm-tools-preview
+          cargo install cargo-llvm-cov --version 0.8.7 --locked
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Verify quality and coverage
+        run: npm run quality:verify
+
+      - name: Verify quality-review receipt
+        if: github.event_name == 'pull_request'
+        run: node scripts/verify-quality-receipt.mjs --base-ref origin/${{ github.base_ref }}
+
+      - name: Verify quality-review receipt for a non-initial push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: node scripts/verify-quality-receipt.mjs --base-ref ${{ github.event.before }}
+
+      - name: Verify recorded quality-review receipts for an initial push or manual run
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000')
+        run: node scripts/verify-quality-receipt.mjs --all

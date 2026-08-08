@@ -41,6 +41,10 @@ source_structure:
       meaningful_lines: 81
       responsibilities: "Covers Git CLI parsing, environment isolation, errors, and Windows path translation."
       decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_tests.rs
+      meaningful_lines: 298
+      responsibilities: "Exercises the detached execution runtime's lifecycle, policy, stop, and review behavior."
+      decision: kept cohesive
 review:
   skill: clean-code-review
   reviewer: codex
@@ -59,6 +63,8 @@ remediation:
     change: "Extracted one root-resolution helper and changed each test to construct a platform-native file URL."
   - finding: "Windows Git rejected canonical verbatim paths when creating or attaching a worktree."
     change: "Translated only Git process arguments from verbatim disk and UNC paths, retained canonical paths for authorization comparisons, and isolated the Git tests from the production adapter. The adapter now recognizes the literal Windows verbatim marker before Windows Path parsing can normalize it away."
+  - finding: "The detached-runtime integration test's five-second observation deadline was too short for a fully concurrent Linux CI suite."
+    change: "Retained a finite monotonic deadline while extending it to fifteen seconds, because the test verifies eventual detached-monitor completion rather than a five-second latency service level."
 verification:
   commands:
     - command: npm run test:platform

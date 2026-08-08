@@ -32,7 +32,7 @@ pub trait VersionedSchema {
 
 macro_rules! domain_id {
     ($name:ident) => {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
         #[serde(transparent)]
         pub struct $name(pub String);
 
@@ -51,6 +51,7 @@ domain_id!(ExecutionId);
 domain_id!(EvidenceId);
 domain_id!(PolicyDecisionId);
 domain_id!(ExternalLinkId);
+domain_id!(DependencyId);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -133,6 +134,51 @@ pub struct WorkItem {
 }
 
 impl VersionedSchema for WorkItem {
+    fn schema(&self) -> SchemaMetadata {
+        self.schema
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DependencyKind {
+    Blocks,
+    ReviewRequired,
+    Contract,
+    Soft,
+}
+
+impl DependencyKind {
+    pub const fn is_hard(self) -> bool {
+        matches!(self, Self::Blocks | Self::ReviewRequired)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum DependencySource {
+    User,
+    Orchestrator,
+    Connector { connector_id: String },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Dependency {
+    pub schema: SchemaMetadata,
+    pub id: DependencyId,
+    pub upstream_work_item_id: WorkItemId,
+    pub downstream_work_item_id: WorkItemId,
+    pub kind: DependencyKind,
+    pub source: DependencySource,
+    pub reason: String,
+    pub owner: String,
+    pub next_action: String,
+    pub created_by: String,
+    pub created_at: String,
+}
+
+impl VersionedSchema for Dependency {
     fn schema(&self) -> SchemaMetadata {
         self.schema
     }
@@ -273,10 +319,11 @@ impl VersionedSchema for ExternalLink {
 #[cfg(test)]
 mod tests {
     use super::{
-        Board, BoardId, Evidence, EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId,
-        ExecutionStatus, ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance,
-        PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId, SchemaMetadata,
-        VersionedSchema, WorkItem, WorkItemBudget, WorkItemId, WorkItemState,
+        Board, BoardId, Dependency, DependencyId, DependencyKind, DependencySource, Evidence,
+        EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus,
+        ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PolicyDecision,
+        PolicyDecisionId, PolicyDecisionKind, Project, ProjectId, SchemaMetadata, VersionedSchema,
+        WorkItem, WorkItemBudget, WorkItemId, WorkItemState,
     };
 
     #[test]
@@ -313,6 +360,19 @@ mod tests {
             },
             state: WorkItemState::Inbox,
             requires_human_review: true,
+        };
+        let dependency = Dependency {
+            schema: SchemaMetadata::current(),
+            id: DependencyId::from("dependency-1"),
+            upstream_work_item_id: work_item_id.clone(),
+            downstream_work_item_id: WorkItemId::from("work-item-2"),
+            kind: DependencyKind::Blocks,
+            source: DependencySource::Orchestrator,
+            reason: "The domain state must exist before scheduling.".to_owned(),
+            owner: "orchestrator".to_owned(),
+            next_action: "Finish the upstream task.".to_owned(),
+            created_by: "planner".to_owned(),
+            created_at: "2026-08-08T00:00:00Z".to_owned(),
         };
         let execution = Execution {
             schema: SchemaMetadata::current(),
@@ -363,6 +423,7 @@ mod tests {
         assert!(project.uses_current_schema());
         assert!(board.uses_current_schema());
         assert!(work_item.uses_current_schema());
+        assert!(dependency.uses_current_schema());
         assert!(execution.uses_current_schema());
         assert!(evidence.uses_current_schema());
         assert!(policy_decision.uses_current_schema());
@@ -387,6 +448,32 @@ mod tests {
 
         assert_eq!(serialized["schema"]["version"], 1);
         assert_eq!(serialized["state"], "inbox");
+    }
+
+    #[test]
+    fn serialized_dependencies_keep_connector_provenance_provider_neutral() {
+        let dependency = Dependency {
+            schema: SchemaMetadata::current(),
+            id: DependencyId::from("dependency-1"),
+            upstream_work_item_id: WorkItemId::from("upstream"),
+            downstream_work_item_id: WorkItemId::from("downstream"),
+            kind: DependencyKind::Blocks,
+            source: DependencySource::Connector {
+                connector_id: "linear".to_owned(),
+            },
+            reason: "The downstream task consumes the upstream API.".to_owned(),
+            owner: "platform-team".to_owned(),
+            next_action: "Publish the API contract.".to_owned(),
+            created_by: "connector-sync".to_owned(),
+            created_at: "2026-08-08T00:00:00Z".to_owned(),
+        };
+
+        let serialized = serde_json::to_value(dependency).expect("dependency should serialize");
+
+        assert_eq!(serialized["schema"]["version"], 1);
+        assert_eq!(serialized["kind"], "blocks");
+        assert_eq!(serialized["source"]["kind"], "connector");
+        assert_eq!(serialized["source"]["connector_id"], "linear");
     }
 
     #[test]

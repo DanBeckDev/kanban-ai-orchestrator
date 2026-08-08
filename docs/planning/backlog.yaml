@@ -62,13 +62,14 @@ tasks:
   - id: CORE-002
     epic: CORE
     title: Implement the typed dependency graph and eligibility evaluator
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001]
     acceptance_criteria:
       - All incoming hard blockers must be satisfied before a task becomes eligible.
       - Cycle insertion is rejected with an actionable explanation.
       - Critical path, upstream/downstream blockers, and safe parallel tasks can be calculated.
+    notes: Versioned typed dependencies, hard-cycle validation, explainable eligibility, graph traversal, and dependency-safe parallel-ready task selection were implemented and verified on 2026-08-08. Hard blockers require accepted completion evidence or review acceptance and must name a reason, owner, and next action.
 
   - id: CORE-003
     epic: CORE

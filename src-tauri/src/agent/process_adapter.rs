@@ -6,7 +6,9 @@ use std::{
     thread,
 };
 
-use super::process_event_reader::{has_terminal_event, kill_child, read_events};
+use super::process_event_reader::{
+    ProcessEventProtocol, has_terminal_event, kill_child, read_events,
+};
 use super::{
     AgentAdapter, AgentAdapterError, AgentCapabilities, AgentProfile, AgentSession,
     NormalizedAgentEvent, StartAgentRequest,
@@ -21,6 +23,7 @@ pub struct ProcessAgentDefinition {
 
 pub struct ProcessAgentAdapter {
     definition: ProcessAgentDefinition,
+    protocol: ProcessEventProtocol,
     next_session_number: u64,
     sessions: BTreeMap<String, ProcessSession>,
 }
@@ -31,15 +34,10 @@ struct ProcessSession {
 }
 
 impl ProcessAgentAdapter {
-    pub fn from_profile(profile: AgentProfile) -> Self {
-        Self::new(ProcessAgentDefinition {
-            name: profile.name,
-            program: profile.program,
-            arguments: profile.arguments,
-        })
-    }
-
-    pub fn from_profile_for_execution(profile: AgentProfile, execution_id: &str) -> Self {
+    pub(crate) fn from_structured_profile_for_execution(
+        profile: AgentProfile,
+        execution_id: &str,
+    ) -> Self {
         Self::new(ProcessAgentDefinition {
             name: format!("{}-{execution_id}", profile.name),
             program: profile.program,
@@ -48,8 +46,16 @@ impl ProcessAgentAdapter {
     }
 
     pub fn new(definition: ProcessAgentDefinition) -> Self {
+        Self::new_with_event_protocol(definition, ProcessEventProtocol::Normalized)
+    }
+
+    pub(crate) fn new_with_event_protocol(
+        definition: ProcessAgentDefinition,
+        protocol: ProcessEventProtocol,
+    ) -> Self {
         Self {
             definition,
+            protocol,
             next_session_number: 1,
             sessions: BTreeMap::new(),
         }
@@ -123,9 +129,12 @@ impl ProcessAgentAdapter {
         };
         let reader_session_id = session_id.clone();
         let reader_child = child.clone();
+        let protocol = self.protocol;
         if let Err(error) = thread::Builder::new()
             .name(format!("agent-events-{session_id}"))
-            .spawn(move || read_events(stdout, &reader_session_id, &reader_child, &events))
+            .spawn(move || {
+                read_events(stdout, &reader_session_id, &reader_child, &events, protocol)
+            })
         {
             kill_child(&child);
             return Err(AgentAdapterError::ProcessRuntime {

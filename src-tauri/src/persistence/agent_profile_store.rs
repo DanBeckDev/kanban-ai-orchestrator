@@ -47,11 +47,15 @@ impl SqliteEventStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::{agent::AgentProfile, persistence::SqliteEventStore};
+    use crate::{
+        agent::{AgentProfile, AgentProfileKind},
+        persistence::SqliteEventStore,
+    };
 
     fn profile(name: &str, argument: &str) -> AgentProfile {
         AgentProfile {
             name: name.to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
             program: "agent-worker".to_owned(),
             arguments: vec![argument.to_owned()],
         }

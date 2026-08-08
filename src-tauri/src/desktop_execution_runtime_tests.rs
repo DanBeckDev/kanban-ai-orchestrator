@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    agent::AgentProfile,
+    agent::{AgentProfile, AgentProfileKind},
     application::{
         BoardService, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
         ExecutionEventController, RecordExecutionRequest, StartExecutionRequest,
@@ -49,6 +49,7 @@ fn prepared_runtime(
     service
         .save_agent_profile(AgentProfile {
             name: "structured-script".to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
             program: "sh".to_owned(),
             arguments: vec![
                 "-c".to_owned(),
@@ -220,6 +221,7 @@ fn fails_a_feedback_request_from_a_profile_that_cannot_resume() {
         .expect("service should remain available")
         .save_agent_profile(AgentProfile {
             name: "input-requesting-script".to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
             program: "sh".to_owned(),
             arguments: vec![
                 "-c".to_owned(),
@@ -263,6 +265,7 @@ fn stops_a_live_direct_process_and_records_an_interrupted_attempt() {
         .expect("service should remain available")
         .save_agent_profile(AgentProfile {
             name: "long-running-script".to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
             program: "sh".to_owned(),
             arguments: vec![
                 "-c".to_owned(),

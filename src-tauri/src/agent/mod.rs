@@ -4,6 +4,8 @@ mod ingestion;
 mod process_adapter;
 mod process_event_reader;
 mod profile;
+mod provider_adapter;
+mod provider_event_decoder;
 
 pub use contract::{
     AgentAdapter, AgentAdapterError, AgentCapabilities, AgentSession, NormalizedAgentEvent,
@@ -12,10 +14,17 @@ pub use contract::{
 pub use fake_adapter::FakeAgentAdapter;
 pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
-pub use profile::{AgentProfile, AgentProfileError};
+pub use profile::{AgentProfile, AgentProfileError, AgentProfileKind};
+pub use provider_adapter::{ClaudeCodeAdapter, CodexCliAdapter, WorkerAgentAdapter};
 
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
+mod conformance_tests;
+
+#[cfg(all(test, unix))]
 mod process_adapter_tests;
+
+#[cfg(all(test, unix))]
+mod provider_adapter_tests;

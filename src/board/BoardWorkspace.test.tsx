@@ -355,6 +355,12 @@ describe("board workspace", () => {
     await waitFor(() =>
       expect(boardGateway.saveAgentProfile).toHaveBeenCalledOnce(),
     );
+    expect(boardGateway.saveAgentProfile).toHaveBeenCalledWith({
+      name: "structured-worker",
+      kind: "structured_process",
+      program: "agent-worker",
+      arguments: ["--jsonl"],
+    });
 
     const launchForm = screen.getByRole("form", {
       name: "Start agent for Task ready-task",
@@ -375,5 +381,40 @@ describe("board workspace", () => {
         agentProfileName: "structured-worker",
       }),
     );
+  });
+
+  it("shows the selected provider's unsupported capabilities before task start", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    const profileForm = screen.getByRole("form", {
+      name: "Save agent profile",
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+      target: { value: "codex-worker" },
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Adapter"), {
+      target: { value: "codex_cli" },
+    });
+    expect(within(profileForm).getByLabelText("Program")).toHaveValue("codex");
+    expect(
+      within(profileForm).getByText(/native structured event protocol/i),
+    ).toBeVisible();
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Save profile" }),
+    );
+
+    const launchForm = await screen.findByRole("form", {
+      name: "Start agent for Task ready-task",
+    });
+    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
+      target: { value: "codex-worker" },
+    });
+
+    expect(
+      within(launchForm).getByText(
+        /feedback, session resume, and safe process-tree cancellation are not available yet/i,
+      ),
+    ).toBeVisible();
   });
 });

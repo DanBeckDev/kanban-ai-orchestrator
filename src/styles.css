@@ -297,9 +297,14 @@ legend,
 }
 
 .profile-list span,
-.launch-hint {
+.launch-hint,
+.agent-capability-summary {
   color: #aebbd0;
   font-size: 0.78rem;
+}
+
+.agent-capability-summary {
+  margin: 0;
 }
 
 .execution-history summary,

@@ -276,8 +276,14 @@ export type TransitionWorkItemRequest = Readonly<{
   recordedAt: string;
 }>;
 
+export type AgentProfileKind =
+  | "structured_process"
+  | "codex_cli"
+  | "claude_code";
+
 export type AgentProfile = Readonly<{
   name: string;
+  kind: AgentProfileKind;
   program: string;
   arguments: readonly string[];
 }>;

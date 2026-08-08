@@ -4,19 +4,59 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use super::provider_event_decoder::{NativeEventDecoder, NativeEventProtocol};
 use super::{NormalizedAgentEvent, NormalizedAgentEventKind};
 
 const MAX_EVENT_LINE_BYTES: usize = 64 * 1024;
 const MAX_RETAINED_EVENTS: usize = 1_000;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ProcessEventProtocol {
+    Normalized,
+    Codex,
+    ClaudeCode,
+}
+
+enum ProcessEventDecoder {
+    NormalizedJsonl,
+    Native(NativeEventDecoder),
+}
+
+impl ProcessEventProtocol {
+    fn decoder(self) -> ProcessEventDecoder {
+        match self {
+            Self::Normalized => ProcessEventDecoder::NormalizedJsonl,
+            Self::Codex => {
+                ProcessEventDecoder::Native(NativeEventDecoder::new(NativeEventProtocol::Codex))
+            }
+            Self::ClaudeCode => ProcessEventDecoder::Native(NativeEventDecoder::new(
+                NativeEventProtocol::ClaudeCode,
+            )),
+        }
+    }
+}
+
+impl ProcessEventDecoder {
+    fn decode_line(&mut self, line: &[u8]) -> Result<Vec<NormalizedAgentEvent>, String> {
+        match self {
+            Self::NormalizedJsonl => serde_json::from_slice(line)
+                .map(|event| vec![event])
+                .map_err(|error| format!("invalid JSON event: {error}")),
+            Self::Native(decoder) => decoder.decode_line(line),
+        }
+    }
+}
 
 pub(super) fn read_events(
     mut stdout: impl Read,
     session_id: &str,
     child: &Arc<Mutex<Child>>,
     events: &Arc<Mutex<Vec<NormalizedAgentEvent>>>,
+    protocol: ProcessEventProtocol,
 ) {
     let mut pending = Vec::new();
     let mut chunk = [0; 4096];
+    let mut decoder = protocol.decoder();
 
     loop {
         let read = match stdout.read(&mut chunk) {
@@ -37,7 +77,7 @@ pub(super) fn read_events(
         pending.extend_from_slice(&chunk[..read]);
         while let Some(newline) = pending.iter().position(|byte| *byte == b'\n') {
             let line: Vec<_> = pending.drain(..=newline).collect();
-            if !record_event_line(&line, session_id, events) {
+            if !record_event_line(&line, session_id, events, &mut decoder) {
                 kill_child(child);
                 return;
             }
@@ -49,7 +89,7 @@ pub(super) fn read_events(
         }
     }
 
-    if !pending.is_empty() && !record_event_line(&pending, session_id, events) {
+    if !pending.is_empty() && !record_event_line(&pending, session_id, events, &mut decoder) {
         kill_child(child);
     }
 }
@@ -77,13 +117,16 @@ fn record_event_line(
     line: &[u8],
     session_id: &str,
     events: &Arc<Mutex<Vec<NormalizedAgentEvent>>>,
+    decoder: &mut ProcessEventDecoder,
 ) -> bool {
     let line = line.strip_suffix(b"\n").unwrap_or(line);
     let line = line.strip_suffix(b"\r").unwrap_or(line);
-    match serde_json::from_slice::<NormalizedAgentEvent>(line) {
-        Ok(event) => record_event(event, events),
-        Err(error) => {
-            record_reader_failure(session_id, events, &format!("invalid JSON event: {error}"));
+    match decoder.decode_line(line) {
+        Ok(decoded_events) => decoded_events
+            .into_iter()
+            .all(|event| record_event(event, events)),
+        Err(reason) => {
+            record_reader_failure(session_id, events, &reason);
             false
         }
     }

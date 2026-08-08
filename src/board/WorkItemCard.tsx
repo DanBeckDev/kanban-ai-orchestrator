@@ -11,6 +11,7 @@ import {
   stateLabel,
   timestamp,
 } from "./presentation";
+import { AgentLaunchForm } from "./AgentLaunchForm";
 import { ReviewCheckForm } from "./ReviewCheckForm";
 import { ReviewDecisionForm } from "./ReviewDecisionForm";
 import { ExecutionControl } from "./ExecutionControl";
@@ -119,7 +120,7 @@ export function WorkItemCard({
         </section>
       )}
       {workItem.state === "ready" && (
-        <StartAgentForm
+        <AgentLaunchForm
           busy={busy}
           profiles={agentProfiles}
           workItem={workItem}
@@ -202,76 +203,6 @@ export function WorkItemCard({
 
 function isRecoveryState(state: WorkItemState): boolean {
   return state === "blocked" || state === "failed" || state === "interrupted";
-}
-
-function StartAgentForm({
-  busy,
-  profiles,
-  workItem,
-  onStart,
-}: Readonly<{
-  busy: boolean;
-  profiles: readonly AgentProfile[];
-  workItem: WorkItem;
-  onStart: (request: StartExecutionRequest) => Promise<void>;
-}>) {
-  const [profileName, setProfileName] = useState("");
-  const [brief, setBrief] = useState(
-    `Implement ${workItem.title}.\n\n${workItem.description}\n\nAcceptance criteria:\n${workItem.acceptanceCriteria.map((criterion) => `- ${criterion}`).join("\n")}`,
-  );
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await onStart({
-      executionId: `execution-${workItem.id}-${timestamp()}`,
-      workItemId: workItem.id,
-      agentProfileName: profileName,
-      taskBrief: brief,
-    });
-  }
-
-  if (profiles.length === 0) {
-    return (
-      <p className="launch-hint">
-        Save an agent profile before starting this task.
-      </p>
-    );
-  }
-
-  return (
-    <form
-      aria-label={`Start agent for ${workItem.title}`}
-      className="agent-launch-form"
-      onSubmit={submit}
-    >
-      <label>
-        Agent profile
-        <select
-          required
-          value={profileName}
-          onChange={(event) => setProfileName(event.target.value)}
-        >
-          <option value="">Select profile</option>
-          {profiles.map((profile) => (
-            <option key={profile.name} value={profile.name}>
-              {profile.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Task brief
-        <textarea
-          required
-          value={brief}
-          onChange={(event) => setBrief(event.target.value)}
-        />
-      </label>
-      <button disabled={busy} type="submit">
-        Start agent
-      </button>
-    </form>
-  );
 }
 
 function ExecutionHistory({

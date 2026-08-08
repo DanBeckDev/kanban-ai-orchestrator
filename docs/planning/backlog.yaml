@@ -113,14 +113,14 @@ tasks:
   - id: EXEC-003
     epic: EXEC
     title: Add initial Codex CLI, Claude Code, and third-agent adapters
-    status: in_progress
+    status: done
     priority: P1
     depends_on: [EXEC-001, EXEC-002]
     acceptance_criteria:
       - Three adapters pass the common conformance suite.
       - Unsupported capabilities are visible before task start.
       - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
-    notes: In progress on 2026-08-08. The generic structured-process boundary now receives a task brief over stdin and emits bounded JSON-lines lifecycle events without a shell or raw transcript retention. It explicitly reports resume, feedback, and process-tree interruption as unsupported until a provider/platform adapter can implement them safely. Codex CLI, Claude Code, and a third concrete wrapper still need conformance coverage and execution-controller integration.
+    notes: Completed on 2026-08-08 with three provider-neutral execution profiles: a generic structured JSONL bridge, a native Codex CLI wrapper, and a native Claude Code wrapper. Each runs without a production shell, receives the brief through stdin, converts bounded structured output to safe normalized events, and passes one shared non-interactive conformance suite. The desktop profile and launch UI show the selected provider and its unavailable feedback, session-recovery, and safe process-tree cancellation capabilities before start. Codex protocol/sandbox controls and Claude protocol/permission controls are adapter-owned and profile validation rejects attempts to override them. Resume, interactive feedback, and process-tree cancellation remain explicitly unsupported until future provider/platform adapters prove them.
 
   - id: ORCH-001
     epic: ORCH

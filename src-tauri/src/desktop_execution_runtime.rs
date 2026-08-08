@@ -9,7 +9,7 @@ use std::{
 use crate::{
     agent::{
         AgentAdapter, AgentProfile, NormalizedAgentEvent, NormalizedAgentEventKind,
-        ProcessAgentAdapter,
+        WorkerAgentAdapter,
     },
     application::{
         ExecutionEventController, RecordEvidenceRequest, RecordExecutionRequest,
@@ -33,7 +33,7 @@ pub(crate) struct ExecutionRuntime {
     pub(crate) service: Arc<Mutex<LocalBoardService>>,
     pub(crate) workspace_root: PathBuf,
     launch_gate: Arc<Mutex<()>>,
-    pub(crate) agents: Arc<Mutex<BTreeMap<String, ProcessAgentAdapter>>>,
+    pub(crate) agents: Arc<Mutex<BTreeMap<String, WorkerAgentAdapter>>>,
     pub(crate) stop_requests: Arc<Mutex<BTreeSet<String>>>,
 }
 
@@ -81,7 +81,7 @@ impl ExecutionRuntime {
         self.record_pending_execution(&request, &assignment)?;
 
         let mut adapter =
-            ProcessAgentAdapter::from_profile_for_execution(profile, &request.execution_id);
+            WorkerAgentAdapter::from_profile_for_execution(profile, &request.execution_id);
         let session = match adapter.start(preparation.request().clone()) {
             Ok(session) => session,
             Err(error) => {
@@ -187,7 +187,7 @@ impl ExecutionRuntime {
     fn register_live_agent(
         &self,
         execution_id: &str,
-        mut adapter: ProcessAgentAdapter,
+        mut adapter: WorkerAgentAdapter,
         session_id: &str,
     ) -> Result<(), ExecutionRuntimeError> {
         let mut agents = match lock(&self.agents, "agent runtime") {

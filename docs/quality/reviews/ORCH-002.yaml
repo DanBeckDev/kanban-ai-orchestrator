@@ -19,11 +19,13 @@ scope:
   - docs/decisions/0010-source-structure-gate.md
   - docs/quality/code-structure.md
   - docs/quality/code-structure-exceptions.json
+  - docs/quality/code-requirements.md
+  - docs/quality/review-receipt.template.yaml
   - docs/planning/backlog.yaml
 review:
   skill: clean-code-review
   reviewer: codex
-  reviewed_at: 2026-08-08T15:31:00Z
+  reviewed_at: 2026-08-08T15:55:00Z
   findings:
     must_fix: []
     should_fix: []

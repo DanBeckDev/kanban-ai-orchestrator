@@ -6,13 +6,16 @@ import type {
   AddDependencyRequest,
   AgentProfile,
   BoardGateway,
+  BoardPlan,
   BoardSnapshot,
+  ConfirmPlanRequest,
   CreateWorkItemRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  ProposePlanRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -36,6 +39,7 @@ export function BoardWorkspace({
   const [agentProfiles, setAgentProfiles] = useState<readonly AgentProfile[]>(
     [],
   );
+  const [boardPlan, setBoardPlan] = useState<BoardPlan>();
   const [linearConnectionStatus, setLinearConnectionStatus] =
     useState<LinearConnectionStatus>(disconnectedLinearStatus);
   const [linearIssues, setLinearIssues] = useState<
@@ -71,8 +75,7 @@ export function BoardWorkspace({
         projectId: input.projectId,
         name: input.boardName,
       });
-      setAgentProfiles(await gateway.agentProfiles());
-      await refreshLinearConnectionStatus();
+      await loadBoardContext(input.boardId);
       return boardSnapshot;
     });
   }
@@ -80,8 +83,7 @@ export function BoardWorkspace({
   async function openBoard(boardId: string) {
     await run(async () => {
       const boardSnapshot = await gateway.boardSnapshot(boardId);
-      setAgentProfiles(await gateway.agentProfiles());
-      await refreshLinearConnectionStatus();
+      await loadBoardContext(boardId);
       return boardSnapshot;
     });
   }
@@ -92,6 +94,33 @@ export function BoardWorkspace({
 
   async function addDependency(request: AddDependencyRequest) {
     await run(() => gateway.addDependency(request));
+  }
+
+  async function proposePlan(request: ProposePlanRequest) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setBoardPlan(await gateway.proposePlan(request));
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+      throw operationError;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmPlan(request: ConfirmPlanRequest) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const updatedSnapshot = await gateway.confirmPlan(request);
+      setSnapshot(updatedSnapshot);
+      setBoardPlan(await gateway.boardPlan(request.boardId));
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function transitionWorkItem(request: TransitionWorkItemRequest) {
@@ -145,6 +174,13 @@ export function BoardWorkspace({
       });
     }
   }, [gateway]);
+
+  async function loadBoardContext(boardId: string) {
+    setAgentProfiles(await gateway.agentProfiles());
+    setBoardPlan(await gateway.boardPlan(boardId));
+    setLinearIssues([]);
+    await refreshLinearConnectionStatus();
+  }
 
   async function beginLinearOAuth(configuration: LinearOAuthConfiguration) {
     setBusy(true);
@@ -205,6 +241,8 @@ export function BoardWorkspace({
           busy={busy}
           agentProfiles={agentProfiles}
           onAddDependency={addDependency}
+          boardPlan={boardPlan}
+          onConfirmPlan={confirmPlan}
           onCreateWorkItem={createWorkItem}
           onImportLinearBlocker={importLinearBlocker}
           onImportLinearIssue={importLinearIssue}
@@ -212,6 +250,7 @@ export function BoardWorkspace({
           linearIssues={linearIssues}
           onConnectLinear={beginLinearOAuth}
           onLoadLinearIssues={loadLinearAssignedIssues}
+          onProposePlan={proposePlan}
           onSaveAgentProfile={saveAgentProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}

@@ -11,6 +11,7 @@ mod event_store_support;
 mod execution_activation_store;
 mod execution_store;
 mod external_link_store;
+mod plan_store;
 pub(crate) mod sqlite_event_store;
 
 pub use board_store_error::BoardStoreError;

@@ -3,18 +3,22 @@ import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
 import { LinearImportForm } from "./LinearImportForm";
+import { PlanProposalPanel } from "./PlanProposalPanel";
 import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
   AddDependencyRequest,
   AgentProfile,
+  BoardPlan,
   BoardSnapshot,
+  ConfirmPlanRequest,
   CreateWorkItemRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  ProposePlanRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -24,8 +28,10 @@ import type {
 type BoardViewProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
+  boardPlan?: BoardPlan;
   snapshot: BoardSnapshot;
   onAddDependency: (request: AddDependencyRequest) => Promise<void>;
+  onConfirmPlan: (request: ConfirmPlanRequest) => Promise<void>;
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
   onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
   onImportLinearIssue: (request: ImportLinearIssueRequest) => Promise<void>;
@@ -33,6 +39,7 @@ type BoardViewProps = Readonly<{
   linearIssues: readonly LinearIssueSummary[];
   onConnectLinear: (configuration: LinearOAuthConfiguration) => Promise<void>;
   onLoadLinearIssues: () => Promise<void>;
+  onProposePlan: (request: ProposePlanRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
@@ -46,8 +53,10 @@ type BoardViewProps = Readonly<{
 export function BoardView({
   busy,
   agentProfiles,
+  boardPlan,
   snapshot,
   onAddDependency,
+  onConfirmPlan,
   onCreateWorkItem,
   onImportLinearBlocker,
   onImportLinearIssue,
@@ -55,6 +64,7 @@ export function BoardView({
   linearIssues,
   onConnectLinear,
   onLoadLinearIssues,
+  onProposePlan,
   onSaveAgentProfile,
   onStartExecution,
   onStopExecution,
@@ -106,6 +116,13 @@ export function BoardView({
           ))}
         </section>
         <aside className="board-actions">
+          <PlanProposalPanel
+            boardId={snapshot.board.id}
+            busy={busy}
+            plan={boardPlan}
+            onConfirm={onConfirmPlan}
+            onPropose={onProposePlan}
+          />
           <TaskForm
             boardId={snapshot.board.id}
             busy={busy}

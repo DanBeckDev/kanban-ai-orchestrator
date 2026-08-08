@@ -1,6 +1,8 @@
 mod agent_profile_service;
+mod board_plan;
 mod board_requests;
 mod board_service;
+mod board_service_error;
 mod board_snapshot;
 mod completion_evidence_service;
 mod execution_event_controller;
@@ -10,17 +12,21 @@ mod execution_service;
 mod execution_start_request;
 mod linear_import_request;
 mod linear_import_service;
+mod plan_requests;
+mod plan_service;
 mod review_check_request;
 mod review_decision_request;
 mod review_service;
 
 pub use agent_profile_service::AgentProfileServiceError;
+pub use board_plan::{BoardPlan, StoredPlan};
 pub use board_requests::{
     AddDependencyRequest, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
     RecordEvidenceRequest, RecordExecutionRequest, TransitionWorkItemRequest,
     UpdateExecutionRequest,
 };
-pub use board_service::{BoardRepository, BoardService, BoardServiceError};
+pub use board_service::{BoardRepository, BoardService};
+pub use board_service_error::BoardServiceError;
 pub use board_snapshot::{BoardActivity, BoardSnapshot, board_activity};
 pub use execution_event_controller::{ExecutionEventController, ExecutionEventControllerError};
 pub use execution_launch::{
@@ -28,6 +34,10 @@ pub use execution_launch::{
 };
 pub use execution_start_request::StartExecutionRequest;
 pub use linear_import_request::{ImportLinearBlockerRequest, ImportLinearIssueRequest};
+pub use plan_requests::{
+    ConfirmPlanRequest, ProposePlanRequest, ProposedPlanDependencyRequest,
+    ProposedPlanWorkItemRequest,
+};
 pub use review_check_request::RecordReviewCheckRequest;
 pub use review_decision_request::RecordReviewDecisionRequest;
 

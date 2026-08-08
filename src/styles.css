@@ -437,6 +437,12 @@ legend,
   background: #3b1c27;
 }
 
+.inline-error {
+  margin: 0;
+  color: #ffd6da;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 58rem) {
   .application-header,
   .board-header,

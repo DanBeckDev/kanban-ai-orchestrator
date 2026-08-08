@@ -90,6 +90,7 @@ pub(super) fn create_board(service: &mut BoardService<SqliteEventStore>) {
         .expect("board should be created");
 }
 
+mod plan;
 mod review;
 
 #[test]

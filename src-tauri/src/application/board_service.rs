@@ -1,16 +1,17 @@
-use std::{error::Error, fmt};
+use std::error::Error;
 
 use crate::agent::AgentProfile;
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
-    EvidenceKind, EvidenceResult, Execution, ExecutionId, ExternalLink, MaterializedWorkItem,
-    Project, ProjectId, RecordedWorkItemEvent, SchemaMetadata, TransitionConfig,
-    TransitionWorkItemCommand, WorkItem, WorkItemEventId, WorkItemId, WorkItemState,
+    Execution, ExecutionId, ExternalLink, MaterializedWorkItem, Project, ProjectId,
+    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
+    WorkItemEventId, WorkItemId, WorkItemState,
 };
+use crate::orchestration::{PlanConfirmation, PlanProposal};
 
 use super::{
-    AddDependencyRequest, BoardSnapshot, CreateBoardRequest, CreateProjectRequest,
-    CreateWorkItemRequest, TransitionWorkItemRequest,
+    AddDependencyRequest, BoardServiceError, BoardSnapshot, CreateBoardRequest,
+    CreateProjectRequest, CreateWorkItemRequest, StoredPlan, TransitionWorkItemRequest,
 };
 
 pub trait BoardRepository {
@@ -63,6 +64,13 @@ pub trait BoardRepository {
     fn save_agent_profile(&mut self, profile: AgentProfile) -> Result<AgentProfile, Self::Error>;
     fn agent_profile(&self, name: &str) -> Result<Option<AgentProfile>, Self::Error>;
     fn agent_profiles(&self) -> Result<Vec<AgentProfile>, Self::Error>;
+    fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error>;
+    fn stored_plan_for_board(&self, board_id: &BoardId) -> Result<Option<StoredPlan>, Self::Error>;
+    fn confirm_and_materialize_plan(
+        &mut self,
+        proposal: PlanProposal,
+        confirmation: PlanConfirmation,
+    ) -> Result<(), Self::Error>;
     fn board_snapshot(&self, board_id: &BoardId) -> Result<BoardSnapshot, Self::Error>;
 }
 
@@ -244,7 +252,7 @@ where
     }
 }
 
-pub(super) fn validate_required<RepositoryError>(
+pub(crate) fn validate_required<RepositoryError>(
     value: &str,
     field: &'static str,
 ) -> Result<(), BoardServiceError<RepositoryError>> {
@@ -255,7 +263,7 @@ pub(super) fn validate_required<RepositoryError>(
     }
 }
 
-fn validate_criteria<RepositoryError>(
+pub(crate) fn validate_criteria<RepositoryError>(
     acceptance_criteria: &[String],
 ) -> Result<(), BoardServiceError<RepositoryError>> {
     if acceptance_criteria.is_empty()
@@ -266,148 +274,5 @@ fn validate_criteria<RepositoryError>(
         Err(BoardServiceError::InvalidAcceptanceCriteria)
     } else {
         Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub enum BoardServiceError<RepositoryError> {
-    Repository(RepositoryError),
-    MissingRequiredField {
-        field: &'static str,
-    },
-    InvalidAcceptanceCriteria,
-    InvalidExternalIdentifier {
-        field: &'static str,
-    },
-    InvalidExternalUrl,
-    ProjectNotFound {
-        project_id: ProjectId,
-    },
-    BoardNotFound {
-        board_id: BoardId,
-    },
-    WorkItemNotFound {
-        work_item_id: WorkItemId,
-    },
-    ExecutionNotFound {
-        execution_id: ExecutionId,
-    },
-    ExecutionNotPending {
-        execution_id: ExecutionId,
-        status: crate::domain::ExecutionStatus,
-    },
-    WorkItemNotReady {
-        work_item_id: WorkItemId,
-        state: WorkItemState,
-    },
-    WorkItemNotInReview {
-        work_item_id: WorkItemId,
-        state: WorkItemState,
-    },
-    ExternalResourceNotLinked {
-        connector_id: &'static str,
-        external_id: String,
-    },
-    MissingRecordedEvidence {
-        work_item_id: WorkItemId,
-        kind: EvidenceKind,
-        result: EvidenceResult,
-    },
-}
-
-impl<RepositoryError> fmt::Display for BoardServiceError<RepositoryError>
-where
-    RepositoryError: fmt::Display,
-{
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Repository(error) => write!(formatter, "board repository error: {error}"),
-            Self::MissingRequiredField { field } => write!(formatter, "{field} is required"),
-            Self::InvalidAcceptanceCriteria => {
-                formatter.write_str("at least one non-empty acceptance criterion is required")
-            }
-            Self::InvalidExternalIdentifier { field } => {
-                write!(formatter, "{field} must be a valid UUID")
-            }
-            Self::InvalidExternalUrl => {
-                formatter.write_str("Linear issue URL must be an HTTPS linear.app URL")
-            }
-            Self::ProjectNotFound { project_id } => {
-                write!(formatter, "project {} was not found", project_id.0)
-            }
-            Self::BoardNotFound { board_id } => {
-                write!(formatter, "board {} was not found", board_id.0)
-            }
-            Self::WorkItemNotFound { work_item_id } => {
-                write!(formatter, "work item {} was not found", work_item_id.0)
-            }
-            Self::ExecutionNotFound { execution_id } => {
-                write!(formatter, "execution {} was not found", execution_id.0)
-            }
-            Self::ExecutionNotPending {
-                execution_id,
-                status,
-            } => write!(
-                formatter,
-                "execution {} cannot start because it is {status:?}",
-                execution_id.0
-            ),
-            Self::WorkItemNotReady {
-                work_item_id,
-                state,
-            } => write!(
-                formatter,
-                "work item {} cannot start because it is {state:?}",
-                work_item_id.0
-            ),
-            Self::WorkItemNotInReview {
-                work_item_id,
-                state,
-            } => write!(
-                formatter,
-                "work item {} cannot record review evidence because it is {state:?}",
-                work_item_id.0
-            ),
-            Self::ExternalResourceNotLinked {
-                connector_id,
-                external_id,
-            } => write!(
-                formatter,
-                "external resource {connector_id}:{external_id} is not linked to a local task"
-            ),
-            Self::MissingRecordedEvidence {
-                work_item_id,
-                kind,
-                result,
-            } => write!(
-                formatter,
-                "work item {} requires recorded {result:?} {kind:?} evidence before Done",
-                work_item_id.0
-            ),
-        }
-    }
-}
-
-impl<RepositoryError> Error for BoardServiceError<RepositoryError>
-where
-    RepositoryError: Error + 'static,
-{
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Repository(error) => Some(error),
-            Self::MissingRequiredField { .. }
-            | Self::InvalidAcceptanceCriteria
-            | Self::InvalidExternalIdentifier { .. }
-            | Self::InvalidExternalUrl
-            | Self::ProjectNotFound { .. }
-            | Self::BoardNotFound { .. }
-            | Self::WorkItemNotFound { .. }
-            | Self::ExecutionNotFound { .. }
-            | Self::ExecutionNotPending { .. }
-            | Self::WorkItemNotReady { .. }
-            | Self::WorkItemNotInReview { .. }
-            | Self::ExternalResourceNotLinked { .. }
-            | Self::MissingRecordedEvidence { .. } => None,
-        }
     }
 }

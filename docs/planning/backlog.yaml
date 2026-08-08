@@ -184,6 +184,19 @@ tasks:
       - Accessible component tests cover task creation, state-transition feedback, dependency visibility, and error presentation.
     notes: Completed on 2026-08-08 with a Tauri-command-backed React board. Users can create or reopen local boards, create budgeted tasks, submit guarded transitions with completion evidence, manage typed dependencies, see dependency responsibility, and distinguish plan, ready, active, review, done, and recovery work. The board only presents daemon responses; it does not own persistence or state-machine authority.
 
+  - id: APP-003
+    epic: APP
+    title: Materialize durable, user-confirmed plan proposals through the desktop board
+    status: done
+    priority: P0
+    depends_on: [APP-001, APP-002, ORCH-002]
+    acceptance_criteria:
+      - A provider-neutral proposal can be submitted for one existing board and is rendered as its exact task, dependency, critical-path, parallel-stage, budget, and assumption preview.
+      - Confirmation names a user and time, survives reopening, and atomically creates the proposed tasks and validated dependencies exactly once.
+      - A rejected, mismatched, cross-board, duplicate, or already-confirmed proposal cannot partly mutate the board.
+      - The desktop clearly distinguishes an unconfirmed preview from a confirmed plan and sends only typed commands to the local daemon.
+    notes: Completed on 2026-08-08 with typed desktop commands, a durable SQLite proposal/confirmation record, exact daemon-generated previews, and one atomic materialization transaction. The UI can inspect, revise, cancel, reject, or confirm an unconfirmed proposal; confirmation records identity and time, survives reopening, and is idempotent on retry. Tests cover no partial mutation for mismatched, cross-board, duplicate, collision, and already-confirmed requests. A future provider-neutral orchestrator adapter will generate this same safe proposal contract.
+
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage

@@ -11,10 +11,11 @@ use tauri_plugin_opener::OpenerExt;
 use crate::{
     agent::AgentProfile,
     application::{
-        AddDependencyRequest, BoardService, BoardSnapshot, CreateBoardRequest,
-        CreateProjectRequest, CreateWorkItemRequest, ImportLinearBlockerRequest,
-        ImportLinearIssueRequest, RecordReviewCheckRequest, RecordReviewDecisionRequest,
-        StartExecutionRequest, TransitionWorkItemRequest,
+        AddDependencyRequest, BoardPlan, BoardService, BoardSnapshot, ConfirmPlanRequest,
+        CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
+        ImportLinearBlockerRequest, ImportLinearIssueRequest, ProposePlanRequest,
+        RecordReviewCheckRequest, RecordReviewDecisionRequest, StartExecutionRequest,
+        TransitionWorkItemRequest,
     },
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
@@ -103,6 +104,36 @@ pub(crate) fn add_dependency(
 ) -> Result<BoardSnapshot, String> {
     lock_service(&state)?
         .add_dependency(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn propose_plan(
+    state: State<'_, BoardDaemonState>,
+    request: ProposePlanRequest,
+) -> Result<BoardPlan, String> {
+    lock_service(&state)?
+        .propose_plan(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn board_plan(
+    state: State<'_, BoardDaemonState>,
+    board_id: String,
+) -> Result<Option<BoardPlan>, String> {
+    lock_service(&state)?
+        .board_plan(&board_id)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn confirm_plan(
+    state: State<'_, BoardDaemonState>,
+    request: ConfirmPlanRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .confirm_plan(request)
         .map_err(error_message)
 }
 

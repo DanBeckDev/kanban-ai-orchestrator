@@ -3,7 +3,9 @@ import type {
   AddDependencyRequest,
   AgentProfile,
   BoardGateway,
+  BoardPlan,
   BoardSnapshot,
+  ConfirmPlanRequest,
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
@@ -12,6 +14,7 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  ProposePlanRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -30,6 +33,15 @@ export const tauriBoardGateway: BoardGateway = {
   },
   addDependency(request: AddDependencyRequest): Promise<BoardSnapshot> {
     return invoke("add_dependency", { request });
+  },
+  proposePlan(request: ProposePlanRequest): Promise<BoardPlan> {
+    return invoke("propose_plan", { request });
+  },
+  boardPlan(boardId: string): Promise<BoardPlan | undefined> {
+    return invoke("board_plan", { boardId });
+  },
+  confirmPlan(request: ConfirmPlanRequest): Promise<BoardSnapshot> {
+    return invoke("confirm_plan", { request });
   },
   transitionWorkItem(
     request: TransitionWorkItemRequest,

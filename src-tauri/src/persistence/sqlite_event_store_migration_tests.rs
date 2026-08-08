@@ -20,7 +20,7 @@ fn rejects_databases_created_by_a_newer_schema_version() {
             applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         INSERT INTO schema_migrations (version, applied_at)
-        VALUES (8, '2026-08-08T00:00:00Z');",
+        VALUES (9, '2026-08-08T00:00:00Z');",
         )
         .expect("future schema version should be recorded");
     drop(connection);
@@ -28,8 +28,8 @@ fn rejects_databases_created_by_a_newer_schema_version() {
     assert!(matches!(
         SqliteEventStore::open(&database_path),
         Err(EventStoreError::UnsupportedDatabaseSchemaVersion {
-            current: 8,
-            supported: 7
+            current: 9,
+            supported: 8
         })
     ));
 }
@@ -72,19 +72,19 @@ fn migrates_existing_event_stores_to_the_current_schema() {
         store
             .database_schema_version()
             .expect("schema version should load"),
-        7
+        8
     );
     assert_eq!(
         store
             .connection
             .query_row(
                 "SELECT COUNT(*) FROM sqlite_master
-                 WHERE type = 'table' AND name IN ('executions', 'evidence', 'agent_profiles', 'external_links')",
+                 WHERE type = 'table' AND name IN ('executions', 'evidence', 'agent_profiles', 'external_links', 'plan_proposals')",
                 [],
                 |row| row.get::<_, i64>(0),
             )
             .expect("execution tables should be created during migration"),
-        4
+        5
     );
     assert_eq!(
         store

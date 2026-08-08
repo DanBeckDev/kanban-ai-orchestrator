@@ -3,11 +3,14 @@ import { vi } from "vitest";
 import type {
   AgentProfile,
   BoardGateway,
+  BoardPlan,
   BoardSnapshot,
+  ConfirmPlanRequest,
   CreateWorkItemRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  ProposePlanRequest,
   TransitionWorkItemRequest,
   WorkItemState,
 } from "./types";
@@ -53,6 +56,8 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
   let linearConnectionStatus: LinearConnectionStatus = { kind: "disconnected" };
   const linearIssues: readonly LinearIssueSummary[] = [];
   let profiles: readonly AgentProfile[] = [];
+  let savedPlan: BoardPlan | undefined;
+  let proposedPlan: ProposePlanRequest | undefined;
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
     createBoard: vi.fn().mockImplementation(async () => current),
@@ -95,6 +100,85 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
       };
       return current;
     }),
+    proposePlan: vi
+      .fn()
+      .mockImplementation(async (request: ProposePlanRequest) => {
+        proposedPlan = request;
+        savedPlan = {
+          preview: {
+            id: request.planId,
+            projectId: current.board.projectId,
+            workItems: request.workItems.map((workItem) => ({
+              id: workItem.workItemId,
+              title: workItem.title,
+              acceptanceCriteria: workItem.acceptanceCriteria,
+              budget: workItem.budget,
+            })),
+            dependencies: request.dependencies.map((dependency) => ({
+              id: dependency.dependencyId,
+              upstreamWorkItemId: dependency.upstreamWorkItemId,
+              downstreamWorkItemId: dependency.downstreamWorkItemId,
+              kind: dependency.kind,
+              reason: dependency.reason,
+              owner: dependency.owner,
+              nextAction: dependency.nextAction,
+            })),
+            criticalPath: request.workItems.map(
+              (workItem) => workItem.workItemId,
+            ),
+            parallelStages: [
+              request.workItems.map((workItem) => workItem.workItemId),
+            ],
+            budget: {
+              workItemsMissingAgentTurnBudget: [],
+              workItemsMissingDurationBudget: [],
+              workItemsMissingCostBudget: [],
+            },
+            unresolvedAssumptions: request.unresolvedAssumptions,
+          },
+        };
+        return savedPlan;
+      }),
+    boardPlan: vi.fn().mockImplementation(async () => savedPlan),
+    confirmPlan: vi
+      .fn()
+      .mockImplementation(async (request: ConfirmPlanRequest) => {
+        if (savedPlan === undefined || proposedPlan === undefined) {
+          throw new Error("plan not found");
+        }
+        if (savedPlan.preview.id !== request.planId) {
+          throw new Error("plan confirmation does not match the saved plan");
+        }
+        savedPlan = {
+          ...savedPlan,
+          confirmation: {
+            planId: request.planId,
+            confirmedBy: request.confirmedBy,
+            confirmedAt: request.confirmedAt,
+          },
+        };
+        current = {
+          ...current,
+          workItems: [
+            ...current.workItems,
+            ...proposedPlan.workItems.map((workItem, index) => ({
+              lastEventSequence: current.workItems.length + index + 1,
+              workItem: {
+                id: workItem.workItemId,
+                boardId: current.board.id,
+                title: workItem.title,
+                description: workItem.description,
+                acceptanceCriteria: workItem.acceptanceCriteria,
+                budget: workItem.budget,
+                state: "inbox" as const,
+                requiresHumanReview: workItem.requiresHumanReview,
+              },
+            })),
+          ],
+          dependencies: savedPlan.preview.dependencies,
+        };
+        return current;
+      }),
     transitionWorkItem: vi
       .fn()
       .mockImplementation(async (request: TransitionWorkItemRequest) => {

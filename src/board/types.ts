@@ -155,6 +155,44 @@ export type BoardSnapshot = Readonly<{
   externalLinks: readonly ExternalLink[];
 }>;
 
+export type PlanWorkItemPreview = Readonly<{
+  id: string;
+  title: string;
+  acceptanceCriteria: readonly string[];
+  budget: WorkItemBudget;
+}>;
+
+export type PlanBudgetSummary = Readonly<{
+  maxAgentTurns?: number;
+  maxDurationSeconds?: number;
+  maxCostMicros?: number;
+  workItemsMissingAgentTurnBudget: readonly string[];
+  workItemsMissingDurationBudget: readonly string[];
+  workItemsMissingCostBudget: readonly string[];
+}>;
+
+export type PlanPreview = Readonly<{
+  id: string;
+  projectId: string;
+  workItems: readonly PlanWorkItemPreview[];
+  dependencies: readonly Dependency[];
+  criticalPath: readonly string[];
+  parallelStages: readonly (readonly string[])[];
+  budget: PlanBudgetSummary;
+  unresolvedAssumptions: readonly string[];
+}>;
+
+export type PlanConfirmation = Readonly<{
+  planId: string;
+  confirmedBy: string;
+  confirmedAt: string;
+}>;
+
+export type BoardPlan = Readonly<{
+  preview: PlanPreview;
+  confirmation?: PlanConfirmation;
+}>;
+
 export type CreateProjectRequest = Readonly<{
   projectId: string;
   name: string;
@@ -191,6 +229,42 @@ export type AddDependencyRequest = Readonly<{
   nextAction: string;
   createdBy: string;
   createdAt: string;
+}>;
+
+export type ProposedPlanWorkItemRequest = Readonly<{
+  workItemId: string;
+  title: string;
+  description: string;
+  acceptanceCriteria: readonly string[];
+  budget: WorkItemBudget;
+  requiresHumanReview: boolean;
+}>;
+
+export type ProposedPlanDependencyRequest = Readonly<{
+  dependencyId: string;
+  upstreamWorkItemId: string;
+  downstreamWorkItemId: string;
+  kind: DependencyKind;
+  reason: string;
+  owner: string;
+  nextAction: string;
+}>;
+
+export type ProposePlanRequest = Readonly<{
+  planId: string;
+  boardId: string;
+  proposedBy: string;
+  proposedAt: string;
+  workItems: readonly ProposedPlanWorkItemRequest[];
+  dependencies: readonly ProposedPlanDependencyRequest[];
+  unresolvedAssumptions: readonly string[];
+}>;
+
+export type ConfirmPlanRequest = Readonly<{
+  boardId: string;
+  planId: string;
+  confirmedBy: string;
+  confirmedAt: string;
 }>;
 
 export type TransitionWorkItemRequest = Readonly<{
@@ -256,6 +330,9 @@ export interface BoardGateway {
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
   createWorkItem(request: CreateWorkItemRequest): Promise<BoardSnapshot>;
   addDependency(request: AddDependencyRequest): Promise<BoardSnapshot>;
+  proposePlan(request: ProposePlanRequest): Promise<BoardPlan>;
+  boardPlan(boardId: string): Promise<BoardPlan | undefined>;
+  confirmPlan(request: ConfirmPlanRequest): Promise<BoardSnapshot>;
   transitionWorkItem(
     request: TransitionWorkItemRequest,
   ): Promise<BoardSnapshot>;

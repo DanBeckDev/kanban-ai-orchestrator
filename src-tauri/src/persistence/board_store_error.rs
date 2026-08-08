@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use crate::domain::{BoardId, DependencyGraphError, DependencyId, ProjectId, WorkItemId};
+use crate::domain::{BoardId, DependencyGraphError, DependencyId, PlanId, ProjectId, WorkItemId};
 
 use super::EventStoreError;
 
@@ -29,6 +29,27 @@ pub enum BoardStoreError {
         downstream_board_id: BoardId,
     },
     DependencyIdConflict {
+        dependency_id: DependencyId,
+    },
+    PlanAlreadyExists {
+        board_id: BoardId,
+    },
+    PlanIdConflict {
+        plan_id: PlanId,
+    },
+    PlanNotFound {
+        plan_id: PlanId,
+    },
+    PlanProposalConflict {
+        plan_id: PlanId,
+    },
+    PlanConfirmationConflict {
+        plan_id: PlanId,
+    },
+    PlanWorkItemAlreadyExists {
+        work_item_id: WorkItemId,
+    },
+    PlanDependencyAlreadyExists {
         dependency_id: DependencyId,
     },
 }
@@ -67,6 +88,41 @@ impl fmt::Display for BoardStoreError {
                 "dependency id {} conflicts with a recorded dependency",
                 dependency_id.0
             ),
+            Self::PlanAlreadyExists { board_id } => {
+                write!(
+                    formatter,
+                    "board {} already has a plan proposal",
+                    board_id.0
+                )
+            }
+            Self::PlanIdConflict { plan_id } => {
+                write!(
+                    formatter,
+                    "plan id {} conflicts with a recorded plan",
+                    plan_id.0
+                )
+            }
+            Self::PlanNotFound { plan_id } => write!(formatter, "plan {} was not found", plan_id.0),
+            Self::PlanProposalConflict { plan_id } => write!(
+                formatter,
+                "plan {} cannot be confirmed because its stored proposal changed",
+                plan_id.0
+            ),
+            Self::PlanConfirmationConflict { plan_id } => write!(
+                formatter,
+                "plan {} already has a different confirmation",
+                plan_id.0
+            ),
+            Self::PlanWorkItemAlreadyExists { work_item_id } => write!(
+                formatter,
+                "plan cannot create work item {} because it already exists",
+                work_item_id.0
+            ),
+            Self::PlanDependencyAlreadyExists { dependency_id } => write!(
+                formatter,
+                "plan cannot create dependency {} because it already exists",
+                dependency_id.0
+            ),
         }
     }
 }
@@ -82,7 +138,14 @@ impl Error for BoardStoreError {
             | Self::BoardNotFound { .. }
             | Self::WorkItemNotFound { .. }
             | Self::CrossBoardDependency { .. }
-            | Self::DependencyIdConflict { .. } => None,
+            | Self::DependencyIdConflict { .. }
+            | Self::PlanAlreadyExists { .. }
+            | Self::PlanIdConflict { .. }
+            | Self::PlanNotFound { .. }
+            | Self::PlanProposalConflict { .. }
+            | Self::PlanConfirmationConflict { .. }
+            | Self::PlanWorkItemAlreadyExists { .. }
+            | Self::PlanDependencyAlreadyExists { .. } => None,
         }
     }
 }

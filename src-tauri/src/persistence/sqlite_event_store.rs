@@ -24,7 +24,7 @@ use super::{
     },
 };
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 7;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 8;
 pub struct SqliteEventStore {
     pub(crate) connection: Connection,
 }
@@ -278,6 +278,11 @@ impl SqliteEventStore {
         if current_version < 7 {
             create_external_link_schema(&transaction)?;
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [7])?;
+        }
+
+        if current_version < 8 {
+            crate::persistence::plan_store::create_plan_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [8])?;
         }
 
         transaction.commit()?;

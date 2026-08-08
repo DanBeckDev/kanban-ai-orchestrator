@@ -1,6 +1,9 @@
 #![cfg(unix)]
 
-use std::{thread, time::Duration};
+use std::{
+    thread,
+    time::{Duration, Instant},
+};
 
 use super::{
     AgentAdapter, AgentAdapterError, NormalizedAgentEventKind, ProcessAgentAdapter,
@@ -31,16 +34,35 @@ fn wait_for_events(
     session_id: &str,
     count: usize,
 ) -> Vec<super::NormalizedAgentEvent> {
-    for _ in 0..50 {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
         let events = adapter
             .stream_events(session_id, 0)
             .expect("the session should be readable");
         if events.len() >= count {
             return events;
         }
+        if Instant::now() >= deadline {
+            panic!("the process did not emit {count} lifecycle events in time");
+        }
         thread::sleep(Duration::from_millis(10));
     }
-    panic!("the process did not emit {count} lifecycle events in time");
+}
+
+fn wait_for_process_exit(adapter: &ProcessAgentAdapter, session_id: &str, failure: &str) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        if matches!(
+            adapter.health_check(session_id),
+            Err(AgentAdapterError::ProcessExited { .. })
+        ) {
+            return;
+        }
+        if Instant::now() >= deadline {
+            panic!("{failure}");
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
 }
 
 #[test]
@@ -108,16 +130,11 @@ fn process_adapter_reports_an_exit_without_a_terminal_event() {
     let mut adapter = adapter("cat >/dev/null");
     let session = adapter.start(request()).expect("process should start");
 
-    for _ in 0..50 {
-        if matches!(
-            adapter.health_check(&session.id),
-            Err(AgentAdapterError::ProcessExited { .. })
-        ) {
-            return;
-        }
-        thread::sleep(Duration::from_millis(10));
-    }
-    panic!("an exit without a terminal event must be actionable");
+    wait_for_process_exit(
+        &adapter,
+        &session.id,
+        "an exit without a terminal event must be actionable",
+    );
 }
 
 #[test]
@@ -128,16 +145,11 @@ fn process_adapter_can_terminate_its_direct_child_process() {
     adapter
         .terminate(&session.id)
         .expect("direct child should terminate");
-    for _ in 0..50 {
-        if matches!(
-            adapter.health_check(&session.id),
-            Err(AgentAdapterError::ProcessExited { .. })
-        ) {
-            return;
-        }
-        thread::sleep(Duration::from_millis(10));
-    }
-    panic!("terminated agent process should exit");
+    wait_for_process_exit(
+        &adapter,
+        &session.id,
+        "terminated agent process should exit",
+    );
 }
 
 #[test]

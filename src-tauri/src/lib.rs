@@ -17,6 +17,7 @@ mod desktop_execution_runtime;
 mod desktop_execution_runtime_control;
 mod desktop_execution_runtime_review;
 mod desktop_execution_runtime_support;
+mod desktop_planning;
 mod foundation;
 
 pub use foundation::FoundationSummary;
@@ -48,6 +49,9 @@ pub fn run() {
             desktop::transition_work_item,
             desktop::save_agent_profile,
             desktop::agent_profiles,
+            desktop_planning::save_planner_profile,
+            desktop_planning::planner_profiles,
+            desktop_planning::generate_plan,
             desktop::start_execution,
             desktop::stop_execution,
             desktop::record_review_check,

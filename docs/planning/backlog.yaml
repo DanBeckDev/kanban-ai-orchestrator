@@ -161,7 +161,7 @@ tasks:
   - id: ORCH-004
     epic: ORCH
     title: Generate safe plan proposals from natural-language goals
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [APP-003, EXEC-003]
     acceptance_criteria:
@@ -169,7 +169,7 @@ tasks:
       - Planner I/O is bounded, runs without a production shell, and parses only a strict plan payload; raw provider transcripts, credentials, and arbitrary lifecycle output are not persisted.
       - A malformed, oversized, wrong-board, or invalid planner proposal cannot create or confirm tasks, and returns an actionable error while leaving the board unchanged.
       - The proposal is shown through the existing exact preview and confirmation workflow, including dependencies, critical path, parallel stages, budgets, and assumptions.
-    notes: Started on 2026-08-08 after EXEC-003. The existing board accepts manually supplied typed plan JSON; this work replaces that manual-only path with a bounded planner adapter while preserving confirmation as the sole materialization authority.
+    notes: Completed on 2026-08-08 with durable provider-neutral planner profiles, a direct bounded process bridge, strict draft parsing, and daemon-derived plan/task/dependency identity. The UI accepts a goal, shows the existing exact preview, and preserves explicit confirmation as the only task-materialization authority. Planner I/O is capped at 8,000-byte goals, 65,536-byte output, and 45 seconds; raw goals, standard error, and raw provider output are not persisted. A generic profile remains explicitly user-trusted local code rather than a claimed filesystem sandbox; provider-specific sandbox guarantees must be implemented and tested by a dedicated adapter.
 
   - id: APP-001
     epic: APP

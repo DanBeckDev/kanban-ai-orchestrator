@@ -4,6 +4,7 @@ import { DependencyForm } from "./DependencyForm";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
 import { LinearImportForm } from "./LinearImportForm";
 import { PlanProposalPanel } from "./PlanProposalPanel";
+import { PlannerProfileForm } from "./PlannerProfileForm";
 import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
@@ -13,12 +14,14 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
+  GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
   ProposePlanRequest,
+  PlannerProfile,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -28,10 +31,12 @@ import type {
 type BoardViewProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
+  plannerProfiles: readonly PlannerProfile[];
   boardPlan?: BoardPlan;
   snapshot: BoardSnapshot;
   onAddDependency: (request: AddDependencyRequest) => Promise<void>;
   onConfirmPlan: (request: ConfirmPlanRequest) => Promise<void>;
+  onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
   onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
   onImportLinearIssue: (request: ImportLinearIssueRequest) => Promise<void>;
@@ -41,6 +46,7 @@ type BoardViewProps = Readonly<{
   onLoadLinearIssues: () => Promise<void>;
   onProposePlan: (request: ProposePlanRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
+  onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
@@ -53,10 +59,12 @@ type BoardViewProps = Readonly<{
 export function BoardView({
   busy,
   agentProfiles,
+  plannerProfiles,
   boardPlan,
   snapshot,
   onAddDependency,
   onConfirmPlan,
+  onGeneratePlan,
   onCreateWorkItem,
   onImportLinearBlocker,
   onImportLinearIssue,
@@ -66,6 +74,7 @@ export function BoardView({
   onLoadLinearIssues,
   onProposePlan,
   onSaveAgentProfile,
+  onSavePlannerProfile,
   onStartExecution,
   onStopExecution,
   onRecordReviewCheck,
@@ -121,7 +130,9 @@ export function BoardView({
             busy={busy}
             plan={boardPlan}
             onConfirm={onConfirmPlan}
+            onGenerate={onGeneratePlan}
             onPropose={onProposePlan}
+            plannerProfiles={plannerProfiles}
           />
           <TaskForm
             boardId={snapshot.board.id}
@@ -137,6 +148,11 @@ export function BoardView({
             busy={busy}
             profiles={agentProfiles}
             onSave={onSaveAgentProfile}
+          />
+          <PlannerProfileForm
+            busy={busy}
+            onSave={onSavePlannerProfile}
+            profiles={plannerProfiles}
           />
           <LinearConnectionPanel
             busy={busy}

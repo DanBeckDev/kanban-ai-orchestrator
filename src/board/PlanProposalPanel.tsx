@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 
+import { GoalPlanForm } from "./GoalPlanForm";
 import { timestamp } from "./presentation";
 import type {
   BoardPlan,
   ConfirmPlanRequest,
   DependencyKind,
+  GeneratePlanRequest,
+  PlannerProfile,
   ProposePlanRequest,
   WorkItemBudget,
 } from "./types";
@@ -14,7 +17,9 @@ type PlanProposalPanelProps = Readonly<{
   busy: boolean;
   plan?: BoardPlan;
   onConfirm: (request: ConfirmPlanRequest) => Promise<void>;
+  onGenerate: (request: GeneratePlanRequest) => Promise<void>;
   onPropose: (request: ProposePlanRequest) => Promise<void>;
+  plannerProfiles: readonly PlannerProfile[];
 }>;
 
 type PlanDraft = Readonly<{
@@ -62,7 +67,9 @@ export function PlanProposalPanel({
   busy,
   plan,
   onConfirm,
+  onGenerate,
   onPropose,
+  plannerProfiles,
 }: PlanProposalPanelProps) {
   const [proposedBy, setProposedBy] = useState("orchestrator");
   const [draftText, setDraftText] = useState(draftExample);
@@ -100,58 +107,69 @@ export function PlanProposalPanel({
       <div>
         <h3 id="plan-proposal-title">Orchestrator plan</h3>
         <p className="field-hint">
-          Paste the provider-neutral plan JSON produced by your orchestrator.
-          The daemon validates dependencies and records the exact preview before
-          any task exists.
+          Generate a provider-neutral proposal from a goal, then inspect its
+          exact dependency graph before any task exists.
         </p>
       </div>
       {plan === undefined || editing ? (
-        <form
-          aria-label={
-            plan === undefined ? "Propose board plan" : "Revise board plan"
-          }
-          onSubmit={propose}
-        >
+        <>
           {plan !== undefined && (
             <p className="field-hint">
               Replace the unconfirmed proposal with a revised complete plan. Its
               earlier tasks will not be created.
             </p>
           )}
-          <label>
-            Planner identity
-            <input
-              required
-              value={proposedBy}
-              onChange={(event) => setProposedBy(event.target.value)}
-            />
-          </label>
-          <label>
-            Plan draft JSON
-            <textarea
-              required
-              value={draftText}
-              onChange={(event) => setDraftText(event.target.value)}
-            />
-          </label>
-          {draftError !== undefined && (
-            <p className="inline-error" role="alert">
-              {draftError}
-            </p>
-          )}
-          <button disabled={busy} type="submit">
-            {plan === undefined ? "Preview plan" : "Preview revised plan"}
-          </button>
-          {plan !== undefined && (
-            <button
-              disabled={busy}
-              onClick={() => setEditing(false)}
-              type="button"
-            >
-              Cancel revision
-            </button>
-          )}
-        </form>
+          <GoalPlanForm
+            boardId={boardId}
+            busy={busy}
+            hasProposal={plan !== undefined}
+            onGenerate={onGenerate}
+            profiles={plannerProfiles}
+          />
+          <form
+            aria-label={
+              plan === undefined ? "Propose board plan" : "Revise board plan"
+            }
+            onSubmit={propose}
+          >
+            <details>
+              <summary>Advanced: paste a structured plan draft</summary>
+              <label>
+                Planner identity
+                <input
+                  required
+                  value={proposedBy}
+                  onChange={(event) => setProposedBy(event.target.value)}
+                />
+              </label>
+              <label>
+                Plan draft JSON
+                <textarea
+                  required
+                  value={draftText}
+                  onChange={(event) => setDraftText(event.target.value)}
+                />
+              </label>
+              {draftError !== undefined && (
+                <p className="inline-error" role="alert">
+                  {draftError}
+                </p>
+              )}
+              <button disabled={busy} type="submit">
+                {plan === undefined ? "Preview plan" : "Preview revised plan"}
+              </button>
+            </details>
+            {plan !== undefined && (
+              <button
+                disabled={busy}
+                onClick={() => setEditing(false)}
+                type="button"
+              >
+                Cancel revision
+              </button>
+            )}
+          </form>
+        </>
       ) : (
         <PlanPreview
           busy={busy}

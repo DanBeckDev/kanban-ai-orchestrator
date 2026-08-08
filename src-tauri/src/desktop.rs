@@ -299,7 +299,7 @@ pub(crate) fn board_snapshot(
         .map_err(error_message)
 }
 
-fn lock_service<'state, 'daemon>(
+pub(crate) fn lock_service<'state, 'daemon>(
     state: &'state State<'daemon, BoardDaemonState>,
 ) -> Result<MutexGuard<'state, LocalBoardService>, String> {
     state
@@ -338,7 +338,7 @@ fn lock_linear_oauth_state(
         .map_err(|_| "the local Linear connector stopped unexpectedly".to_owned())
 }
 
-fn error_message(error: impl fmt::Display) -> String {
+pub(crate) fn error_message(error: impl fmt::Display) -> String {
     error.to_string()
 }
 

@@ -7,10 +7,12 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
+  GeneratePlanRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
   ProposePlanRequest,
+  PlannerProfile,
   TransitionWorkItemRequest,
   WorkItemState,
 } from "./types";
@@ -56,6 +58,7 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
   let linearConnectionStatus: LinearConnectionStatus = { kind: "disconnected" };
   const linearIssues: readonly LinearIssueSummary[] = [];
   let profiles: readonly AgentProfile[] = [];
+  let plannerProfiles: readonly PlannerProfile[] = [];
   let savedPlan: BoardPlan | undefined;
   let proposedPlan: ProposePlanRequest | undefined;
   return {
@@ -208,6 +211,60 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
         return profile;
       }),
     agentProfiles: vi.fn().mockImplementation(async () => profiles),
+    savePlannerProfile: vi
+      .fn()
+      .mockImplementation(async (profile: PlannerProfile) => {
+        plannerProfiles = [
+          ...plannerProfiles.filter(({ name }) => name !== profile.name),
+          profile,
+        ];
+        return profile;
+      }),
+    plannerProfiles: vi.fn().mockImplementation(async () => plannerProfiles),
+    generatePlan: vi
+      .fn()
+      .mockImplementation(async (request: GeneratePlanRequest) => {
+        proposedPlan = {
+          planId: "generated-plan",
+          boardId: request.boardId,
+          proposedBy: `planner:${request.plannerProfileName}`,
+          proposedAt: "2026-08-08T00:00:00Z",
+          workItems: [
+            {
+              workItemId: "generated-foundation",
+              title: "Generated foundation",
+              description: "A planner-generated starting task.",
+              acceptanceCriteria: ["The generated task is reviewed."],
+              budget: {},
+              requiresHumanReview: true,
+            },
+          ],
+          dependencies: [],
+          unresolvedAssumptions: [],
+        };
+        savedPlan = {
+          preview: {
+            id: proposedPlan.planId,
+            projectId: current.board.projectId,
+            workItems: proposedPlan.workItems.map((workItem) => ({
+              id: workItem.workItemId,
+              title: workItem.title,
+              acceptanceCriteria: workItem.acceptanceCriteria,
+              budget: workItem.budget,
+            })),
+            dependencies: [],
+            criticalPath: ["generated-foundation"],
+            parallelStages: [["generated-foundation"]],
+            budget: {
+              workItemsMissingAgentTurnBudget: ["generated-foundation"],
+              workItemsMissingDurationBudget: ["generated-foundation"],
+              workItemsMissingCostBudget: ["generated-foundation"],
+            },
+            unresolvedAssumptions: [],
+          },
+        };
+        return savedPlan;
+      }),
     startExecution: vi.fn().mockImplementation(async (request) => {
       current = {
         ...current,

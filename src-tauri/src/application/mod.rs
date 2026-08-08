@@ -10,10 +10,12 @@ mod execution_launch;
 mod execution_policy_service;
 mod execution_service;
 mod execution_start_request;
+mod generated_plan_service;
 mod linear_import_request;
 mod linear_import_service;
 mod plan_requests;
 mod plan_service;
+mod planner_profile_service;
 mod review_check_request;
 mod review_decision_request;
 mod review_service;
@@ -33,11 +35,13 @@ pub use execution_launch::{
     ExecutionLaunchError, ExecutionLaunchPreparation, prepare_execution_launch,
 };
 pub use execution_start_request::StartExecutionRequest;
+pub use generated_plan_service::generated_plan_request;
 pub use linear_import_request::{ImportLinearBlockerRequest, ImportLinearIssueRequest};
 pub use plan_requests::{
-    ConfirmPlanRequest, ProposePlanRequest, ProposedPlanDependencyRequest,
+    ConfirmPlanRequest, GeneratePlanRequest, ProposePlanRequest, ProposedPlanDependencyRequest,
     ProposedPlanWorkItemRequest,
 };
+pub use planner_profile_service::{PlannerContext, PlannerProfileServiceError};
 pub use review_check_request::RecordReviewCheckRequest;
 pub use review_decision_request::RecordReviewDecisionRequest;
 
@@ -52,3 +56,6 @@ mod execution_event_controller_tests;
 
 #[cfg(test)]
 mod execution_launch_tests;
+
+#[cfg(test)]
+mod generated_plan_service_tests;

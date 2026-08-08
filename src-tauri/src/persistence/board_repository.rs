@@ -5,7 +5,7 @@ use crate::domain::{
 use crate::{
     agent::AgentProfile,
     application::{BoardRepository, BoardSnapshot, StoredPlan},
-    orchestration::{PlanConfirmation, PlanProposal},
+    orchestration::{PlanConfirmation, PlanProposal, PlannerProfile},
 };
 
 use super::{BoardStoreError, SqliteEventStore};
@@ -131,6 +131,21 @@ impl BoardRepository for SqliteEventStore {
 
     fn agent_profiles(&self) -> Result<Vec<AgentProfile>, Self::Error> {
         SqliteEventStore::agent_profiles(self).map_err(BoardStoreError::from)
+    }
+
+    fn save_planner_profile(
+        &mut self,
+        profile: PlannerProfile,
+    ) -> Result<PlannerProfile, Self::Error> {
+        SqliteEventStore::save_planner_profile(self, profile).map_err(BoardStoreError::from)
+    }
+
+    fn planner_profile(&self, name: &str) -> Result<Option<PlannerProfile>, Self::Error> {
+        SqliteEventStore::planner_profile(self, name).map_err(BoardStoreError::from)
+    }
+
+    fn planner_profiles(&self) -> Result<Vec<PlannerProfile>, Self::Error> {
+        SqliteEventStore::planner_profiles(self).map_err(BoardStoreError::from)
     }
 
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error> {

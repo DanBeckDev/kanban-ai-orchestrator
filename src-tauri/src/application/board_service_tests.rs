@@ -7,6 +7,7 @@ use crate::domain::{
     CompletionEvidence, DependencyKind, EvidenceKind, EvidenceResult, ExecutionStatus,
     ExecutionUsage, WorkItemBudget, WorkItemId, WorkItemState,
 };
+use crate::orchestration::PlannerProfile;
 use crate::persistence::{BoardStoreError, EventStoreError, SqliteEventStore};
 
 pub(super) fn service() -> BoardService<SqliteEventStore> {
@@ -148,6 +149,33 @@ fn rejects_empty_product_input_before_it_reaches_the_repository() {
         service.create_work_item(work_item_request),
         Err(BoardServiceError::InvalidAcceptanceCriteria)
     ));
+}
+
+#[test]
+fn resolves_a_saved_planner_profile_and_the_declared_project_repository() {
+    let mut service = service();
+    create_board(&mut service);
+    service
+        .save_planner_profile(PlannerProfile {
+            name: "local planner".to_owned(),
+            program: "planner-bridge".to_owned(),
+            arguments: vec!["--strict-json".to_owned()],
+        })
+        .expect("planner profile should save");
+
+    let context = service
+        .planner_context("board-1", "local planner")
+        .expect("planner context should resolve");
+
+    assert_eq!(context.profile.name, "local planner");
+    assert_eq!(context.repository_path, "/projects/desktop-application");
+    assert!(
+        service
+            .snapshot(&"board-1".into())
+            .expect("board should remain readable")
+            .work_items
+            .is_empty()
+    );
 }
 
 #[test]

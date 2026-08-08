@@ -4,6 +4,14 @@ use crate::domain::{DependencyKind, WorkItemBudget};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct GeneratePlanRequest {
+    pub board_id: String,
+    pub planner_profile_name: String,
+    pub goal: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ConfirmPlanRequest {
     pub board_id: String,
     pub plan_id: String,

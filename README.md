@@ -9,6 +9,7 @@ The project is intentionally provider-neutral: an orchestrator plans and schedul
 - [Product vision and principles](docs/product/vision.md)
 - [Product requirements](docs/product/requirements.md)
 - [System architecture](docs/architecture/overview.md)
+- [Planner-profile bridge contract](docs/integrations/planner-profiles.md)
 - [Linear integration](docs/integrations/linear.md)
 - [Reliability requirements](docs/quality/reliability.md)
 - [Roadmap](docs/planning/roadmap.md)

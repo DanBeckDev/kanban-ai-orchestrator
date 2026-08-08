@@ -288,6 +288,18 @@ export type AgentProfile = Readonly<{
   arguments: readonly string[];
 }>;
 
+export type PlannerProfile = Readonly<{
+  name: string;
+  program: string;
+  arguments: readonly string[];
+}>;
+
+export type GeneratePlanRequest = Readonly<{
+  boardId: string;
+  plannerProfileName: string;
+  goal: string;
+}>;
+
 export type StartExecutionRequest = Readonly<{
   executionId: string;
   workItemId: string;
@@ -344,6 +356,9 @@ export interface BoardGateway {
   ): Promise<BoardSnapshot>;
   saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
   agentProfiles(): Promise<readonly AgentProfile[]>;
+  savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile>;
+  plannerProfiles(): Promise<readonly PlannerProfile[]>;
+  generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;

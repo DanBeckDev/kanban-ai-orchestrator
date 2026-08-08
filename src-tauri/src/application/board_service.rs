@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use crate::agent::AgentProfile;
 use crate::domain::{
     Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
     Execution, ExecutionId, ExternalLink, MaterializedWorkItem, Project, ProjectId,
@@ -8,6 +7,7 @@ use crate::domain::{
     WorkItemEventId, WorkItemId, WorkItemState,
 };
 use crate::orchestration::{PlanConfirmation, PlanProposal};
+use crate::{agent::AgentProfile, orchestration::PlannerProfile};
 
 use super::{
     AddDependencyRequest, BoardServiceError, BoardSnapshot, CreateBoardRequest,
@@ -64,6 +64,12 @@ pub trait BoardRepository {
     fn save_agent_profile(&mut self, profile: AgentProfile) -> Result<AgentProfile, Self::Error>;
     fn agent_profile(&self, name: &str) -> Result<Option<AgentProfile>, Self::Error>;
     fn agent_profiles(&self) -> Result<Vec<AgentProfile>, Self::Error>;
+    fn save_planner_profile(
+        &mut self,
+        profile: PlannerProfile,
+    ) -> Result<PlannerProfile, Self::Error>;
+    fn planner_profile(&self, name: &str) -> Result<Option<PlannerProfile>, Self::Error>;
+    fn planner_profiles(&self) -> Result<Vec<PlannerProfile>, Self::Error>;
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error>;
     fn stored_plan_for_board(&self, board_id: &BoardId) -> Result<Option<StoredPlan>, Self::Error>;
     fn confirm_and_materialize_plan(

@@ -5,6 +5,7 @@ use crate::{
     domain::{
         EvidenceId, ExecutionId, ExternalLinkId, PolicyDecisionId, WorkItemEventId, WorkItemId,
     },
+    orchestration::PlannerProfileError,
 };
 
 #[derive(Debug)]
@@ -29,6 +30,7 @@ pub enum EventStoreError {
         reason: &'static str,
     },
     InvalidAgentProfile(AgentProfileError),
+    InvalidPlannerProfile(PlannerProfileError),
     EvidenceAlreadyExists {
         evidence_id: EvidenceId,
     },
@@ -98,6 +100,9 @@ impl fmt::Display for EventStoreError {
                 execution_id.0
             ),
             Self::InvalidAgentProfile(error) => write!(formatter, "invalid agent profile: {error}"),
+            Self::InvalidPlannerProfile(error) => {
+                write!(formatter, "invalid planner profile: {error}")
+            }
             Self::EvidenceAlreadyExists { evidence_id } => {
                 write!(formatter, "evidence {} already exists", evidence_id.0)
             }
@@ -169,6 +174,7 @@ impl Error for EventStoreError {
             Self::Serialization(error) => Some(error),
             Self::StateTransition(error) => Some(error),
             Self::InvalidAgentProfile(error) => Some(error),
+            Self::InvalidPlannerProfile(error) => Some(error),
             _ => None,
         }
     }

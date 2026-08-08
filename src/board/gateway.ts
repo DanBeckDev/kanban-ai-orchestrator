@@ -9,12 +9,14 @@ import type {
   CreateBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
+  GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
   ProposePlanRequest,
+  PlannerProfile,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -53,6 +55,15 @@ export const tauriBoardGateway: BoardGateway = {
   },
   agentProfiles(): Promise<readonly AgentProfile[]> {
     return invoke("agent_profiles");
+  },
+  savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile> {
+    return invoke("save_planner_profile", { profile });
+  },
+  plannerProfiles(): Promise<readonly PlannerProfile[]> {
+    return invoke("planner_profiles");
+  },
+  generatePlan(request: GeneratePlanRequest): Promise<BoardPlan> {
+    return invoke("generate_plan", { request });
   },
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
     return invoke("start_execution", { request });

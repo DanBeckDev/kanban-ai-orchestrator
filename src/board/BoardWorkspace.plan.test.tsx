@@ -5,6 +5,115 @@ import { gateway } from "./BoardWorkspace.test.fixtures";
 import { createBoard } from "./BoardWorkspace.test.helpers";
 
 describe("board plan workflow", () => {
+  it("generates a proposal from a goal and still requires explicit confirmation", async () => {
+    const boardGateway = gateway();
+    await createBoard(boardGateway);
+    const profileForm = screen.getByRole("form", {
+      name: "Save planner profile",
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+      target: { value: "local planner" },
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Program"), {
+      target: { value: "planner-bridge" },
+    });
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Save planner profile" }),
+    );
+
+    const generationForm = await screen.findByRole("form", {
+      name: "Generate board plan",
+    });
+    fireEvent.change(within(generationForm).getByLabelText("Goal"), {
+      target: { value: "Build a dependable planning workflow." },
+    });
+    fireEvent.click(
+      within(generationForm).getByRole("button", { name: "Generate preview" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.generatePlan).toHaveBeenCalledWith({
+        boardId: "board-1",
+        plannerProfileName: "local planner",
+        goal: "Build a dependable planning workflow.",
+      }),
+    );
+    expect(screen.getByRole("list", { name: "Plan tasks" })).toHaveTextContent(
+      "Generated foundation",
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Generated foundation" }),
+    ).toBeNull();
+
+    const confirmationForm = screen.getByRole("form", {
+      name: "Confirm board plan",
+    });
+    fireEvent.change(within(confirmationForm).getByLabelText("Confirm as"), {
+      target: { value: "Daniel" },
+    });
+    fireEvent.click(
+      within(confirmationForm).getByRole("button", {
+        name: "Confirm and create tasks",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Generated foundation" }),
+    ).toBeVisible();
+  });
+
+  it("keeps an unsaved planner profile editable when the daemon rejects it", async () => {
+    const boardGateway = gateway();
+    vi.mocked(boardGateway.savePlannerProfile).mockRejectedValueOnce(
+      new Error("Planner profiles must use a declared program."),
+    );
+    await createBoard(boardGateway);
+    const profileForm = screen.getByRole("form", {
+      name: "Save planner profile",
+    });
+    const nameInput = within(profileForm).getByLabelText("Profile name");
+    fireEvent.change(nameInput, { target: { value: "local planner" } });
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Save planner profile" }),
+    );
+
+    expect(await within(profileForm).findByRole("alert")).toHaveTextContent(
+      "Planner profiles must use a declared program.",
+    );
+    expect(nameInput).toHaveValue("local planner");
+  });
+
+  it("shows a planner generation error without creating or clearing a proposal", async () => {
+    const boardGateway = gateway();
+    vi.mocked(boardGateway.generatePlan).mockRejectedValueOnce(
+      new Error("Planner response exceeds the 65536-byte limit."),
+    );
+    await createBoard(boardGateway);
+    const profileForm = screen.getByRole("form", {
+      name: "Save planner profile",
+    });
+    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+      target: { value: "local planner" },
+    });
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Save planner profile" }),
+    );
+    const generationForm = await screen.findByRole("form", {
+      name: "Generate board plan",
+    });
+    const goalInput = within(generationForm).getByLabelText("Goal");
+    fireEvent.change(goalInput, { target: { value: "Build a safe plan." } });
+    fireEvent.click(
+      within(generationForm).getByRole("button", { name: "Generate preview" }),
+    );
+
+    expect(await within(generationForm).findByRole("alert")).toHaveTextContent(
+      "Planner response exceeds the 65536-byte limit.",
+    );
+    expect(goalInput).toHaveValue("Build a safe plan.");
+    expect(screen.queryByRole("list", { name: "Plan tasks" })).toBeNull();
+  });
+
   it("previews a provider-neutral plan before an explicit confirmation materializes it", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);

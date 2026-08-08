@@ -1,0 +1,196 @@
+work_item: ORCH-004
+scope:
+  - README.md
+  - docs/architecture/overview.md
+  - docs/decisions/0015-bounded-planner-profile-boundary.md
+  - docs/integrations/planner-profiles.md
+  - docs/planning/backlog.yaml
+  - src-tauri/src/application/
+  - src-tauri/src/desktop_planning.rs
+  - src-tauri/src/orchestration/
+  - src-tauri/src/persistence/
+  - src/board/
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 264
+      responsibilities: Defines the board use-case repository port and durable board commands.
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests.rs
+      meaningful_lines: 376
+      responsibilities: Exercises board-service command behavior and focused persistence-facing scenarios.
+      decision: kept cohesive
+    - path: src-tauri/src/application/generated_plan_service.rs
+      meaningful_lines: 62
+      responsibilities: Derives daemon-owned proposal identity from validated planner facts.
+      decision: kept cohesive
+    - path: src-tauri/src/application/generated_plan_service_tests.rs
+      meaningful_lines: 63
+      responsibilities: Proves generated proposals cannot carry model-owned identity or raw goals.
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 50
+      responsibilities: Declares application modules and exposes the application boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/application/plan_requests.rs
+      meaningful_lines: 39
+      responsibilities: Defines typed desktop request data for plan commands.
+      decision: kept cohesive
+    - path: src-tauri/src/application/planner_profile_service.rs
+      meaningful_lines: 104
+      responsibilities: Resolves and persists planner profiles with a selected board context.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 369
+      responsibilities: Owns the existing Tauri board-command and local-daemon boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_planning.rs
+      meaningful_lines: 41
+      responsibilities: Adapts planner profile and goal commands to the bounded application boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 66
+      responsibilities: Composes desktop modules and registers Tauri commands.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/mod.rs
+      meaningful_lines: 20
+      responsibilities: Exposes orchestration contracts and their focused test modules.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner.rs
+      meaningful_lines: 227
+      responsibilities: Defines and validates the strict, provider-neutral planner draft contract.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process.rs
+      meaningful_lines: 280
+      responsibilities: Runs and bounds the direct planner-process I/O edge.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process_tests.rs
+      meaningful_lines: 112
+      responsibilities: Exercises direct planner process success and safe failure behavior.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/tests/mod.rs
+      meaningful_lines: 139
+      responsibilities: Shares orchestration test fakes and declares focused scenario modules.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/tests/planner_tests.rs
+      meaningful_lines: 167
+      responsibilities: Exercises strict planner data validation and boundary limits.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 140
+      responsibilities: Implements the board repository port with SQLite operations.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_error.rs
+      meaningful_lines: 191
+      responsibilities: Defines actionable event-store errors and their wrapped sources.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_schema.rs
+      meaningful_lines: 85
+      responsibilities: Defines focused SQLite schema creation helpers.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 25
+      responsibilities: Declares SQLite persistence modules and public persistence types.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/planner_profile_store.rs
+      meaningful_lines: 77
+      responsibilities: Persists and loads validated planner profile records.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 353
+      responsibilities: Owns SQLite store construction and ordered schema migrations.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: Exercises forward-schema rejection and ordered store migrations.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 377
+      responsibilities: Exercises durable event-store behavior and reopen scenarios.
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 172
+      responsibilities: Composes the board's presentation panels and command callbacks.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 310
+      responsibilities: Exercises board plan preview, generation, confirmation, and error workflows.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 372
+      responsibilities: Provides stateful board gateway fixtures shared by board UI tests.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 278
+      responsibilities: Owns board-session state and typed daemon gateway operations.
+      decision: kept cohesive
+    - path: src/board/GoalPlanForm.tsx
+      meaningful_lines: 83
+      responsibilities: Collects a goal and selected planner profile for one proposal request.
+      decision: kept cohesive
+    - path: src/board/PlanProposalPanel.tsx
+      meaningful_lines: 345
+      responsibilities: Presents generated or manual plan preview and explicit confirmation controls.
+      decision: kept cohesive after extracting goal entry
+    - path: src/board/PlannerProfileForm.tsx
+      meaningful_lines: 97
+      responsibilities: Collects and displays local planner profile configuration.
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 103
+      responsibilities: Adapts typed board operations to Tauri invoke calls.
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 335
+      responsibilities: Defines shared board UI contracts for daemon requests and snapshots.
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T22:52:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: A generic configured planner executable is local user-trusted code rather than a cross-platform filesystem sandbox.
+        resolution: accepted
+        rationale: The narrow direct-process bridge keeps provider policy out of the core, accurately documents the trust boundary, and never claims read-only or process-tree guarantees it cannot prove. A provider-specific sandbox is an adapter extension, not an invisible safety assumption.
+        decision_reference: ADR-0015
+      - finding: Planner output is read on one short-lived thread while the command boundary polls the direct child.
+        resolution: accepted
+        rationale: The concurrency mechanics are isolated in the process-edge module, use no shared mutable application data, bound output and lifetime, terminate the child on every reader/wait failure, and leave the board-service lock before I/O.
+        decision_reference: ADR-0015
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The initial strict planner payload still permitted unknown fields nested in a reused budget DTO.
+    change: Added a planner-specific strict budget payload and a one-way conversion into the domain budget, with an unknown-field regression test.
+  - finding: A direct-child wait error could return before terminating the planner process.
+    change: Terminate and reap the child before returning the process-wait error.
+  - finding: Planner-profile save or goal-generation failure could lose form input or leave the user without local feedback.
+    change: Preserve input and show form-local actionable errors; the board remains unchanged until explicit confirmation.
+  - finding: New planner validation and process branches reduced Rust branch coverage below the required threshold.
+    change: Added tests for profile nulls, all draft limits, blank facts, blank and oversized goals, unavailable programs, failed planner processes, and deterministic child timeouts without lowering thresholds.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml planner --lib --no-fail-fast
+      result: passed (10 tests)
+    - command: npm test -- --run src/board/BoardWorkspace.plan.test.tsx
+      result: passed (8 tests)
+    - command: npm run structure:verify
+      result: passed (166 repository paths; no exceptions)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 90.59
+      statements: 90.45
+      functions: 85.44
+      branches: 88.39
+    rust_core:
+      lines: 85.22
+      statements: 80.91
+      functions: 83.96
+      branches: 80.51
+    threshold_met: true
+exceptions: []

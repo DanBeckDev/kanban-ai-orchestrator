@@ -17,6 +17,7 @@ import type {
   LinearOAuthConfiguration,
   ProposePlanRequest,
   PlannerProfile,
+  RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -78,6 +79,11 @@ export const tauriBoardGateway: BoardGateway = {
     request: RecordReviewDecisionRequest,
   ): Promise<BoardSnapshot> {
     return invoke("record_review_decision", { request });
+  },
+  recordCleanCodeReview(
+    request: RecordCleanCodeReviewRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("record_clean_code_review", { request });
   },
   beginLinearOAuth(
     configuration: LinearOAuthConfiguration,

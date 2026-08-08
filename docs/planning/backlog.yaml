@@ -305,13 +305,16 @@ tasks:
   - id: QUAL-003
     epic: QUAL
     title: Enforce quality evidence in the product's agent workflow
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, ORCH-001, ORCH-003, QUAL-001]
     acceptance_criteria:
-      - The task state machine cannot transition from review to done without successful quality-gate evidence.
-      - The orchestrator schedules an independent Clean Code review for substantial or high-risk work.
-      - Actionable review findings return the task to implementation until resolved.
+      - Every review-to-done transition requires a passed `quality_gate` evidence record created after the current implementation completion report; a generic passed check is not sufficient.
+      - In the MVP, `requires_human_review` is the explicit substantial/high-risk designation. When its implementation reaches review, the daemon durably records that an independent Clean Code review is required.
+      - An independent review is a durable review-role execution for the same work item, using an agent-profile name different from every implementation-role execution. The reviewer completion, reviewer profile, concise decision summary, and actionable-finding count are recorded without retaining a raw transcript.
+      - A zero-finding independent review can satisfy the independent-review gate only after its own review-role execution has completed. One or more actionable findings record a failed review and return the work item from review to ready for another implementation attempt.
+      - A later implementation attempt invalidates earlier completion, quality-gate, and review evidence for done eligibility; the complete evidence sequence must be recorded again after that attempt.
+    notes: Implemented and verified on 2026-08-08. The daemon distinguishes current-cycle quality gates from generic checks, schedules and validates role-separated independent reviews, persists one bounded review decision per reviewer run, returns findings to Ready atomically, and requires the independent decision before human acceptance. See ADR 0016 and quality receipt QUAL-003.
 
   - id: QUAL-004
     epic: QUAL

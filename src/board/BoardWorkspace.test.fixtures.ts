@@ -291,7 +291,7 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
           {
             id: request.evidenceId,
             workItemId: request.workItemId,
-            kind: "check",
+            kind: "quality_gate",
             result: request.passed ? "passed" : "failed",
             summary: request.summary,
             recordedAt: request.recordedAt,
@@ -311,6 +311,23 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
             kind: "review_decision",
             result: request.accepted ? "passed" : "failed",
             summary: `${request.reviewer}: ${request.summary}`,
+            recordedAt: request.recordedAt,
+          },
+        ],
+      };
+      return current;
+    }),
+    recordCleanCodeReview: vi.fn().mockImplementation(async (request) => {
+      current = {
+        ...current,
+        evidence: [
+          ...current.evidence,
+          {
+            id: request.evidenceId,
+            workItemId: request.workItemId,
+            kind: "clean_code_review",
+            result: request.actionableFindingCount === 0 ? "passed" : "failed",
+            summary: request.summary,
             recordedAt: request.recordedAt,
           },
         ],

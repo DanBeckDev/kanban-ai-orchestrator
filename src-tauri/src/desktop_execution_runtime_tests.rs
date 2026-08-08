@@ -106,6 +106,7 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
             work_item_id: "task-1".to_owned(),
             agent_profile_name: "structured-script".to_owned(),
             task_brief: "Complete the task.".to_owned(),
+            execution_role: Default::default(),
         })
         .expect("runtime should start the configured worker");
     assert_eq!(
@@ -124,6 +125,17 @@ fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
             .expect("work item should persist");
         if execution.status == crate::domain::ExecutionStatus::AwaitingReview {
             assert_eq!(work_item.work_item.state, WorkItemState::Review);
+            assert!(
+                service
+                    .snapshot(&crate::domain::BoardId::from("board-1"))
+                    .expect("review evidence should persist")
+                    .evidence
+                    .iter()
+                    .any(|evidence| {
+                        evidence.kind == crate::domain::EvidenceKind::CleanCodeReview
+                            && evidence.result == crate::domain::EvidenceResult::Recorded
+                    })
+            );
             return;
         }
         drop(service);
@@ -144,6 +156,7 @@ fn refuses_an_unsupported_policy_before_provisioning_a_workspace_or_process() {
             work_item_id: "task-1".to_owned(),
             agent_profile_name: "structured-script".to_owned(),
             task_brief: "Complete the task.".to_owned(),
+            execution_role: Default::default(),
         })
         .expect_err("the unsupported policy must block process launch");
 
@@ -184,6 +197,7 @@ fn refuses_a_second_project_execution_before_worker_start() {
             .record_execution(RecordExecutionRequest {
                 execution_id: "execution-active".to_owned(),
                 work_item_id: "task-2".to_owned(),
+                role: Default::default(),
                 adapter_name: "other-worker".to_owned(),
                 workspace_path: "/tmp/other-worker".to_owned(),
             })
@@ -203,6 +217,7 @@ fn refuses_a_second_project_execution_before_worker_start() {
             work_item_id: "task-1".to_owned(),
             agent_profile_name: "structured-script".to_owned(),
             task_brief: "Complete the task.".to_owned(),
+            execution_role: Default::default(),
         })
         .expect_err("the standard policy permits only one project execution");
 
@@ -236,6 +251,7 @@ fn fails_a_feedback_request_from_a_profile_that_cannot_resume() {
             work_item_id: "task-1".to_owned(),
             agent_profile_name: "input-requesting-script".to_owned(),
             task_brief: "Need input.".to_owned(),
+            execution_role: Default::default(),
         })
         .expect("runtime should begin the worker before it requests feedback");
 
@@ -281,6 +297,7 @@ fn stops_a_live_direct_process_and_records_an_interrupted_attempt() {
             work_item_id: "task-1".to_owned(),
             agent_profile_name: "long-running-script".to_owned(),
             task_brief: "Stop the task.".to_owned(),
+            execution_role: Default::default(),
         })
         .expect("runtime should start the worker");
     runtime

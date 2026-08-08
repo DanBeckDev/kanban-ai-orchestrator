@@ -32,6 +32,7 @@ fn prepared_launch() -> (
         .record_execution(RecordExecutionRequest {
             execution_id: "execution-1".to_owned(),
             work_item_id: "task-1".to_owned(),
+            role: Default::default(),
             adapter_name: "fake".to_owned(),
             workspace_path: assignment.path().display().to_string(),
         })

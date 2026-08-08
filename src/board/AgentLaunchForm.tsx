@@ -5,12 +5,20 @@ import {
   noninteractiveCapabilitySummary,
 } from "./agentProfilePresentation";
 import { timestamp } from "./presentation";
-import type { AgentProfile, StartExecutionRequest, WorkItem } from "./types";
+import type {
+  AgentProfile,
+  ExecutionRole,
+  StartExecutionRequest,
+  WorkItem,
+} from "./types";
 
 type AgentLaunchFormProps = Readonly<{
   busy: boolean;
   profiles: readonly AgentProfile[];
   workItem: WorkItem;
+  executionRole?: ExecutionRole;
+  formLabel?: string;
+  buttonLabel?: string;
   onStart: (request: StartExecutionRequest) => Promise<void>;
 }>;
 
@@ -18,10 +26,13 @@ export function AgentLaunchForm({
   busy,
   profiles,
   workItem,
+  executionRole = "implementation",
+  formLabel = `Start agent for ${workItem.title}`,
+  buttonLabel = "Start agent",
   onStart,
 }: AgentLaunchFormProps) {
   const [profileName, setProfileName] = useState("");
-  const [brief, setBrief] = useState(defaultBrief(workItem));
+  const [brief, setBrief] = useState(defaultBrief(workItem, executionRole));
   const selectedProfile = profiles.find(({ name }) => name === profileName);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -31,6 +42,7 @@ export function AgentLaunchForm({
       workItemId: workItem.id,
       agentProfileName: profileName,
       taskBrief: brief,
+      executionRole,
     });
   }
 
@@ -44,7 +56,7 @@ export function AgentLaunchForm({
 
   return (
     <form
-      aria-label={`Start agent for ${workItem.title}`}
+      aria-label={formLabel}
       className="agent-launch-form"
       onSubmit={submit}
     >
@@ -78,15 +90,18 @@ export function AgentLaunchForm({
         />
       </label>
       <button disabled={busy} type="submit">
-        Start agent
+        {buttonLabel}
       </button>
     </form>
   );
 }
 
-function defaultBrief(workItem: WorkItem): string {
+function defaultBrief(workItem: WorkItem, role: ExecutionRole): string {
   const acceptanceCriteria = workItem.acceptanceCriteria
     .map((criterion) => `- ${criterion}`)
     .join("\n");
+  if (role === "independent_review") {
+    return `Independently review ${workItem.title}. Do not edit files.\n\n${workItem.description}\n\nAcceptance criteria:\n${acceptanceCriteria}\n\nReview the current task worktree against the repository Clean Code requirements and the acceptance criteria. Report every actionable finding, including small correctness or maintainability defects. Finish only after the review is complete; a person records the structured decision on the board.`;
+  }
   return `Implement ${workItem.title}.\n\n${workItem.description}\n\nAcceptance criteria:\n${acceptanceCriteria}`;
 }

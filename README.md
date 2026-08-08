@@ -4,6 +4,8 @@ A local-first, cross-platform desktop application for planning, coordinating, an
 
 The project is intentionally provider-neutral: an orchestrator plans and schedules work, while each task runs through an isolated worker-agent adapter in its own Git workspace. Linear is a first-class planning-system integration, rather than a one-way export.
 
+High-risk tasks use a second, independent reviewer-agent session. The board records a passed quality gate and concise Clean Code outcome, returns actionable findings to implementation, and never treats an agent's final message as proof that a task is done.
+
 ## Start here
 
 - [Product vision and principles](docs/product/vision.md)

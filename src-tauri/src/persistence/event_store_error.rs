@@ -34,6 +34,10 @@ pub enum EventStoreError {
     EvidenceAlreadyExists {
         evidence_id: EvidenceId,
     },
+    EvidenceWorkItemMismatch {
+        evidence_id: EvidenceId,
+        work_item_id: WorkItemId,
+    },
     ExternalLinkIdConflict {
         link_id: ExternalLinkId,
     },
@@ -106,6 +110,14 @@ impl fmt::Display for EventStoreError {
             Self::EvidenceAlreadyExists { evidence_id } => {
                 write!(formatter, "evidence {} already exists", evidence_id.0)
             }
+            Self::EvidenceWorkItemMismatch {
+                evidence_id,
+                work_item_id,
+            } => write!(
+                formatter,
+                "evidence {} does not belong to work item {}",
+                evidence_id.0, work_item_id.0
+            ),
             Self::ExternalLinkIdConflict { link_id } => {
                 write!(
                     formatter,

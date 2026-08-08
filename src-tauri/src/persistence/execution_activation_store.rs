@@ -6,8 +6,8 @@ use crate::domain::{
 };
 
 use super::{
-    EventStoreError, SqliteEventStore, event_store_support::event_sequence,
-    execution_store::validate_execution_update,
+    EventStoreError, SqliteEventStore, execution_store::validate_execution_update,
+    sqlite_event_store::persist_work_item_event,
 };
 
 impl SqliteEventStore {
@@ -87,40 +87,6 @@ fn persist_execution(
     Ok(())
 }
 
-fn persist_work_item_event(
-    transaction: &Transaction<'_>,
-    event: WorkItemEvent,
-    work_item: crate::domain::WorkItem,
-) -> Result<RecordedWorkItemEvent, EventStoreError> {
-    transaction.execute(
-        "INSERT INTO work_item_events (event_id, work_item_id, event_json)
-         VALUES (?1, ?2, ?3)",
-        params![
-            event.id.0,
-            event.work_item_id.0,
-            serde_json::to_string(&event)?,
-        ],
-    )?;
-    let database_sequence = transaction.last_insert_rowid();
-    let sequence = event_sequence(database_sequence)?;
-    transaction.execute(
-        "INSERT INTO materialized_work_items (
-            work_item_id,
-            work_item_json,
-            last_event_sequence
-         ) VALUES (?1, ?2, ?3)
-         ON CONFLICT(work_item_id) DO UPDATE SET
-            work_item_json = excluded.work_item_json,
-            last_event_sequence = excluded.last_event_sequence",
-        params![
-            work_item.id.0,
-            serde_json::to_string(&work_item)?,
-            database_sequence,
-        ],
-    )?;
-    Ok(RecordedWorkItemEvent { sequence, event })
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -161,6 +127,7 @@ mod tests {
             schema: crate::domain::SchemaMetadata::current(),
             id: ExecutionId::from("execution-1"),
             work_item_id: WorkItemId::from("task-1"),
+            role: Default::default(),
             adapter_name: "fake".to_owned(),
             status: ExecutionStatus::Pending,
             session_id: None,

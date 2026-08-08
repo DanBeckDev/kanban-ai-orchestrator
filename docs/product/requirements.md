@@ -18,7 +18,7 @@ Alternative terminal or recovery states are `Blocked`, `Failed`, `Cancelled`, an
 
 Rules:
 
-- `Done` requires declared evidence and, where configured, human review.
+- `Done` requires a completion report and a passed quality gate from the current implementation cycle. A task declared as substantial or high-risk (`requires_human_review` in the MVP) also requires a completed independent Clean Code reviewer-agent run, a zero-actionable-finding decision, and then human review from that same cycle.
 - `Failed` and `Interrupted` are never aliases for `Done`, `Trash`, or `Cancelled`.
 - Moving a task to `Cancelled` must request cancellation from its agent and retain its audit history.
 - The daemon owns transitions; the UI renders them and sends commands, but does not run scheduling logic.
@@ -52,8 +52,10 @@ Each task retains a structured completion record:
 - agent/session identity and significant events;
 - worktree/branch identity and Git diff or commit/PR;
 - requested checks and their result;
-- review comments and reviewer decision;
+- quality-gate result, independent review execution, concise finding outcome, and reviewer decision;
 - known limitations and follow-up work.
+
+An actionable independent-review finding records a failed review outcome and returns the task to `Ready`; a later implementation completion must collect fresh quality and review evidence. Raw provider transcripts are not retained as review evidence.
 
 ## Privacy and safety requirements
 

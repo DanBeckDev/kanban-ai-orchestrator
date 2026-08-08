@@ -1,8 +1,14 @@
-use rusqlite::{OptionalExtension, params, params_from_iter};
+use rusqlite::{OptionalExtension, Transaction, params, params_from_iter};
 
-use crate::domain::{Evidence, EvidenceId, Execution, ExecutionId, ExecutionStatus, WorkItemId};
+use crate::domain::{
+    Evidence, EvidenceId, Execution, ExecutionId, ExecutionStatus, RecordedWorkItemEvent,
+    TransitionWorkItemCommand, WorkItemId,
+};
 
-use super::{EventStoreError, SqliteEventStore};
+use super::{
+    EventStoreError, SqliteEventStore, event_store_support::idempotent_transition,
+    sqlite_event_store::persist_work_item_event,
+};
 
 impl SqliteEventStore {
     pub fn record_execution(&mut self, execution: Execution) -> Result<Execution, EventStoreError> {
@@ -126,6 +132,44 @@ impl SqliteEventStore {
         Ok(evidence)
     }
 
+    pub fn record_evidence_and_transition(
+        &mut self,
+        evidence: Evidence,
+        command: TransitionWorkItemCommand,
+    ) -> Result<RecordedWorkItemEvent, EventStoreError> {
+        if evidence.work_item_id != command.work_item_id {
+            return Err(EventStoreError::EvidenceWorkItemMismatch {
+                evidence_id: evidence.id,
+                work_item_id: command.work_item_id,
+            });
+        }
+        let evidence_exists = match self.evidence(&evidence.id)? {
+            Some(recorded_evidence) if recorded_evidence == evidence => true,
+            Some(recorded_evidence) => {
+                return Err(EventStoreError::EvidenceAlreadyExists {
+                    evidence_id: recorded_evidence.id,
+                });
+            }
+            None => false,
+        };
+        if let Some(recorded_event) = self.event_by_id(&command.event_id)? {
+            let recorded_event = idempotent_transition(recorded_event, &command)?;
+            if !evidence_exists {
+                self.record_evidence(evidence)?;
+            }
+            return Ok(recorded_event);
+        }
+
+        let (event, updated_work_item) = self.prepare_work_item_transition(&command)?;
+        let transaction = self.connection.transaction()?;
+        if !evidence_exists {
+            persist_evidence(&transaction, &evidence)?;
+        }
+        let recorded_event = persist_work_item_event(&transaction, event, updated_work_item)?;
+        transaction.commit()?;
+        Ok(recorded_event)
+    }
+
     pub fn evidence(&self, evidence_id: &EvidenceId) -> Result<Option<Evidence>, EventStoreError> {
         self.connection
             .query_row(
@@ -158,6 +202,22 @@ impl SqliteEventStore {
             limit_per_work_item,
         )
     }
+}
+
+fn persist_evidence(
+    transaction: &Transaction<'_>,
+    evidence: &Evidence,
+) -> Result<(), EventStoreError> {
+    transaction.execute(
+        "INSERT INTO evidence (evidence_id, work_item_id, evidence_json)
+         VALUES (?1, ?2, ?3)",
+        params![
+            evidence.id.0,
+            evidence.work_item_id.0,
+            serde_json::to_string(evidence)?,
+        ],
+    )?;
+    Ok(())
 }
 
 pub(super) fn query_records_for_work_items<Record>(

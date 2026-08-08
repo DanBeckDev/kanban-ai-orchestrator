@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
 use crate::domain::{
-    CompletionEvidence, DependencyKind, EvidenceKind, EvidenceResult, ExecutionStatus,
-    ExecutionUsage, WorkItemBudget, WorkItemState,
+    CompletionEvidence, DependencyKind, EvidenceKind, EvidenceResult, ExecutionRole,
+    ExecutionStatus, ExecutionUsage, WorkItemBudget, WorkItemState,
 };
 
 #[derive(Clone, Debug, Deserialize)]
@@ -70,6 +70,8 @@ pub struct RecordExecutionRequest {
     pub work_item_id: String,
     pub adapter_name: String,
     pub workspace_path: String,
+    #[serde(default)]
+    pub role: ExecutionRole,
 }
 
 #[derive(Clone, Debug, Deserialize)]

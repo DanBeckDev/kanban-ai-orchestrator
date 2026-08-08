@@ -20,7 +20,7 @@ export type WorkItemBudget = Readonly<{
 }>;
 
 export type CompletionEvidence = Readonly<{
-  checksPassed: boolean;
+  qualityGatePassed: boolean;
   completionReportPresent: boolean;
   reviewAccepted: boolean;
 }>;
@@ -75,9 +75,12 @@ export type ExecutionStatus =
   | "interrupted"
   | "cancelled";
 
+export type ExecutionRole = "implementation" | "independent_review";
+
 export type Execution = Readonly<{
   id: string;
   workItemId: string;
+  role: ExecutionRole;
   adapterName: string;
   status: ExecutionStatus;
   sessionId?: string;
@@ -93,10 +96,12 @@ export type Execution = Readonly<{
 export type EvidenceKind =
   | "agent_report"
   | "check"
+  | "quality_gate"
   | "diff"
   | "commit"
   | "pull_request"
   | "completion_report"
+  | "clean_code_review"
   | "review_decision";
 
 export type EvidenceResult = "recorded" | "passed" | "failed";
@@ -139,6 +144,7 @@ export type ExternalLink = Readonly<{
 export type Evidence = Readonly<{
   id: string;
   workItemId: string;
+  executionId?: string;
   kind: EvidenceKind;
   result: EvidenceResult;
   summary: string;
@@ -305,6 +311,7 @@ export type StartExecutionRequest = Readonly<{
   workItemId: string;
   agentProfileName: string;
   taskBrief: string;
+  executionRole: ExecutionRole;
 }>;
 
 export type RecordReviewCheckRequest = Readonly<{
@@ -321,6 +328,15 @@ export type RecordReviewDecisionRequest = Readonly<{
   reviewer: string;
   summary: string;
   accepted: boolean;
+  recordedAt: string;
+}>;
+
+export type RecordCleanCodeReviewRequest = Readonly<{
+  evidenceId: string;
+  workItemId: string;
+  reviewExecutionId: string;
+  actionableFindingCount: number;
+  summary: string;
   recordedAt: string;
 }>;
 
@@ -364,6 +380,9 @@ export interface BoardGateway {
   recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
   recordReviewDecision(
     request: RecordReviewDecisionRequest,
+  ): Promise<BoardSnapshot>;
+  recordCleanCodeReview(
+    request: RecordCleanCodeReviewRequest,
   ): Promise<BoardSnapshot>;
   beginLinearOAuth(
     configuration: LinearOAuthConfiguration,

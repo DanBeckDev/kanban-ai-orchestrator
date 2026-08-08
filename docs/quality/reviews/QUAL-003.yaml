@@ -1,0 +1,258 @@
+work_item: QUAL-003
+scope:
+  - "Durable independent Clean Code review workflow from the board UI through the daemon and SQLite store."
+  - "Cycle-aware completion evidence, remediation, documentation, and regression coverage."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/ingestion.rs
+      meaningful_lines: 64
+      responsibilities: "Validates normalized agent-event sequencing without retaining provider transcripts."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_requests.rs
+      meaningful_lines: 69
+      responsibilities: "Defines deserialized board-boundary request payloads."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 273
+      responsibilities: "Coordinates board use cases through the repository boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_error.rs
+      meaningful_lines: 223
+      responsibilities: "Expresses actionable application-boundary failures."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests.rs
+      meaningful_lines: 386
+      responsibilities: "Provides shared board-service fixtures and core use-case tests."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests/clean_code_review.rs
+      meaningful_lines: 184
+      responsibilities: "Proves independent Clean Code review completion and remediation rules."
+      decision: split
+    - path: src-tauri/src/application/board_service_tests/review.rs
+      meaningful_lines: 251
+      responsibilities: "Proves quality-gate evidence and independent reviewer lifecycle rules."
+      decision: split
+    - path: src-tauri/src/application/clean_code_review_request.rs
+      meaningful_lines: 9
+      responsibilities: "Defines the structured independent-review decision input."
+      decision: kept cohesive
+    - path: src-tauri/src/application/completion_evidence_service.rs
+      meaningful_lines: 74
+      responsibilities: "Validates cycle-aware completion evidence ordering."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_event_controller.rs
+      meaningful_lines: 342
+      responsibilities: "Maps normalized execution events into guarded board updates and evidence."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_event_controller_tests.rs
+      meaningful_lines: 358
+      responsibilities: "Tests durable execution-event ingestion and state effects."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_launch.rs
+      meaningful_lines: 143
+      responsibilities: "Preflights execution launches against recorded task state."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_launch_tests.rs
+      meaningful_lines: 145
+      responsibilities: "Tests launch preflight validation."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_service.rs
+      meaningful_lines: 245
+      responsibilities: "Records and activates role-specific execution attempts."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_start_request.rs
+      meaningful_lines: 9
+      responsibilities: "Defines the requested execution role at launch."
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 52
+      responsibilities: "Composes application modules and exports boundary types."
+      decision: kept cohesive
+    - path: src-tauri/src/application/review_service.rs
+      meaningful_lines: 187
+      responsibilities: "Records quality, human, and independent-review evidence."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 377
+      responsibilities: "Exposes desktop command handlers at the Tauri boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime.rs
+      meaningful_lines: 396
+      responsibilities: "Owns direct-agent runtime lifecycle and monitor coordination."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_review.rs
+      meaningful_lines: 120
+      responsibilities: "Records bounded review artifacts after execution completion."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_support.rs
+      meaningful_lines: 187
+      responsibilities: "Shares runtime validation and error helpers."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_tests.rs
+      meaningful_lines: 298
+      responsibilities: "Tests desktop execution runtime lifecycle behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/mod.rs
+      meaningful_lines: 24
+      responsibilities: "Exports domain concepts."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/execution.rs
+      meaningful_lines: 105
+      responsibilities: "Defines durable execution and evidence models."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/mod.rs
+      meaningful_lines: 22
+      responsibilities: "Composes domain model modules."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/tests.rs
+      meaningful_lines: 206
+      responsibilities: "Tests domain model serialization and lifecycle invariants."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/state_machine.rs
+      meaningful_lines: 292
+      responsibilities: "Defines legal work-item transitions and declared completion evidence."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 67
+      responsibilities: "Composes the Tauri application and public library surface."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 155
+      responsibilities: "Adapts board repository operations to SQLite persistence."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store_tests.rs
+      meaningful_lines: 262
+      responsibilities: "Tests durable board snapshot persistence."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_error.rs
+      meaningful_lines: 203
+      responsibilities: "Defines actionable event-store errors."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/evidence_transition_store_tests.rs
+      meaningful_lines: 104
+      responsibilities: "Tests atomic evidence and remediation-transition persistence."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/execution_activation_store.rs
+      meaningful_lines: 208
+      responsibilities: "Atomically persists execution activation and work-item start."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/execution_store.rs
+      meaningful_lines: 351
+      responsibilities: "Persists executions, evidence, and atomic remediation transitions."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/execution_store_tests.rs
+      meaningful_lines: 320
+      responsibilities: "Tests execution and evidence persistence behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 26
+      responsibilities: "Composes persistence modules and test modules."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 374
+      responsibilities: "Owns SQLite event-store transitions, migrations, and materialization."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_replay_tests.rs
+      meaningful_lines: 54
+      responsibilities: "Tests event replay conflicts."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 377
+      responsibilities: "Tests SQLite event-store lifecycle behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/tests.rs
+      meaningful_lines: 388
+      responsibilities: "Tests workspace ownership and isolation policies."
+      decision: kept cohesive
+    - path: src/board/AgentLaunchForm.test.tsx
+      meaningful_lines: 51
+      responsibilities: "Tests execution role submission and reviewer briefing."
+      decision: kept cohesive
+    - path: src/board/AgentLaunchForm.tsx
+      meaningful_lines: 100
+      responsibilities: "Collects provider-neutral agent launch input."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 178
+      responsibilities: "Connects board presentation callbacks to the workspace."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 389
+      responsibilities: "Provides realistic board workspace test fixtures."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 388
+      responsibilities: "Tests board workspace orchestration interactions."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 283
+      responsibilities: "Owns board workspace gateway interactions and state."
+      decision: kept cohesive
+    - path: src/board/CleanCodeReviewForm.test.tsx
+      meaningful_lines: 70
+      responsibilities: "Tests structured Clean Code review outcome submission."
+      decision: kept cohesive
+    - path: src/board/CleanCodeReviewForm.tsx
+      meaningful_lines: 90
+      responsibilities: "Collects bounded independent-review findings."
+      decision: kept cohesive
+    - path: src/board/ReviewCheckForm.tsx
+      meaningful_lines: 58
+      responsibilities: "Collects current-cycle quality-gate evidence."
+      decision: kept cohesive
+    - path: src/board/WorkItemCard.tsx
+      meaningful_lines: 367
+      responsibilities: "Renders one task and its lifecycle controls."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 109
+      responsibilities: "Adapts board UI requests to desktop commands."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 352
+      responsibilities: "Defines shared board UI contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T23:40:00Z
+  findings:
+    must_fix:
+      - finding: "A generic check and stale review evidence could satisfy completion."
+      - finding: "Failed independent review evidence and remediation state could diverge after a persistence failure."
+      - finding: "Human acceptance could be recorded before the independent reviewer decision."
+      - finding: "Review evidence did not durably identify a single reviewer execution."
+    should_fix: []
+    outside_clean_code_rubric:
+      - finding: "The initial review test module exceeded the 400-meaningful-line policy."
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Generic and stale evidence could bypass the intended current-cycle quality workflow."
+    change: "Added typed quality-gate and Clean Code-review evidence with ordered current-cycle validation."
+  - finding: "A failed review could persist without its Ready remediation transition."
+    change: "Persisted failed review evidence and the Review-to-Ready event in one SQLite transaction, with rollback coverage."
+  - finding: "Review order and identity were ambiguous."
+    change: "Required independent review before human acceptance, persisted the reviewer execution identity, allowed one bounded decision per run, and added regression tests."
+  - finding: "The Clean Code review test module was oversized."
+    change: "Split focused quality-gate and Clean Code-review test responsibilities into separate modules."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run structure:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 90.17
+        statements: 89.93
+        functions: 84.43
+        branches: 87.96
+      - package_or_crate: src-tauri-rust
+        lines: 85.39
+        statements: 81.37
+        functions: 84.43
+        branches: 80.20
+    threshold_met: true
+exceptions: []

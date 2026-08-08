@@ -56,6 +56,7 @@ pub fn run() {
             desktop::stop_execution,
             desktop::record_review_check,
             desktop::record_review_decision,
+            desktop::record_clean_code_review,
             desktop::begin_linear_oauth,
             desktop::linear_connection_status,
             desktop::linear_assigned_issues,

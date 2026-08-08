@@ -2,7 +2,9 @@ use std::{error::Error, fmt};
 
 use crate::{
     agent::StartAgentRequest,
-    domain::{Execution, ExecutionId, ExecutionStatus, MaterializedWorkItem, WorkItemState},
+    domain::{
+        Execution, ExecutionId, ExecutionRole, ExecutionStatus, MaterializedWorkItem, WorkItemState,
+    },
     workspace::{WorkspaceAssignment, WorkspaceError, WorkspaceManager},
 };
 
@@ -45,12 +47,7 @@ pub fn prepare_execution_launch(
             configured: adapter_name.to_owned(),
         });
     }
-    if work_item.work_item.state != WorkItemState::Ready {
-        return Err(ExecutionLaunchError::WorkItemNotReady {
-            work_item_id: work_item.work_item.id.clone(),
-            state: work_item.work_item.state,
-        });
-    }
+    ensure_work_item_is_ready_for(execution.role, work_item)?;
     manager
         .verify_execution_workspace(execution, assignment)
         .map_err(ExecutionLaunchError::Workspace)?;
@@ -63,6 +60,24 @@ pub fn prepare_execution_launch(
             task_brief: task_brief.to_owned(),
         },
     })
+}
+
+fn ensure_work_item_is_ready_for(
+    role: ExecutionRole,
+    work_item: &MaterializedWorkItem,
+) -> Result<(), ExecutionLaunchError> {
+    let expected_state = match role {
+        ExecutionRole::Implementation => WorkItemState::Ready,
+        ExecutionRole::IndependentReview => WorkItemState::Review,
+    };
+    if work_item.work_item.state == expected_state {
+        Ok(())
+    } else {
+        Err(ExecutionLaunchError::WorkItemNotReady {
+            work_item_id: work_item.work_item.id.clone(),
+            state: work_item.work_item.state,
+        })
+    }
 }
 
 fn validate_required(value: &str, field: &'static str) -> Result<(), ExecutionLaunchError> {

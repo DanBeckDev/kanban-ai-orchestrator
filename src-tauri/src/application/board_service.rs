@@ -36,6 +36,10 @@ pub trait BoardRepository {
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error>;
     fn execution(&self, execution_id: &ExecutionId) -> Result<Option<Execution>, Self::Error>;
+    fn executions_for_work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<Vec<Execution>, Self::Error>;
     fn update_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error>;
     fn active_execution_count_for_project(
         &self,
@@ -47,6 +51,11 @@ pub trait BoardRepository {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error>;
+    fn record_evidence_and_transition(
+        &mut self,
+        evidence: Evidence,
+        command: TransitionWorkItemCommand,
+    ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_external_link(&mut self, link: ExternalLink) -> Result<ExternalLink, Self::Error>;
     fn external_link_for_connector_resource(
         &self,

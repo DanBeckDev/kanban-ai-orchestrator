@@ -12,7 +12,7 @@ use crate::{
         AgentProfileServiceError, BoardServiceError, ExecutionEventControllerError,
         ExecutionLaunchError, StartExecutionRequest,
     },
-    domain::{ExecutionStatus, WorkItemId, WorkItemState},
+    domain::{ExecutionRole, ExecutionStatus, WorkItemId, WorkItemState},
     persistence::{BoardStoreError, EventStoreError},
     workspace::WorkspaceError,
 };
@@ -37,11 +37,16 @@ pub(super) fn validate_start_request(
     Ok(())
 }
 
-pub(super) fn ensure_ready(
+pub(super) fn ensure_startable(
     work_item_id: &WorkItemId,
     state: WorkItemState,
+    role: ExecutionRole,
 ) -> Result<(), ExecutionRuntimeError> {
-    if state == WorkItemState::Ready {
+    let expected_state = match role {
+        ExecutionRole::Implementation => WorkItemState::Ready,
+        ExecutionRole::IndependentReview => WorkItemState::Review,
+    };
+    if state == expected_state {
         Ok(())
     } else {
         Err(ExecutionRuntimeError::WorkItemNotReady {

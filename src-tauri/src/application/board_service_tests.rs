@@ -66,6 +66,7 @@ fn execution_request(work_item_id: &str) -> RecordExecutionRequest {
     RecordExecutionRequest {
         execution_id: "execution-1".to_owned(),
         work_item_id: work_item_id.to_owned(),
+        role: Default::default(),
         adapter_name: "codex-cli".to_owned(),
         workspace_path: "/workspaces/task-1".to_owned(),
     }
@@ -91,6 +92,7 @@ pub(super) fn create_board(service: &mut BoardService<SqliteEventStore>) {
         .expect("board should be created");
 }
 
+mod clean_code_review;
 mod plan;
 mod review;
 
@@ -185,6 +187,14 @@ fn records_a_pending_worker_attempt_and_review_evidence_through_the_use_case() {
     service
         .create_work_item(create_work_item_request("task-1"))
         .expect("work item should be created");
+    for (event_id, next_state) in [
+        ("plan-task-1", WorkItemState::Planned),
+        ("ready-task-1", WorkItemState::Ready),
+    ] {
+        service
+            .transition_work_item(transition_request(event_id, "task-1", next_state, None))
+            .expect("task should become ready before execution is recorded");
+    }
 
     let execution_snapshot = service
         .record_execution(execution_request("task-1"))
@@ -258,36 +268,13 @@ fn preserves_done_evidence_requirements_at_the_command_use_case() {
         )))
     ));
     let completion = CompletionEvidence {
-        checks_passed: true,
+        quality_gate_passed: true,
         completion_report_present: true,
         review_accepted: false,
     };
     assert!(matches!(
         service.transition_work_item(transition_request(
             "done-task-1-without-records",
-            "task-1",
-            WorkItemState::Done,
-            Some(completion),
-        )),
-        Err(BoardServiceError::MissingRecordedEvidence {
-            kind: EvidenceKind::Check,
-            result: EvidenceResult::Passed,
-            ..
-        })
-    ));
-    service
-        .record_evidence(RecordEvidenceRequest {
-            evidence_id: "check-task-1".to_owned(),
-            work_item_id: "task-1".to_owned(),
-            kind: EvidenceKind::Check,
-            result: EvidenceResult::Passed,
-            summary: "Unit tests passed.".to_owned(),
-            recorded_at: "2026-08-08T00:02:00Z".to_owned(),
-        })
-        .expect("passing check should persist");
-    assert!(matches!(
-        service.transition_work_item(transition_request(
-            "done-task-1-without-report",
             "task-1",
             WorkItemState::Done,
             Some(completion),
@@ -305,9 +292,32 @@ fn preserves_done_evidence_requirements_at_the_command_use_case() {
             kind: EvidenceKind::CompletionReport,
             result: EvidenceResult::Recorded,
             summary: "The agent submitted a completion report.".to_owned(),
-            recorded_at: "2026-08-08T00:02:01Z".to_owned(),
+            recorded_at: "2026-08-08T00:02:00Z".to_owned(),
         })
         .expect("completion report should persist");
+    assert!(matches!(
+        service.transition_work_item(transition_request(
+            "done-task-1-without-quality-gate",
+            "task-1",
+            WorkItemState::Done,
+            Some(completion),
+        )),
+        Err(BoardServiceError::MissingRecordedEvidence {
+            kind: EvidenceKind::QualityGate,
+            result: EvidenceResult::Passed,
+            ..
+        })
+    ));
+    service
+        .record_evidence(RecordEvidenceRequest {
+            evidence_id: "quality-gate-task-1".to_owned(),
+            work_item_id: "task-1".to_owned(),
+            kind: EvidenceKind::QualityGate,
+            result: EvidenceResult::Passed,
+            summary: "The full quality gate passed.".to_owned(),
+            recorded_at: "2026-08-08T00:02:01Z".to_owned(),
+        })
+        .expect("quality gate should persist");
     let completed_snapshot = service
         .transition_work_item(transition_request(
             "done-task-1-with-evidence",

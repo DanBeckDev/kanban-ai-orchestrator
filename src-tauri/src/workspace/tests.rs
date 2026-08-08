@@ -80,6 +80,7 @@ pub(crate) fn execution(work_item_id: &str, workspace_path: &Path) -> Execution 
         schema: SchemaMetadata::current(),
         id: ExecutionId::from("execution-1"),
         work_item_id: WorkItemId::from(work_item_id),
+        role: Default::default(),
         adapter_name: "test-adapter".to_owned(),
         status: ExecutionStatus::Pending,
         session_id: None,

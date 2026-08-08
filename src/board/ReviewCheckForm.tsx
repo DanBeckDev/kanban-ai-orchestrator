@@ -33,11 +33,11 @@ export function ReviewCheckForm({
 
   return (
     <form
-      aria-label={`Record review check for ${workItem.title}`}
+      aria-label={`Record quality gate for ${workItem.title}`}
       className="review-check-form"
       onSubmit={submit}
     >
-      <h5>Review checks</h5>
+      <h5>Quality gate</h5>
       <label>
         Result summary
         <input
@@ -56,7 +56,7 @@ export function ReviewCheckForm({
         Check passed
       </label>
       <button disabled={busy} type="submit">
-        Record check
+        Record quality gate
       </button>
     </form>
   );

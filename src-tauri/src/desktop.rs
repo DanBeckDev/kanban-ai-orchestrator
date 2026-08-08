@@ -14,8 +14,8 @@ use crate::{
         AddDependencyRequest, BoardPlan, BoardService, BoardSnapshot, ConfirmPlanRequest,
         CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
         ImportLinearBlockerRequest, ImportLinearIssueRequest, ProposePlanRequest,
-        RecordReviewCheckRequest, RecordReviewDecisionRequest, StartExecutionRequest,
-        TransitionWorkItemRequest,
+        RecordCleanCodeReviewRequest, RecordReviewCheckRequest, RecordReviewDecisionRequest,
+        StartExecutionRequest, TransitionWorkItemRequest,
     },
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
@@ -203,6 +203,16 @@ pub(crate) fn record_review_decision(
 ) -> Result<BoardSnapshot, String> {
     lock_service(&state)?
         .record_review_decision(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn record_clean_code_review(
+    state: State<'_, BoardDaemonState>,
+    request: RecordCleanCodeReviewRequest,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .record_clean_code_review(request)
         .map_err(error_message)
 }
 

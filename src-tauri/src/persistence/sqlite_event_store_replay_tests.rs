@@ -32,7 +32,7 @@ fn rejects_duplicate_work_items_and_every_conflicting_transition_replay() {
     let mut mismatched_evidence =
         transition_command("plan-task-1", "task-1", WorkItemState::Planned);
     mismatched_evidence.evidence = Some(CompletionEvidence {
-        checks_passed: true,
+        quality_gate_passed: true,
         completion_report_present: true,
         review_accepted: true,
     });

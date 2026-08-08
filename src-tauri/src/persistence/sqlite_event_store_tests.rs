@@ -193,7 +193,7 @@ fn rejects_invalid_transitions_without_mutating_history_or_snapshot() {
     let invalid_completion = TransitionWorkItemCommand {
         next_state: WorkItemState::Done,
         evidence: Some(CompletionEvidence {
-            checks_passed: true,
+            quality_gate_passed: true,
             completion_report_present: true,
             review_accepted: true,
         }),

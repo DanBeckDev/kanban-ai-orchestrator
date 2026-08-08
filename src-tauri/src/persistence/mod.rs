@@ -36,3 +36,6 @@ mod sqlite_event_store_replay_tests;
 
 #[cfg(test)]
 mod execution_store_tests;
+
+#[cfg(test)]
+mod evidence_transition_store_tests;

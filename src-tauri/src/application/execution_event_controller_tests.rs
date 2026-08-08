@@ -5,7 +5,9 @@ use super::{
 };
 use crate::{
     agent::{NormalizedAgentEvent, NormalizedAgentEventKind},
-    domain::{EvidenceKind, EvidenceResult, ExecutionStatus, WorkItemBudget, WorkItemState},
+    domain::{
+        EvidenceKind, EvidenceResult, ExecutionRole, ExecutionStatus, WorkItemBudget, WorkItemState,
+    },
     persistence::SqliteEventStore,
 };
 
@@ -63,6 +65,7 @@ fn prepared_service() -> BoardService<SqliteEventStore> {
         .record_execution(RecordExecutionRequest {
             execution_id: "execution-1".to_owned(),
             work_item_id: "task-1".to_owned(),
+            role: Default::default(),
             adapter_name: "fake".to_owned(),
             workspace_path: "/workspaces/task-1".to_owned(),
         })
@@ -221,6 +224,69 @@ fn completion_requires_review_and_repeated_review_events_remain_auditable() {
     );
     assert_eq!(second_snapshot.executions[0].last_event_sequence, 2);
     assert_eq!(second_snapshot.evidence.len(), 2);
+}
+
+#[test]
+fn independent_reviewer_events_remain_in_review_and_never_replace_implementation_evidence() {
+    let mut service = prepared_service();
+    for (event_id, next_state) in [
+        ("run-task-1", WorkItemState::Running),
+        ("review-task-1", WorkItemState::Review),
+    ] {
+        service
+            .transition_work_item(TransitionWorkItemRequest {
+                event_id: event_id.to_owned(),
+                work_item_id: "task-1".to_owned(),
+                next_state,
+                evidence: None,
+                reason: "Prepare an independent review.".to_owned(),
+                recorded_at: "2026-08-08T00:02:00Z".to_owned(),
+            })
+            .expect("task should enter review");
+    }
+    service
+        .record_execution(RecordExecutionRequest {
+            execution_id: "review-execution".to_owned(),
+            work_item_id: "task-1".to_owned(),
+            role: ExecutionRole::IndependentReview,
+            adapter_name: "independent-reviewer".to_owned(),
+            workspace_path: "/workspaces/task-1".to_owned(),
+        })
+        .expect("review execution should persist");
+    ExecutionEventController::activate(
+        &mut service,
+        "review-execution",
+        "review-session",
+        "2026-08-08T00:03:00Z",
+    )
+    .expect("review execution should start");
+
+    let snapshot = ExecutionEventController::record_event(
+        &mut service,
+        "review-execution",
+        event(
+            1,
+            NormalizedAgentEventKind::Completed {
+                summary: "No findings were found.".to_owned(),
+            },
+        ),
+        "2026-08-08T00:04:00Z",
+    )
+    .expect("review result should persist");
+
+    assert_eq!(
+        snapshot.work_items[0].work_item.state,
+        WorkItemState::Review
+    );
+    assert!(matches!(
+        snapshot.executions.iter().find(|execution| execution.id.0 == "review-execution"),
+        Some(execution) if execution.status == ExecutionStatus::Completed
+    ));
+    assert!(matches!(
+        snapshot.evidence.last(),
+        Some(evidence) if evidence.kind == EvidenceKind::AgentReport
+            && evidence.result == EvidenceResult::Recorded
+    ));
 }
 
 #[test]

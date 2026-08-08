@@ -5,8 +5,8 @@ use crate::{
         AgentAdapterError, AgentEventIngestor, NormalizedAgentEvent, NormalizedAgentEventKind,
     },
     domain::{
-        EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus, ExecutionUsage,
-        MaterializedWorkItem, TransitionConfig, WorkItemState,
+        EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionRole, ExecutionStatus,
+        ExecutionUsage, MaterializedWorkItem, TransitionConfig, WorkItemState,
     },
 };
 
@@ -48,15 +48,22 @@ impl ExecutionEventController {
         ensure_execution_accepts_events(&execution)?;
         let work_item = work_item(service, &execution)?;
         let mut ingestor = AgentEventIngestor::new(execution.last_event_sequence);
-        let next_work_item_state = ingestor
-            .apply_to_work_item(
-                work_item.work_item.state,
-                &event,
-                TransitionConfig {
-                    human_review_required: work_item.work_item.requires_human_review,
-                },
-            )
-            .map_err(ExecutionEventControllerError::AgentAdapter)?;
+        let next_work_item_state = if execution.role == ExecutionRole::IndependentReview {
+            ingestor
+                .record_without_work_item_transition(&event)
+                .map_err(ExecutionEventControllerError::AgentAdapter)?;
+            work_item.work_item.state
+        } else {
+            ingestor
+                .apply_to_work_item(
+                    work_item.work_item.state,
+                    &event,
+                    TransitionConfig {
+                        human_review_required: work_item.work_item.requires_human_review,
+                    },
+                )
+                .map_err(ExecutionEventControllerError::AgentAdapter)?
+        };
 
         if next_work_item_state != work_item.work_item.state {
             transition_work_item(
@@ -67,7 +74,12 @@ impl ExecutionEventController {
                 recorded_at,
             )?;
         }
-        if let Some(evidence) = evidence_for_event(&execution, &event, recorded_at) {
+        for evidence in evidence_for_event(
+            &execution,
+            work_item.work_item.requires_human_review,
+            &event,
+            recorded_at,
+        ) {
             service
                 .record_evidence(evidence)
                 .map_err(ExecutionEventControllerError::BoardService)?;
@@ -134,9 +146,13 @@ where
 
 fn evidence_for_event(
     execution: &Execution,
+    requires_human_review: bool,
     event: &NormalizedAgentEvent,
     recorded_at: &str,
-) -> Option<RecordEvidenceRequest> {
+) -> Vec<RecordEvidenceRequest> {
+    if execution.role == ExecutionRole::IndependentReview {
+        return review_evidence_for_event(execution, event, recorded_at);
+    }
     let (kind, result) = match event.kind {
         NormalizedAgentEventKind::ApprovalRequested { .. }
         | NormalizedAgentEventKind::AwaitingInput { .. }
@@ -152,24 +168,72 @@ fn evidence_for_event(
         }
         NormalizedAgentEventKind::Activity { .. }
         | NormalizedAgentEventKind::UsageUpdated { .. } => {
-            return None;
+            return Vec::new();
         }
     };
-
-    Some(RecordEvidenceRequest {
+    let mut evidence = vec![RecordEvidenceRequest {
         evidence_id: format!("{}-agent-event-{}", execution.id.0, event.sequence),
         work_item_id: execution.work_item_id.0.clone(),
         kind,
         result,
         summary: event_summary(&event.kind),
         recorded_at: recorded_at.to_owned(),
-    })
+    }];
+    if requires_human_review
+        && matches!(
+            event.kind,
+            NormalizedAgentEventKind::AwaitingReview { .. }
+                | NormalizedAgentEventKind::Completed { .. }
+        )
+    {
+        evidence.push(RecordEvidenceRequest {
+            evidence_id: format!("{}-clean-code-review-required", execution.id.0),
+            work_item_id: execution.work_item_id.0.clone(),
+            kind: EvidenceKind::CleanCodeReview,
+            result: EvidenceResult::Recorded,
+            summary: "Independent Clean Code review is required before Done.".to_owned(),
+            recorded_at: recorded_at.to_owned(),
+        });
+    }
+    evidence
+}
+
+fn review_evidence_for_event(
+    execution: &Execution,
+    event: &NormalizedAgentEvent,
+    recorded_at: &str,
+) -> Vec<RecordEvidenceRequest> {
+    let result = match event.kind {
+        NormalizedAgentEventKind::Failed { .. } => EvidenceResult::Failed,
+        _ => EvidenceResult::Recorded,
+    };
+    match event.kind {
+        NormalizedAgentEventKind::Activity { .. }
+        | NormalizedAgentEventKind::UsageUpdated { .. } => Vec::new(),
+        _ => vec![RecordEvidenceRequest {
+            evidence_id: format!("{}-agent-event-{}", execution.id.0, event.sequence),
+            work_item_id: execution.work_item_id.0.clone(),
+            kind: EvidenceKind::AgentReport,
+            result,
+            summary: event_summary(&event.kind),
+            recorded_at: recorded_at.to_owned(),
+        }],
+    }
 }
 
 fn execution_status_for(
     execution: &Execution,
     event: &NormalizedAgentEventKind,
 ) -> ExecutionStatus {
+    if execution.role == ExecutionRole::IndependentReview
+        && matches!(
+            event,
+            NormalizedAgentEventKind::AwaitingReview { .. }
+                | NormalizedAgentEventKind::Completed { .. }
+        )
+    {
+        return ExecutionStatus::Completed;
+    }
     match event {
         NormalizedAgentEventKind::ApprovalRequested { .. }
         | NormalizedAgentEventKind::AwaitingInput { .. } => ExecutionStatus::AwaitingInput,

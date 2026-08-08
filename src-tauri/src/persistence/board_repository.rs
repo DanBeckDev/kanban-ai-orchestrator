@@ -68,6 +68,14 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::execution(self, execution_id).map_err(BoardStoreError::from)
     }
 
+    fn executions_for_work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<Vec<Execution>, Self::Error> {
+        SqliteEventStore::executions_for_work_items(self, std::slice::from_ref(work_item_id))
+            .map_err(BoardStoreError::from)
+    }
+
     fn update_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error> {
         SqliteEventStore::update_execution(self, execution).map_err(BoardStoreError::from)
     }
@@ -90,6 +98,15 @@ impl BoardRepository for SqliteEventStore {
 
     fn record_evidence(&mut self, evidence: Evidence) -> Result<Evidence, Self::Error> {
         SqliteEventStore::record_evidence(self, evidence).map_err(BoardStoreError::from)
+    }
+
+    fn record_evidence_and_transition(
+        &mut self,
+        evidence: Evidence,
+        command: TransitionWorkItemCommand,
+    ) -> Result<RecordedWorkItemEvent, Self::Error> {
+        SqliteEventStore::record_evidence_and_transition(self, evidence, command)
+            .map_err(BoardStoreError::from)
     }
 
     fn record_external_link(&mut self, link: ExternalLink) -> Result<ExternalLink, Self::Error> {

@@ -39,6 +39,27 @@ pub enum BoardServiceError<RepositoryError> {
         work_item_id: WorkItemId,
         state: WorkItemState,
     },
+    IndependentReviewProfileMatchesImplementation {
+        work_item_id: WorkItemId,
+        adapter_name: String,
+    },
+    ReviewExecutionDoesNotMatchWorkItem {
+        execution_id: ExecutionId,
+        work_item_id: WorkItemId,
+    },
+    ReviewExecutionNotCompleted {
+        execution_id: ExecutionId,
+        status: crate::domain::ExecutionStatus,
+    },
+    ReviewExecutionIsNotIndependent {
+        execution_id: ExecutionId,
+    },
+    CleanCodeReviewAlreadyRecorded {
+        execution_id: ExecutionId,
+    },
+    CleanCodeReviewSummaryTooLong {
+        maximum_characters: usize,
+    },
     ExternalResourceNotLinked {
         connector_id: &'static str,
         external_id: String,
@@ -108,6 +129,44 @@ where
                 "work item {} cannot record review evidence because it is {state:?}",
                 work_item_id.0
             ),
+            Self::IndependentReviewProfileMatchesImplementation {
+                work_item_id,
+                adapter_name,
+            } => write!(
+                formatter,
+                "independent review for work item {} cannot reuse implementation profile {adapter_name}",
+                work_item_id.0
+            ),
+            Self::ReviewExecutionDoesNotMatchWorkItem {
+                execution_id,
+                work_item_id,
+            } => write!(
+                formatter,
+                "review execution {} does not belong to work item {}",
+                execution_id.0, work_item_id.0
+            ),
+            Self::ReviewExecutionNotCompleted {
+                execution_id,
+                status,
+            } => write!(
+                formatter,
+                "review execution {} cannot record a decision because it is {status:?}",
+                execution_id.0
+            ),
+            Self::ReviewExecutionIsNotIndependent { execution_id } => write!(
+                formatter,
+                "execution {} is not an independent review",
+                execution_id.0
+            ),
+            Self::CleanCodeReviewAlreadyRecorded { execution_id } => write!(
+                formatter,
+                "independent review execution {} already has a recorded decision",
+                execution_id.0
+            ),
+            Self::CleanCodeReviewSummaryTooLong { maximum_characters } => write!(
+                formatter,
+                "Clean Code review summary exceeds the {maximum_characters}-character limit"
+            ),
             Self::ExternalResourceNotLinked {
                 connector_id,
                 external_id,
@@ -155,6 +214,12 @@ where
             | Self::ExecutionNotPending { .. }
             | Self::WorkItemNotReady { .. }
             | Self::WorkItemNotInReview { .. }
+            | Self::IndependentReviewProfileMatchesImplementation { .. }
+            | Self::ReviewExecutionDoesNotMatchWorkItem { .. }
+            | Self::ReviewExecutionNotCompleted { .. }
+            | Self::ReviewExecutionIsNotIndependent { .. }
+            | Self::CleanCodeReviewAlreadyRecorded { .. }
+            | Self::CleanCodeReviewSummaryTooLong { .. }
             | Self::ExternalResourceNotLinked { .. }
             | Self::MissingRecordedEvidence { .. }
             | Self::PlanNotFound { .. } => None,

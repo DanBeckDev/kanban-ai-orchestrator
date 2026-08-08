@@ -98,6 +98,7 @@ mod tests {
             schema: SchemaMetadata::current(),
             id: ExecutionId::from("execution-1"),
             work_item_id: WorkItemId::from("task-1"),
+            role: Default::default(),
             adapter_name: "structured-worker".to_owned(),
             status: ExecutionStatus::AwaitingReview,
             session_id: Some("session-1".to_owned()),

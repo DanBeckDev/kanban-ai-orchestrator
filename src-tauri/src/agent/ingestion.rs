@@ -34,6 +34,15 @@ impl AgentEventIngestor {
         self.last_sequence
     }
 
+    pub fn record_without_work_item_transition(
+        &mut self,
+        event: &NormalizedAgentEvent,
+    ) -> Result<(), AgentAdapterError> {
+        self.validate_sequence(event.sequence)?;
+        self.last_sequence = event.sequence;
+        Ok(())
+    }
+
     fn validate_sequence(&self, sequence: u64) -> Result<(), AgentAdapterError> {
         if sequence <= self.last_sequence {
             return Err(AgentAdapterError::DuplicateEvent { sequence });

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, Transaction, params};
 
 use crate::domain::{
     CreateWorkItemCommand, MaterializedWorkItem, PolicyDecision, PolicyDecisionId, ProjectId,
@@ -84,9 +84,17 @@ impl SqliteEventStore {
             return idempotent_transition(recorded_event, &command);
         }
 
+        let (event, updated_work_item) = self.prepare_work_item_transition(&command)?;
+        self.persist_event(event, updated_work_item)
+    }
+
+    pub(super) fn prepare_work_item_transition(
+        &self,
+        command: &TransitionWorkItemCommand,
+    ) -> Result<(WorkItemEvent, WorkItem), EventStoreError> {
         if command.reason.trim().is_empty() {
             return Err(EventStoreError::MissingTransitionReason {
-                event_id: command.event_id,
+                event_id: command.event_id.clone(),
             });
         }
 
@@ -102,19 +110,19 @@ impl SqliteEventStore {
         updated_work_item.state = next_state;
         let event = WorkItemEvent {
             schema: SchemaMetadata::current(),
-            id: command.event_id,
-            work_item_id: command.work_item_id,
+            id: command.event_id.clone(),
+            work_item_id: command.work_item_id.clone(),
             kind: WorkItemEventKind::StateTransitioned {
                 from: previous_state,
                 to: next_state,
                 config: command.config,
                 evidence: command.evidence,
-                reason: command.reason,
+                reason: command.reason.clone(),
             },
-            recorded_at: command.recorded_at,
+            recorded_at: command.recorded_at.clone(),
         };
 
-        self.persist_event(event, updated_work_item)
+        Ok((event, updated_work_item))
     }
 
     pub fn record_policy_decision(
@@ -294,7 +302,7 @@ impl SqliteEventStore {
         Ok(())
     }
 
-    fn event_by_id(
+    pub(super) fn event_by_id(
         &self,
         event_id: &WorkItemEventId,
     ) -> Result<Option<RecordedWorkItemEvent>, EventStoreError> {
@@ -364,31 +372,45 @@ impl SqliteEventStore {
         event: WorkItemEvent,
         work_item: WorkItem,
     ) -> Result<RecordedWorkItemEvent, EventStoreError> {
-        let event_json = serde_json::to_string(&event)?;
-        let work_item_json = serde_json::to_string(&work_item)?;
         let transaction = self.connection.transaction()?;
-        transaction.execute(
-            "INSERT INTO work_item_events (event_id, work_item_id, event_json)
-             VALUES (?1, ?2, ?3)",
-            params![event.id.0, event.work_item_id.0, event_json],
-        )?;
-        let database_sequence = transaction.last_insert_rowid();
-        let sequence = event_sequence(database_sequence)?;
-        transaction.execute(
-            "INSERT INTO materialized_work_items (
-                work_item_id,
-                work_item_json,
-                last_event_sequence
-             ) VALUES (?1, ?2, ?3)
-             ON CONFLICT(work_item_id) DO UPDATE SET
-                work_item_json = excluded.work_item_json,
-                last_event_sequence = excluded.last_event_sequence",
-            params![work_item.id.0, work_item_json, database_sequence],
-        )?;
+        let recorded_event = persist_work_item_event(&transaction, event, work_item)?;
         transaction.commit()?;
-
-        Ok(RecordedWorkItemEvent { sequence, event })
+        Ok(recorded_event)
     }
+}
+
+pub(super) fn persist_work_item_event(
+    transaction: &Transaction<'_>,
+    event: WorkItemEvent,
+    work_item: WorkItem,
+) -> Result<RecordedWorkItemEvent, EventStoreError> {
+    transaction.execute(
+        "INSERT INTO work_item_events (event_id, work_item_id, event_json)
+         VALUES (?1, ?2, ?3)",
+        params![
+            event.id.0,
+            event.work_item_id.0,
+            serde_json::to_string(&event)?,
+        ],
+    )?;
+    let database_sequence = transaction.last_insert_rowid();
+    let sequence = event_sequence(database_sequence)?;
+    transaction.execute(
+        "INSERT INTO materialized_work_items (
+            work_item_id,
+            work_item_json,
+            last_event_sequence
+         ) VALUES (?1, ?2, ?3)
+         ON CONFLICT(work_item_id) DO UPDATE SET
+            work_item_json = excluded.work_item_json,
+            last_event_sequence = excluded.last_event_sequence",
+        params![
+            work_item.id.0,
+            serde_json::to_string(&work_item)?,
+            database_sequence,
+        ],
+    )?;
+    Ok(RecordedWorkItemEvent { sequence, event })
 }
 
 #[cfg(test)]

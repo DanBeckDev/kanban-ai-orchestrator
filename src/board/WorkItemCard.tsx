@@ -12,6 +12,7 @@ import {
   timestamp,
 } from "./presentation";
 import { AgentLaunchForm } from "./AgentLaunchForm";
+import { CleanCodeReviewForm } from "./CleanCodeReviewForm";
 import { ReviewCheckForm } from "./ReviewCheckForm";
 import { ReviewDecisionForm } from "./ReviewDecisionForm";
 import { ExecutionControl } from "./ExecutionControl";
@@ -21,6 +22,7 @@ import type {
   BoardSnapshot,
   AgentProfile,
   CompletionEvidence,
+  RecordCleanCodeReviewRequest,
   TransitionWorkItemRequest,
   StartExecutionRequest,
   RecordReviewCheckRequest,
@@ -41,10 +43,13 @@ type WorkItemCardProps = Readonly<{
   onRecordReviewDecision: (
     request: RecordReviewDecisionRequest,
   ) => Promise<void>;
+  onRecordCleanCodeReview: (
+    request: RecordCleanCodeReviewRequest,
+  ) => Promise<void>;
 }>;
 
 const emptyEvidence: CompletionEvidence = {
-  checksPassed: false,
+  qualityGatePassed: false,
   completionReportPresent: false,
   reviewAccepted: false,
 };
@@ -59,6 +64,7 @@ export function WorkItemCard({
   onStopExecution,
   onRecordReviewCheck,
   onRecordReviewDecision,
+  onRecordCleanCodeReview,
 }: WorkItemCardProps) {
   const [nextState, setNextState] = useState<WorkItemState | "">("");
   const [reason, setReason] = useState("");
@@ -67,6 +73,11 @@ export function WorkItemCard({
   const activity = activityFor(snapshot, workItem.id);
   const executions = executionsFor(snapshot, workItem.id);
   const evidenceRecords = evidenceFor(snapshot, workItem.id);
+  const completedReviewExecutions = executions.filter(
+    (execution) =>
+      execution.role === "independent_review" &&
+      execution.status === "completed",
+  );
   const externalLinks = externalLinksFor(snapshot, workItem.id);
   const options = manualTransitionStates(workItem.state);
 
@@ -93,7 +104,9 @@ export function WorkItemCard({
       <p>{workItem.description}</p>
       <p className="budget-summary">{budgetSummary(workItem)}</p>
       {workItem.requiresHumanReview && (
-        <p className="review-requirement">Human review required before Done</p>
+        <p className="review-requirement">
+          Independent Clean Code review and human review required before Done
+        </p>
       )}
       <ul className="criteria-list">
         {workItem.acceptanceCriteria.map((criterion) => (
@@ -139,6 +152,25 @@ export function WorkItemCard({
             workItem={workItem}
             onRecord={onRecordReviewCheck}
           />
+          {workItem.requiresHumanReview && (
+            <>
+              <AgentLaunchForm
+                busy={busy}
+                buttonLabel="Start independent reviewer"
+                executionRole="independent_review"
+                formLabel={`Start independent reviewer for ${workItem.title}`}
+                profiles={agentProfiles}
+                workItem={workItem}
+                onStart={onStartExecution}
+              />
+              <CleanCodeReviewForm
+                busy={busy}
+                reviewExecutions={completedReviewExecutions}
+                workItem={workItem}
+                onRecord={onRecordCleanCodeReview}
+              />
+            </>
+          )}
           <ReviewDecisionForm
             busy={busy}
             workItem={workItem}
@@ -264,8 +296,8 @@ function DecisionHistory({
             <time dateTime={entry.recordedAt}>{entry.recordedAt}</time>
             {entry.completionEvidence && (
               <span>
-                Evidence: checks{" "}
-                {entry.completionEvidence.checksPassed
+                Evidence: quality gate{" "}
+                {entry.completionEvidence.qualityGatePassed
                   ? "passed"
                   : "not passed"}
                 , report{" "}
@@ -299,9 +331,11 @@ function EvidenceFields({
     <fieldset>
       <legend>Completion evidence</legend>
       <EvidenceCheckbox
-        checked={evidence.checksPassed}
-        label="Checks passed"
-        onChange={(checksPassed) => onChange({ ...evidence, checksPassed })}
+        checked={evidence.qualityGatePassed}
+        label="Quality gate passed"
+        onChange={(qualityGatePassed) =>
+          onChange({ ...evidence, qualityGatePassed })
+        }
       />
       <EvidenceCheckbox
         checked={evidence.completionReportPresent}
@@ -313,7 +347,7 @@ function EvidenceFields({
       {requiresHumanReview && (
         <EvidenceCheckbox
           checked={evidence.reviewAccepted}
-          label="Recorded review accepted"
+          label="Independent and human reviews accepted"
           onChange={(reviewAccepted) =>
             onChange({ ...evidence, reviewAccepted })
           }

@@ -25,7 +25,8 @@ use crate::{
 use crate::desktop::LocalBoardService;
 use crate::desktop_execution_policy::authorize_execution_start;
 use crate::desktop_execution_runtime_support::{
-    ExecutionRuntimeError, ensure_ready, is_terminal_event, lock, timestamp, validate_start_request,
+    ExecutionRuntimeError, ensure_startable, is_terminal_event, lock, timestamp,
+    validate_start_request,
 };
 
 #[derive(Clone)]
@@ -57,7 +58,11 @@ impl ExecutionRuntime {
         let work_item_id = WorkItemId::from(request.work_item_id.as_str());
         let (profile, project, work_item) =
             self.launch_context(&request.agent_profile_name, &work_item_id)?;
-        ensure_ready(&work_item.work_item.id, work_item.work_item.state)?;
+        ensure_startable(
+            &work_item.work_item.id,
+            work_item.work_item.state,
+            request.execution_role,
+        )?;
         self.authorize_execution_start(&project, &work_item, &request.execution_id)?;
 
         let manager = WorkspaceManager::new(&project, &self.workspace_root)
@@ -143,13 +148,18 @@ impl ExecutionRuntime {
         let work_item = service
             .work_item(&WorkItemId::from(request.work_item_id.as_str()))
             .map_err(ExecutionRuntimeError::Board)?;
-        ensure_ready(&work_item.work_item.id, work_item.work_item.state)?;
+        ensure_startable(
+            &work_item.work_item.id,
+            work_item.work_item.state,
+            request.execution_role,
+        )?;
         service
             .record_execution(RecordExecutionRequest {
                 execution_id: request.execution_id.clone(),
                 work_item_id: request.work_item_id.clone(),
                 adapter_name: request.agent_profile_name.clone(),
                 workspace_path: assignment.path().display().to_string(),
+                role: request.execution_role,
             })
             .map_err(ExecutionRuntimeError::Board)?;
         Ok(())
@@ -394,6 +404,7 @@ fn pending_execution(
         schema: SchemaMetadata::current(),
         id: ExecutionId::from(request.execution_id.as_str()),
         work_item_id: WorkItemId::from(request.work_item_id.as_str()),
+        role: request.execution_role,
         adapter_name: request.agent_profile_name.clone(),
         status: ExecutionStatus::Pending,
         session_id: None,

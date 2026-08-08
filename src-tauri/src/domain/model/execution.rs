@@ -15,6 +15,20 @@ pub enum ExecutionStatus {
     Cancelled,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExecutionRole {
+    #[default]
+    Implementation,
+    IndependentReview,
+}
+
+impl ExecutionRole {
+    pub const fn is_independent_review(self) -> bool {
+        matches!(self, Self::IndependentReview)
+    }
+}
+
 impl ExecutionStatus {
     pub const fn is_terminal(self) -> bool {
         matches!(
@@ -62,6 +76,8 @@ pub struct Execution {
     pub schema: SchemaMetadata,
     pub id: ExecutionId,
     pub work_item_id: WorkItemId,
+    #[serde(default)]
+    pub role: ExecutionRole,
     pub adapter_name: String,
     pub status: ExecutionStatus,
     pub session_id: Option<String>,
@@ -81,10 +97,12 @@ impl VersionedSchema for Execution {
 pub enum EvidenceKind {
     AgentReport,
     Check,
+    QualityGate,
     Diff,
     Commit,
     PullRequest,
     CompletionReport,
+    CleanCodeReview,
     ReviewDecision,
 }
 
@@ -102,6 +120,8 @@ pub struct Evidence {
     pub schema: SchemaMetadata,
     pub id: EvidenceId,
     pub work_item_id: WorkItemId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_id: Option<ExecutionId>,
     pub kind: EvidenceKind,
     pub result: EvidenceResult,
     pub summary: String,

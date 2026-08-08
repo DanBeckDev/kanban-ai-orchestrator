@@ -22,6 +22,7 @@ import type {
   LinearOAuthConfiguration,
   ProposePlanRequest,
   PlannerProfile,
+  RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -53,6 +54,9 @@ type BoardViewProps = Readonly<{
   onRecordReviewDecision: (
     request: RecordReviewDecisionRequest,
   ) => Promise<void>;
+  onRecordCleanCodeReview: (
+    request: RecordCleanCodeReviewRequest,
+  ) => Promise<void>;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
 }>;
 
@@ -79,6 +83,7 @@ export function BoardView({
   onStopExecution,
   onRecordReviewCheck,
   onRecordReviewDecision,
+  onRecordCleanCodeReview,
   onTransition,
 }: BoardViewProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -118,6 +123,7 @@ export function BoardView({
                     onStopExecution={onStopExecution}
                     onRecordReviewCheck={onRecordReviewCheck}
                     onRecordReviewDecision={onRecordReviewDecision}
+                    onRecordCleanCodeReview={onRecordCleanCodeReview}
                   />
                 ))}
               </div>

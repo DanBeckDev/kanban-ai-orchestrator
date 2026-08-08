@@ -6,7 +6,8 @@ mod schema;
 mod work_item;
 
 pub use execution::{
-    Evidence, EvidenceKind, EvidenceResult, Execution, ExecutionStatus, ExecutionUsage,
+    Evidence, EvidenceKind, EvidenceResult, Execution, ExecutionRole, ExecutionStatus,
+    ExecutionUsage,
 };
 pub use external_link::{ExternalConnectionMode, ExternalLink, ExternalLinkProvenance};
 pub use policy::{PolicyAction, PolicyDecision, PolicyDecisionKind, ProtectedGitAction, ToolScope};

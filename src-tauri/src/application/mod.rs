@@ -4,6 +4,7 @@ mod board_requests;
 mod board_service;
 mod board_service_error;
 mod board_snapshot;
+mod clean_code_review_request;
 mod completion_evidence_service;
 mod execution_event_controller;
 mod execution_launch;
@@ -30,6 +31,7 @@ pub use board_requests::{
 pub use board_service::{BoardRepository, BoardService};
 pub use board_service_error::BoardServiceError;
 pub use board_snapshot::{BoardActivity, BoardSnapshot, board_activity};
+pub use clean_code_review_request::RecordCleanCodeReviewRequest;
 pub use execution_event_controller::{ExecutionEventController, ExecutionEventControllerError};
 pub use execution_launch::{
     ExecutionLaunchError, ExecutionLaunchPreparation, prepare_execution_launch,

@@ -18,6 +18,7 @@ import type {
   LinearOAuthConfiguration,
   ProposePlanRequest,
   PlannerProfile,
+  RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
@@ -188,6 +189,10 @@ export function BoardWorkspace({
     await run(() => gateway.recordReviewDecision(request));
   }
 
+  async function recordCleanCodeReview(request: RecordCleanCodeReviewRequest) {
+    await run(() => gateway.recordCleanCodeReview(request));
+  }
+
   async function importLinearIssue(request: ImportLinearIssueRequest) {
     await run(() => gateway.importLinearIssue(request));
   }
@@ -291,6 +296,7 @@ export function BoardWorkspace({
           onStopExecution={stopExecution}
           onRecordReviewCheck={recordReviewCheck}
           onRecordReviewDecision={recordReviewDecision}
+          onRecordCleanCodeReview={recordCleanCodeReview}
           onTransition={transitionWorkItem}
           snapshot={snapshot}
           plannerProfiles={plannerProfiles}

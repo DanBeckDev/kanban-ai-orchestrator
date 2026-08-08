@@ -101,7 +101,7 @@ describe("board workspace", () => {
             recordedAt: "2026-08-08T00:00:00Z",
             summary: "State changed from running to review: Ready for review.",
             completionEvidence: {
-              checksPassed: true,
+              qualityGatePassed: true,
               completionReportPresent: true,
               reviewAccepted: true,
             },
@@ -113,7 +113,7 @@ describe("board workspace", () => {
     fireEvent.click(screen.getByText("Recent decision history (1)"));
     expect(
       screen.getByText(
-        "Evidence: checks passed, report present, review accepted.",
+        "Evidence: quality gate passed, report present, review accepted.",
       ),
     ).toBeVisible();
     const transitionForm = screen.getByRole("form", {
@@ -126,9 +126,9 @@ describe("board workspace", () => {
       target: { value: "Review accepted." },
     });
     for (const label of [
-      "Checks passed",
+      "Quality gate passed",
       "Completion report present",
-      "Recorded review accepted",
+      "Independent and human reviews accepted",
     ]) {
       fireEvent.click(within(transitionForm).getByLabelText(label));
     }
@@ -141,7 +141,7 @@ describe("board workspace", () => {
         workItemId: "review-task",
         nextState: "done",
         evidence: {
-          checksPassed: true,
+          qualityGatePassed: true,
           completionReportPresent: true,
           reviewAccepted: true,
         },
@@ -165,12 +165,14 @@ describe("board workspace", () => {
 
     await createBoard(boardGateway);
     const form = screen.getByRole("form", {
-      name: "Record review check for Task review-task",
+      name: "Record quality gate for Task review-task",
     });
     fireEvent.change(within(form).getByLabelText("Result summary"), {
       target: { value: "Unit tests passed." },
     });
-    fireEvent.click(within(form).getByRole("button", { name: "Record check" }));
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Record quality gate" }),
+    );
 
     await waitFor(() =>
       expect(boardGateway.recordReviewCheck).toHaveBeenCalledOnce(),

@@ -1,5 +1,5 @@
 use crate::domain::{
-    Evidence, EvidenceId, Execution, ExecutionId, ExecutionStatus, ExecutionUsage,
+    Evidence, EvidenceId, Execution, ExecutionId, ExecutionRole, ExecutionStatus, ExecutionUsage,
     MaterializedWorkItem, Project, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand,
     WorkItemEventId, WorkItemId, WorkItemState,
 };
@@ -24,12 +24,15 @@ where
         validate_required(&request.workspace_path, "workspace path")?;
 
         let work_item_id = WorkItemId::from(request.work_item_id.as_str());
+        let work_item = self.work_item(&work_item_id)?;
+        self.validate_execution_role(request.role, &request.adapter_name, &work_item)?;
         let board_id = self.board_id_for(&work_item_id)?;
         self.repository
             .record_execution(Execution {
                 schema: SchemaMetadata::current(),
                 id: ExecutionId::from(request.execution_id.as_str()),
                 work_item_id,
+                role: request.role,
                 adapter_name: request.adapter_name,
                 status: ExecutionStatus::Pending,
                 session_id: None,
@@ -61,6 +64,7 @@ where
                 schema: SchemaMetadata::current(),
                 id: EvidenceId::from(request.evidence_id.as_str()),
                 work_item_id,
+                execution_id: None,
                 kind: request.kind,
                 result: request.result,
                 summary: request.summary,
@@ -103,7 +107,7 @@ where
         let work_item = self.work_item(&execution.work_item_id)?;
         if execution.status == ExecutionStatus::Running
             && execution.session_id.as_deref() == Some(session_id)
-            && work_item.work_item.state == WorkItemState::Running
+            && execution_is_active_for(&execution, work_item.work_item.state)
         {
             return self.snapshot(&work_item.work_item.board_id);
         }
@@ -113,16 +117,17 @@ where
                 status: execution.status,
             });
         }
-        if work_item.work_item.state != WorkItemState::Ready {
-            return Err(BoardServiceError::WorkItemNotReady {
-                work_item_id: work_item.work_item.id,
-                state: work_item.work_item.state,
-            });
-        }
+        self.validate_execution_role(execution.role, &execution.adapter_name, &work_item)?;
 
         let mut active_execution = execution;
         active_execution.status = ExecutionStatus::Running;
         active_execution.session_id = Some(session_id.to_owned());
+        if active_execution.role.is_independent_review() {
+            self.repository
+                .update_execution(active_execution)
+                .map_err(BoardServiceError::Repository)?;
+            return self.snapshot(&work_item.work_item.board_id);
+        }
         self.repository
             .activate_execution_and_start_work_item(
                 active_execution,
@@ -193,5 +198,66 @@ where
             .ok_or_else(|| BoardServiceError::ProjectNotFound {
                 project_id: board.project_id,
             })
+    }
+
+    fn validate_execution_role(
+        &self,
+        role: ExecutionRole,
+        adapter_name: &str,
+        work_item: &MaterializedWorkItem,
+    ) -> Result<(), BoardServiceError<Repository::Error>> {
+        if role == ExecutionRole::Implementation {
+            return require_ready(work_item);
+        }
+        require_review(work_item)?;
+        let executions = self
+            .repository
+            .executions_for_work_item(&work_item.work_item.id)
+            .map_err(BoardServiceError::Repository)?;
+        if let Some(implementation) = executions.iter().find(|execution| {
+            execution.role == ExecutionRole::Implementation
+                && execution.adapter_name == adapter_name
+        }) {
+            return Err(
+                BoardServiceError::IndependentReviewProfileMatchesImplementation {
+                    work_item_id: work_item.work_item.id.clone(),
+                    adapter_name: implementation.adapter_name.clone(),
+                },
+            );
+        }
+        Ok(())
+    }
+}
+
+fn execution_is_active_for(execution: &Execution, state: WorkItemState) -> bool {
+    match execution.role {
+        ExecutionRole::Implementation => state == WorkItemState::Running,
+        ExecutionRole::IndependentReview => state == WorkItemState::Review,
+    }
+}
+
+fn require_ready<RepositoryError>(
+    work_item: &MaterializedWorkItem,
+) -> Result<(), BoardServiceError<RepositoryError>> {
+    if work_item.work_item.state == WorkItemState::Ready {
+        Ok(())
+    } else {
+        Err(BoardServiceError::WorkItemNotReady {
+            work_item_id: work_item.work_item.id.clone(),
+            state: work_item.work_item.state,
+        })
+    }
+}
+
+fn require_review<RepositoryError>(
+    work_item: &MaterializedWorkItem,
+) -> Result<(), BoardServiceError<RepositoryError>> {
+    if work_item.work_item.state == WorkItemState::Review {
+        Ok(())
+    } else {
+        Err(BoardServiceError::WorkItemNotInReview {
+            work_item_id: work_item.work_item.id.clone(),
+            state: work_item.work_item.state,
+        })
     }
 }

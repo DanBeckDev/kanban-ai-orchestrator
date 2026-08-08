@@ -38,9 +38,9 @@ The desktop application uses Tauri 2 as its IPC/security boundary, React/TypeScr
 | `Board` | A planning/execution view over work items, optionally linked to a Linear project/team |
 | `WorkItem` | Task specification, state, evidence, budgets, and external links |
 | `Dependency` | Typed directed edge between work items |
-| `Execution` | One worker-agent attempt; session, workspace, status, cost, and event stream |
+| `Execution` | One implementation or independent-review agent attempt; session, workspace, status, cost, and event stream |
 | `Workspace` | Worktree path, Git ref, lifecycle, health checks, and isolation policy |
-| `Evidence` | Checks, diffs, commits, PRs, review decisions, and completion report |
+| `Evidence` | Quality gates, checks, diffs, commits, PRs, completion reports, and review decisions |
 | `PlanProposal` | A provider-neutral, unconfirmed task/dependency graph prepared for one board |
 | `PlanConfirmation` | A named, timestamped authorization to materialize one exact proposal |
 | `ExternalLink` | Stable mapping to a Linear issue or future connector resource |
@@ -59,7 +59,7 @@ Adapters may use a structured protocol when available and a constrained PTY fall
 
 The local process boundary has three profile kinds: a provider-neutral structured JSONL bridge, Codex CLI (`exec --json`), and Claude Code (`--print --output-format stream-json --verbose`). Each receives task briefs over stdin, reads bounded JSON-lines events from stdout, strips raw provider transcript text, and maps only safe lifecycle summaries into the normalized contract. The daemon, scheduler, and task-state machine do not know which provider produced an event. Profiles reject attempts to override adapter-owned protocol, sandbox, permission, resume, or unsafe-bypass options. All current profiles visibly report that feedback, session resume, and safe process-tree interruption are unavailable before a task can start; an `awaiting_input` or approval event is persisted and then fails rather than leaving a false interactive state. See [ADR 0013](../decisions/0013-structured-process-agent-adapter.md).
 
-Adapter events are sequenced and deduplicated before they are offered to the daemon. The execution-event controller accepts events only for an activated execution with an attached session, persists a monotonic usage/status checkpoint, and records significant input, failure, interruption, and completion reports as bounded evidence. `completed` and `awaiting_review` request the work item's `Review` state; no adapter event can request `Done`. The daemon still applies its guarded transition and evidence policy. A repeated review report is evidence, not an illegal self-transition.
+Adapter events are sequenced and deduplicated before they are offered to the daemon. The execution-event controller accepts events only for an activated execution with an attached session, persists a monotonic usage/status checkpoint, and records significant input, failure, interruption, and completion reports as bounded evidence. An implementation `completed` or `awaiting_review` event requests the work item's `Review` state; no adapter event can request `Done`. For a substantial/high-risk task, that transition also durably schedules an independent Clean Code review. A review-role execution runs only while its task remains in `Review`, uses a profile distinct from every implementation attempt, and cannot change task state through lifecycle events. A person records the review's concise structured outcome; actionable findings return the task to `Ready`. The daemon evaluates evidence order, so only quality, independent-review, and human-decision records after the latest implementation completion can satisfy `Done`. Raw transcripts are never completion evidence.
 
 ## Persistence and recovery
 

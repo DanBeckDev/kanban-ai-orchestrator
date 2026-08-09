@@ -1,0 +1,123 @@
+.app-shell {
+  min-height: 100vh;
+  padding: clamp(1rem, 4vw, 4rem);
+  background:
+    radial-gradient(circle at 84% -10%, color-mix(in oklch, var(--primary), transparent 88%), transparent 32rem),
+    radial-gradient(circle at -10% 20%, color-mix(in oklch, var(--chart-2), transparent 94%), transparent 28rem);
+}
+
+.application-frame {
+  width: min(100%, 112rem);
+  margin: 0 auto;
+}
+
+.application-header,
+.board-header,
+.board-library-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.application-header {
+  padding: 0.5rem 0 2.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 720;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: var(--foreground);
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
+h2 {
+  margin-bottom: 0.55rem;
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+  line-height: 1.15;
+}
+
+h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1.05rem;
+}
+
+h4,
+h5 {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+
+p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+}
+
+.application-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin: 0;
+}
+
+.application-status div {
+  min-width: 9rem;
+  padding-left: 0.85rem;
+  border-inline-start: 1px solid var(--border);
+}
+
+dt {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+dd {
+  margin: 0.2rem 0 0;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+@media (max-width: 48rem) {
+  .app-shell {
+    padding: 1.25rem;
+  }
+
+  .application-header,
+  .board-header,
+  .board-library-heading {
+    display: grid;
+  }
+
+  .application-status {
+    justify-content: flex-start;
+  }
+}

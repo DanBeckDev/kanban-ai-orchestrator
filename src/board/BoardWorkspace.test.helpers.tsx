@@ -21,3 +21,10 @@ export async function createBoard(boardGateway: BoardGateway) {
   fireEvent.click(screen.getByRole("button", { name: "Create board" }));
   await screen.findByRole("heading", { name: "MVP" });
 }
+
+export function selectBoardControlTab(name: string) {
+  fireEvent.mouseDown(screen.getByRole("tab", { name }), {
+    button: 0,
+    ctrlKey: false,
+  });
+}

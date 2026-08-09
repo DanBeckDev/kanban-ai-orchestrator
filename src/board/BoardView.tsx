@@ -1,3 +1,7 @@
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { AgentProfileForm } from "./AgentProfileForm";
 import { BoardSupportDetails } from "./BoardSupportDetails";
 import { boardColumns, workItemsForColumn } from "./presentation";
@@ -117,7 +121,7 @@ export function BoardView({
           </p>
         </div>
         <div>
-          <span className="local-status">Local daemon connected</span>
+          <Badge variant="secondary">Local daemon connected</Badge>
           <BoardSupportDetails board={snapshot.board} />
         </div>
       </header>
@@ -151,58 +155,76 @@ export function BoardView({
             </section>
           ))}
         </section>
-        <aside className="board-actions">
-          <PlanProposalPanel
-            boardId={snapshot.board.id}
-            busy={busy}
-            plan={boardPlan}
-            onConfirm={onConfirmPlan}
-            onGenerate={onGeneratePlan}
-            onPropose={onProposePlan}
-            plannerProfiles={plannerProfiles}
-          />
-          <TaskForm
-            boardId={snapshot.board.id}
-            busy={busy}
-            onCreate={onCreateWorkItem}
-          />
-          <DependencyForm
-            busy={busy}
-            onCreate={onAddDependency}
-            workItems={workItems}
-          />
-          <AgentProfileForm
-            busy={busy}
-            profiles={agentProfiles}
-            onSave={onSaveAgentProfile}
-          />
-          <PlannerProfileForm
-            busy={busy}
-            onSave={onSavePlannerProfile}
-            profiles={plannerProfiles}
-          />
-          <LinearConnectionPanel
-            busy={busy}
-            status={linearConnectionStatus}
-            onConnect={onConnectLinear}
-            onEnableCommentAccess={onEnableLinearCommentAccess}
-          />
-          <LinearImportForm
-            busy={busy}
-            connectionStatus={linearConnectionStatus}
-            issues={linearIssues}
-            workItems={workItems}
-            onImportBlocker={onImportLinearBlocker}
-            onImportIssue={onImportLinearIssue}
-            onLoadIssues={onLoadLinearIssues}
-          />
-          <LinearSyncPanel
-            busy={busy}
-            snapshot={snapshot}
-            onDeliver={onDeliverLinearComment}
-            onQueue={onQueueLinearComment}
-            onRefresh={onRefreshLinearSharedFields}
-          />
+        <aside className="board-actions" aria-label="Board controls">
+          <Tabs defaultValue="plan">
+            <TabsList aria-label="Board controls" variant="line">
+              <TabsTrigger value="plan">Plan</TabsTrigger>
+              <TabsTrigger value="organise">Organise</TabsTrigger>
+              <TabsTrigger value="connections">Connections</TabsTrigger>
+            </TabsList>
+            <TabsContent value="plan">
+              <PlanProposalPanel
+                boardId={snapshot.board.id}
+                busy={busy}
+                plan={boardPlan}
+                onConfirm={onConfirmPlan}
+                onGenerate={onGeneratePlan}
+                onPropose={onProposePlan}
+                plannerProfiles={plannerProfiles}
+              />
+              <Separator />
+              <PlannerProfileForm
+                busy={busy}
+                onSave={onSavePlannerProfile}
+                profiles={plannerProfiles}
+              />
+            </TabsContent>
+            <TabsContent value="organise">
+              <TaskForm
+                boardId={snapshot.board.id}
+                busy={busy}
+                onCreate={onCreateWorkItem}
+              />
+              <Separator />
+              <DependencyForm
+                busy={busy}
+                onCreate={onAddDependency}
+                workItems={workItems}
+              />
+              <Separator />
+              <AgentProfileForm
+                busy={busy}
+                profiles={agentProfiles}
+                onSave={onSaveAgentProfile}
+              />
+            </TabsContent>
+            <TabsContent value="connections">
+              <LinearConnectionPanel
+                busy={busy}
+                status={linearConnectionStatus}
+                onConnect={onConnectLinear}
+                onEnableCommentAccess={onEnableLinearCommentAccess}
+              />
+              <Separator />
+              <LinearImportForm
+                busy={busy}
+                connectionStatus={linearConnectionStatus}
+                issues={linearIssues}
+                workItems={workItems}
+                onImportBlocker={onImportLinearBlocker}
+                onImportIssue={onImportLinearIssue}
+                onLoadIssues={onLoadLinearIssues}
+              />
+              <Separator />
+              <LinearSyncPanel
+                busy={busy}
+                snapshot={snapshot}
+                onDeliver={onDeliverLinearComment}
+                onQueue={onQueueLinearComment}
+                onRefresh={onRefreshLinearSharedFields}
+              />
+            </TabsContent>
+          </Tabs>
         </aside>
       </div>
     </section>

@@ -1,4 +1,24 @@
 import { useState, type FormEvent } from "react";
+import { FolderOpenIcon, FolderRootIcon, InfoIcon } from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 import type { CreateLocalBoardRequest, RepositorySetup } from "./types";
 
@@ -72,79 +92,120 @@ export function BoardSetup({
           Nothing is created until you confirm.
         </p>
       </div>
-      <form className="panel form-panel" onSubmit={createBoard}>
-        <div>
-          <p id="repository-label">Repository</p>
-          <button
-            aria-describedby="repository-label"
-            disabled={disabled}
-            onClick={() => void chooseRepository()}
-            type="button"
+      <Card className="board-setup-card">
+        <CardHeader>
+          <CardTitle>Choose a local repository</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="form-panel"
+            id="create-board-form"
+            onSubmit={createBoard}
           >
-            Choose repository
-          </button>
-        </div>
-        {repository !== undefined && (
-          <p className="repository-selection">
-            <span>{repository.repositoryPath}</span> <strong>Git root</strong>
-          </p>
-        )}
-        {chooserMessage !== undefined && (
-          <p aria-live="polite" className="setup-message" role="status">
-            {chooserMessage}
-          </p>
-        )}
-        <label>
-          Board name
-          <input
-            disabled={disabled || repository === undefined}
-            onChange={(event) => setBoardName(event.target.value)}
-            required
-            value={boardName}
-          />
-        </label>
-        <p className="form-hint">Suggested from the repository folder.</p>
-        <section aria-label="Safe defaults" className="safe-defaults">
-          <h3>Safe defaults</h3>
-          <p>Base branch: {repository?.baseRef ?? "—"} · Policy: Standard</p>
-        </section>
-        <details>
-          <summary>Advanced setup</summary>
-          <label>
-            Base branch
-            <input
-              disabled={disabled || repository === undefined}
-              onChange={(event) => setBaseRef(event.target.value)}
-              value={baseRef}
-            />
-          </label>
-          <p className="form-hint">
-            Changing the base branch changes where task worktrees start.
-          </p>
-          <label>
-            Policy
-            <input
-              disabled={disabled || repository === undefined}
-              onChange={(event) => setPolicySetId(event.target.value)}
-              value={policySetId}
-            />
-          </label>
-          <p className="form-hint">
-            Changing the policy changes which local actions need approval.
-          </p>
-        </details>
-        <div className="form-actions">
-          <button disabled={disabled} onClick={onBack} type="button">
+            <FieldGroup>
+              <Field>
+                <FieldTitle id="repository-label">Repository</FieldTitle>
+                <Button
+                  aria-describedby="repository-label"
+                  disabled={disabled}
+                  onClick={() => void chooseRepository()}
+                  type="button"
+                  variant="outline"
+                >
+                  <FolderOpenIcon data-icon="inline-start" />
+                  Choose repository
+                </Button>
+                <FieldDescription>
+                  Select the Git repository that this board coordinates.
+                </FieldDescription>
+              </Field>
+              {repository !== undefined && (
+                <Alert className="repository-selection">
+                  <FolderRootIcon aria-hidden="true" />
+                  <AlertTitle>Git root</AlertTitle>
+                  <AlertDescription>
+                    {repository.repositoryPath}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {chooserMessage !== undefined && (
+                <Alert className="setup-message">
+                  <InfoIcon aria-hidden="true" />
+                  <AlertTitle>Repository selection</AlertTitle>
+                  <AlertDescription>{chooserMessage}</AlertDescription>
+                </Alert>
+              )}
+              <Field>
+                <FieldLabel htmlFor="board-name">Board name</FieldLabel>
+                <Input
+                  disabled={disabled || repository === undefined}
+                  id="board-name"
+                  onChange={(event) => setBoardName(event.target.value)}
+                  required
+                  value={boardName}
+                />
+                <FieldDescription>
+                  Suggested from the repository folder.
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+            <Separator />
+            <section aria-label="Safe defaults" className="safe-defaults">
+              <p className="eyebrow">Safe defaults</p>
+              <p>
+                Base branch: {repository?.baseRef ?? "—"} · Policy: Standard
+              </p>
+            </section>
+            <details className="advanced-disclosure">
+              <summary>Advanced setup</summary>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="base-ref">Base branch</FieldLabel>
+                  <Input
+                    disabled={disabled || repository === undefined}
+                    id="base-ref"
+                    onChange={(event) => setBaseRef(event.target.value)}
+                    value={baseRef}
+                  />
+                  <FieldDescription>
+                    Changing the base branch changes where task worktrees start.
+                  </FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="policy-set">Policy</FieldLabel>
+                  <Input
+                    disabled={disabled || repository === undefined}
+                    id="policy-set"
+                    onChange={(event) => setPolicySetId(event.target.value)}
+                    value={policySetId}
+                  />
+                  <FieldDescription>
+                    Changing the policy changes which local actions need
+                    approval.
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </details>
+          </form>
+        </CardContent>
+        <CardFooter className="form-actions">
+          <Button
+            disabled={disabled}
+            onClick={onBack}
+            type="button"
+            variant="ghost"
+          >
             Back to your boards
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={disabled || repository === undefined || !boardName.trim()}
+            form="create-board-form"
             type="submit"
           >
             Create board
-          </button>
-        </div>
-      </form>
+          </Button>
+        </CardFooter>
+      </Card>
     </section>
   );
 }

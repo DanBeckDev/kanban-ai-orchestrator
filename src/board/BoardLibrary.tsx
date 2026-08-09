@@ -1,3 +1,30 @@
+import {
+  ArrowRightIcon,
+  FolderGit2Icon,
+  PlusIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+
 import type { BoardLibraryEntry } from "./types";
 
 type BoardLibraryProps = Readonly<{
@@ -23,38 +50,79 @@ export function BoardLibrary({
             Pick up where you left off. Your board data stays on this device.
           </p>
         </div>
-        <button disabled={busy} onClick={onCreateBoard} type="button">
-          Create a board
-        </button>
+        {boards.length > 0 && (
+          <Button
+            disabled={busy}
+            onClick={onCreateBoard}
+            size="lg"
+            type="button"
+          >
+            <PlusIcon data-icon="inline-start" />
+            Create a board
+          </Button>
+        )}
       </div>
       {boards.length === 0 ? (
-        <div className="board-library-empty panel">
-          <h3>No local boards yet</h3>
-          <p>Create a board from a repository when you are ready.</p>
-        </div>
+        <Empty className="board-library-empty">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderGit2Icon />
+            </EmptyMedia>
+            <EmptyTitle>No local boards yet</EmptyTitle>
+            <EmptyDescription>
+              Create a board from a repository when you are ready.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button disabled={busy} onClick={onCreateBoard} type="button">
+              <PlusIcon data-icon="inline-start" />
+              Create a board
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <ol className="board-library-list">
           {boards.map((board) => (
-            <li className="board-library-entry" key={board.boardId}>
-              <div>
-                <h3>{board.name}</h3>
-                <p>{board.repositoryName}</p>
-                <p>{lastOpenedText(board.lastOpenedAt)}</p>
-                <p>{attentionText(board.attention)}</p>
-                {!board.repositoryAvailable && (
-                  <p className="board-library-warning">
-                    Repository unavailable. Restore the local folder, then try
-                    again.
-                  </p>
-                )}
-              </div>
-              <button
-                disabled={busy}
-                onClick={() => onOpenBoard(board.boardId)}
-                type="button"
-              >
-                {board.repositoryAvailable ? "Continue" : "Try again"}
-              </button>
+            <li key={board.boardId}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{board.name}</CardTitle>
+                  <CardDescription>{board.repositoryName}</CardDescription>
+                  <CardAction>
+                    <Badge
+                      variant={
+                        board.repositoryAvailable ? "outline" : "destructive"
+                      }
+                    >
+                      {board.repositoryAvailable
+                        ? "Available locally"
+                        : "Needs attention"}
+                    </Badge>
+                  </CardAction>
+                </CardHeader>
+                <CardContent className="board-library-details">
+                  <p>{lastOpenedText(board.lastOpenedAt)}</p>
+                  <p>{attentionText(board.attention)}</p>
+                  {!board.repositoryAvailable && (
+                    <p className="board-library-warning">
+                      <TriangleAlertIcon aria-hidden="true" />
+                      Repository unavailable. Restore the local folder, then try
+                      again.
+                    </p>
+                  )}
+                </CardContent>
+                <CardFooter className="board-library-footer">
+                  <Button
+                    disabled={busy}
+                    onClick={() => onOpenBoard(board.boardId)}
+                    type="button"
+                    variant={board.repositoryAvailable ? "default" : "outline"}
+                  >
+                    {board.repositoryAvailable ? "Continue" : "Try again"}
+                    <ArrowRightIcon data-icon="inline-end" />
+                  </Button>
+                </CardFooter>
+              </Card>
             </li>
           ))}
         </ol>

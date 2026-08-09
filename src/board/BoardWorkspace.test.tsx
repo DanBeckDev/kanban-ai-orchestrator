@@ -14,7 +14,10 @@ import {
   snapshot,
   workItem,
 } from "./BoardWorkspace.test.fixtures";
-import { createBoard } from "./BoardWorkspace.test.helpers";
+import {
+  createBoard,
+  selectBoardControlTab,
+} from "./BoardWorkspace.test.helpers";
 
 describe("board workspace", () => {
   it("creates a local board through the injected daemon gateway", async () => {
@@ -36,6 +39,7 @@ describe("board workspace", () => {
   it("adds a task and a typed dependency, then renders its reason and owner", async () => {
     const boardGateway = gateway(snapshot([workItem("api")]));
     await createBoard(boardGateway);
+    selectBoardControlTab("Organise");
     fireEvent.change(screen.getByLabelText("Task ID"), {
       target: { value: "ui" },
     });
@@ -322,6 +326,7 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
+    selectBoardControlTab("Organise");
     const profileForm = screen.getByRole("form", {
       name: "Save agent profile",
     });
@@ -375,6 +380,7 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
+    selectBoardControlTab("Organise");
     const profileForm = screen.getByRole("form", {
       name: "Save agent profile",
     });

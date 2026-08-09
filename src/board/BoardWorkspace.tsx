@@ -1,4 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
+import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { BoardLibrary } from "./BoardLibrary";
 import { BoardSetup, type RepositoryPicker } from "./BoardSetup";
 import { BoardView } from "./BoardView";
@@ -310,29 +322,47 @@ export function BoardWorkspace({
   return (
     <section className="board-shell">
       {error !== undefined && (
-        <div aria-live="polite" className="error-notice" role="alert">
-          <strong>The local daemon rejected that request.</strong> {error}
-        </div>
+        <Alert
+          aria-live="polite"
+          className="error-notice"
+          variant="destructive"
+        >
+          <AlertCircleIcon aria-hidden="true" />
+          <AlertTitle>The local daemon rejected that request.</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       {snapshot === undefined &&
       boardLibrary === undefined &&
       error !== undefined ? (
-        <section
-          aria-labelledby="board-library-error-title"
-          className="board-library-loading"
-        >
-          <h2 id="board-library-error-title">
-            Your boards could not be loaded
-          </h2>
-          <p>Check that the local daemon is available, then try again.</p>
-          <button onClick={() => void loadBoardLibrary()} type="button">
-            Try again
-          </button>
-        </section>
+        <Empty className="board-library-loading">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <AlertCircleIcon />
+            </EmptyMedia>
+            <EmptyTitle aria-level={2} role="heading">
+              Your boards could not be loaded
+            </EmptyTitle>
+            <EmptyDescription>
+              Check that the local daemon is available, then try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={() => void loadBoardLibrary()} type="button">
+              <RefreshCwIcon data-icon="inline-start" />
+              Try again
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : snapshot === undefined && boardLibrary === undefined ? (
-        <section aria-live="polite" className="board-library-loading">
-          Loading your local boards…
-        </section>
+        <Empty aria-live="polite" className="board-library-loading">
+          <EmptyHeader>
+            <EmptyTitle>Loading your local boards…</EmptyTitle>
+            <EmptyDescription>
+              Reading the boards stored on this device.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : snapshot === undefined && showBoardSetup ? (
         <BoardSetup
           busy={busy}

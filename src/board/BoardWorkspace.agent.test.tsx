@@ -6,6 +6,7 @@ import {
   createBoard,
   openSettings,
   openTask,
+  selectOption,
 } from "./BoardWorkspace.test.helpers";
 
 describe("board task agents", () => {
@@ -45,13 +46,11 @@ describe("board task agents", () => {
     openTask("Task ready-task");
 
     const launchForm = screen.getByRole("form", {
-      name: "Start agent for Task ready-task",
+      name: "Prompt AI for Task ready-task",
     });
-    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
-      target: { value: "structured-worker" },
-    });
+    await selectOption("Agent profile", /structured-worker/);
     fireEvent.click(
-      within(launchForm).getByRole("button", { name: "Start agent" }),
+      within(launchForm).getByRole("button", { name: "Start task worker" }),
     );
 
     await waitFor(() =>
@@ -90,11 +89,9 @@ describe("board task agents", () => {
     openTask("Task ready-task");
 
     const launchForm = await screen.findByRole("form", {
-      name: "Start agent for Task ready-task",
+      name: "Prompt AI for Task ready-task",
     });
-    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
-      target: { value: "cline-pass-worker" },
-    });
+    await selectOption("Agent profile", /cline-pass-worker/);
 
     expect(
       within(launchForm).getByText(

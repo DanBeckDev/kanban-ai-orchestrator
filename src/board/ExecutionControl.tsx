@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 import type { Execution } from "./types";
 
 type ExecutionControlProps = Readonly<{
@@ -23,13 +25,13 @@ export function ExecutionControl({
         Stops the direct worker process and records an interrupted attempt. A
         process started by that worker may need manual cleanup.
       </p>
-      <button
+      <Button
         disabled={busy}
         type="button"
         onClick={() => void onStop(execution.id)}
       >
         Stop agent
-      </button>
+      </Button>
     </section>
   );
 }

@@ -1,5 +1,18 @@
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
 import { timestamp } from "./presentation";
 import type {
   Execution,
@@ -53,44 +66,57 @@ export function CleanCodeReviewForm({
       className="review-check-form"
       onSubmit={submit}
     >
-      <h5>Independent Clean Code review</h5>
-      <label>
-        Completed reviewer run
-        <select
-          required
-          value={reviewExecutionId}
-          onChange={(event) => setReviewExecutionId(event.target.value)}
-        >
-          <option value="">Select reviewer run</option>
-          {reviewExecutions.map((execution) => (
-            <option key={execution.id} value={execution.id}>
-              {execution.adapterName} · {execution.id}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Actionable finding count
-        <input
-          min="0"
-          required
-          type="number"
-          value={findingCount}
-          onChange={(event) => setFindingCount(Number(event.target.value))}
-        />
-      </label>
-      <label>
-        Decision summary
-        <textarea
-          maxLength={2000}
-          required
-          value={summary}
-          onChange={(event) => setSummary(event.target.value)}
-        />
-      </label>
-      <button disabled={busy} type="submit">
-        Record Clean Code review
-      </button>
+      <FieldGroup>
+        <h5>Independent Clean Code review</h5>
+        <Field>
+          <FieldLabel htmlFor="completed-reviewer-run">
+            Completed reviewer run
+          </FieldLabel>
+          <Select
+            value={reviewExecutionId}
+            onValueChange={setReviewExecutionId}
+          >
+            <SelectTrigger id="completed-reviewer-run">
+              <SelectValue placeholder="Select a reviewer run" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {reviewExecutions.map((execution) => (
+                  <SelectItem key={execution.id} value={execution.id}>
+                    {execution.adapterName} · {execution.id}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="finding-count">
+            Actionable finding count
+          </FieldLabel>
+          <Input
+            id="finding-count"
+            min="0"
+            required
+            type="number"
+            value={findingCount}
+            onChange={(event) => setFindingCount(Number(event.target.value))}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="clean-code-summary">Decision summary</FieldLabel>
+          <Textarea
+            id="clean-code-summary"
+            maxLength={2000}
+            required
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+          />
+        </Field>
+        <Button disabled={busy || reviewExecutionId.length === 0} type="submit">
+          Record Clean Code review
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

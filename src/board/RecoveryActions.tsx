@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 import { timestamp } from "./presentation";
 import type { Execution, TransitionWorkItemRequest, WorkItem } from "./types";
 
@@ -36,14 +38,14 @@ export function RecoveryActions({
     >
       <h5>Recovery actions</h5>
       <div>
-        <button
+        <Button
           disabled={busy}
           type="button"
           onClick={() => setShowAttempt((current) => !current)}
         >
           Inspect last attempt
-        </button>
-        <button
+        </Button>
+        <Button
           disabled={busy}
           type="button"
           onClick={() =>
@@ -54,8 +56,9 @@ export function RecoveryActions({
           }
         >
           Recover to Ready
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
           disabled={busy}
           type="button"
           onClick={() =>
@@ -66,7 +69,7 @@ export function RecoveryActions({
           }
         >
           Cancel task
-        </button>
+        </Button>
       </div>
       {showAttempt && <LatestAttempt executions={executions} />}
     </section>

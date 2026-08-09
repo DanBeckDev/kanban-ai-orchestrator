@@ -1,5 +1,22 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
   agentProfilePresentation,
   noninteractiveCapabilitySummary,
@@ -36,6 +53,10 @@ export function AgentLaunchForm({
   const [profileName, setProfileName] = useState(defaultProfileName ?? "");
   const [brief, setBrief] = useState(defaultBrief(workItem, executionRole));
   const selectedProfile = profiles.find(({ name }) => name === profileName);
+  const selectedProfileLabel =
+    selectedProfile === undefined
+      ? undefined
+      : `${selectedProfile.name} · ${agentProfilePresentation(selectedProfile.kind).label}`;
 
   useEffect(() => {
     const fallbackProfileName = defaultProfileName ?? profiles[0]?.name ?? "";
@@ -71,38 +92,46 @@ export function AgentLaunchForm({
       className="agent-launch-form"
       onSubmit={submit}
     >
-      <label>
-        Agent profile
-        <select
-          required
-          value={profileName}
-          onChange={(event) => setProfileName(event.target.value)}
-        >
-          <option value="">Select profile</option>
-          {profiles.map((profile) => (
-            <option key={profile.name} value={profile.name}>
-              {profile.name} · {agentProfilePresentation(profile.kind).label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {selectedProfile !== undefined && (
-        <p aria-live="polite" className="agent-capability-summary">
-          {agentProfilePresentation(selectedProfile.kind).label}:{" "}
-          {noninteractiveCapabilitySummary}
-        </p>
-      )}
-      <label>
-        Task brief
-        <textarea
-          required
-          value={brief}
-          onChange={(event) => setBrief(event.target.value)}
-        />
-      </label>
-      <button disabled={busy} type="submit">
-        {buttonLabel}
-      </button>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="agent-profile">Agent profile</FieldLabel>
+          <Select value={profileName} onValueChange={setProfileName}>
+            <SelectTrigger id="agent-profile">
+              <SelectValue placeholder="Select a profile">
+                {selectedProfileLabel}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.name} value={profile.name}>
+                    {profile.name} ·{" "}
+                    {agentProfilePresentation(profile.kind).label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {selectedProfile !== undefined && (
+            <FieldDescription aria-live="polite">
+              {agentProfilePresentation(selectedProfile.kind).label}:{" "}
+              {noninteractiveCapabilitySummary}
+            </FieldDescription>
+          )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="task-brief">Task brief</FieldLabel>
+          <Textarea
+            id="task-brief"
+            required
+            value={brief}
+            onChange={(event) => setBrief(event.target.value)}
+          />
+        </Field>
+        <Button disabled={busy || profileName.length === 0} type="submit">
+          {buttonLabel}
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

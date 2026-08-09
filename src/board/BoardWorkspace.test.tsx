@@ -19,6 +19,7 @@ import {
   openDependencies,
   openNewTask,
   openTask,
+  selectOption,
 } from "./BoardWorkspace.test.helpers";
 
 describe("board workspace", () => {
@@ -65,8 +66,8 @@ describe("board workspace", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Add a relationship manually" }),
     );
-    await chooseTask("Must happen first", "Task api");
-    await chooseTask("Depends on it", "UI");
+    await selectOption("Must happen first", "Task api");
+    await selectOption("Depends on it", "UI");
     const dependencyForm = screen.getByRole("form", {
       name: "Add a relationship",
     });
@@ -90,8 +91,10 @@ describe("board workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     expect(await screen.findByText("Waiting on Task api")).toBeVisible();
     openTask("UI");
+    fireEvent.click(screen.getByRole("button", { name: "Dependencies" }));
     await screen.findByText(/UI needs the API/);
-    expect(screen.getByText(/Owner: platform/)).toBeInTheDocument();
+    expect(screen.getByText("Owner")).toBeInTheDocument();
+    expect(screen.getByText("platform")).toBeInTheDocument();
   });
 
   it("submits lifecycle transition evidence and presents command errors", async () => {
@@ -115,19 +118,27 @@ describe("board workspace", () => {
     );
     await createBoard(boardGateway);
     openTask("Task review-task");
-    fireEvent.click(screen.getByText("Recent decision history (1)"));
+    fireEvent.click(screen.getByRole("button", { name: "Decision history" }));
     expect(
       screen.getByText(
         "Evidence: quality gate passed, report present, review accepted.",
       ),
     ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "More task options" }));
     const transitionForm = screen.getByRole("form", {
-      name: "Transition Task review-task",
+      name: "Change state for Task review-task",
     });
-    fireEvent.change(within(transitionForm).getByLabelText("Move to"), {
-      target: { value: "done" },
+    fireEvent.pointerDown(screen.getByLabelText("Next state"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
     });
-    fireEvent.change(within(transitionForm).getByLabelText("Reason"), {
+    expect(screen.queryByRole("option", { name: "ready" })).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
+    await selectOption("Next state", "done");
+    fireEvent.change(within(transitionForm).getByLabelText("Why"), {
       target: { value: "Review accepted." },
     });
     for (const label of [
@@ -137,7 +148,9 @@ describe("board workspace", () => {
     ]) {
       fireEvent.click(within(transitionForm).getByLabelText(label));
     }
-    fireEvent.click(screen.getByRole("button", { name: "Request transition" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Request state change" }),
+    );
     await waitFor(() =>
       expect(boardGateway.transitionWorkItem).toHaveBeenCalledOnce(),
     );
@@ -159,7 +172,7 @@ describe("board workspace", () => {
       .mockRejectedValue(new Error("not found"));
     render(<App gateway={failingGateway} />);
     fireEvent.click(await screen.findByRole("button", { name: "Open MVP" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("not found");
+    expect(await screen.findByText("not found")).toBeVisible();
   });
 
   it("records a durable check while a task is awaiting review", async () => {
@@ -295,12 +308,16 @@ describe("board workspace", () => {
 
     await createBoard(boardGateway);
     openTask("Task active-task");
-    const transition = screen.getByRole("form", {
-      name: "Transition Task active-task",
+    fireEvent.click(screen.getByRole("button", { name: "More task options" }));
+    fireEvent.pointerDown(screen.getByLabelText("Next state"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
     });
-    expect(
-      within(transition).queryByRole("option", { name: "cancelled" }),
-    ).toBeNull();
+    expect(screen.queryByRole("option", { name: "cancelled" })).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
     fireEvent.click(screen.getByRole("button", { name: "Stop agent" }));
 
     await waitFor(() =>
@@ -340,20 +357,13 @@ describe("board workspace", () => {
 
     await createBoard(boardGateway);
     openTask("Task review-task");
-    fireEvent.click(screen.getByText("Recent agent attempts (1)"));
-    fireEvent.click(screen.getByText("Recent review evidence (1)"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Activity and attempts" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Review evidence" }));
 
     expect(screen.getByText(/codex-cli · awaiting review/)).toBeVisible();
     expect(screen.getByText("Session: session-1")).toBeVisible();
     expect(screen.getByText("Unit tests passed.")).toBeVisible();
   });
 });
-
-async function chooseTask(label: string, name: string) {
-  fireEvent.pointerDown(screen.getByLabelText(label), {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
-  });
-  fireEvent.click(await screen.findByRole("option", { name }));
-}

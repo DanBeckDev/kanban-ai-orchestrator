@@ -247,6 +247,20 @@ tasks:
       - Restart, duplicate events, policy/budget denials, stale decisions, pause, retry, correction, and recovery are covered by daemon and UI tests.
     notes: This is the intelligent organiser loop in the product vision; do not simulate it with UI-only timers or unrecorded client state.
 
+  - id: ORCH-008
+    epic: ORCH
+    title: Turn ticket AI prompts into reviewable, daemon-owned task effects
+    status: ready
+    priority: P0
+    depends_on: [ORCH-006, UX-006]
+    acceptance_criteria:
+      - A ticket-scoped prompt can request every supported ticket action: refine the specification or criteria, request worker guidance, prepare a start or restart, explain evidence, return work for correction, and recover from interruption.
+      - Manual mode presents every state-changing or protected result as a named, reviewable user decision; autonomous mode evaluates the same typed request only within recorded authority and policy.
+      - The daemon persists the requested effect, rationale, policy result, and outcome while retaining the existing no-bypass boundaries for Done, review, policy, protected Git, and external actions.
+      - Prompt I/O is bounded and redacted before persistence; task cards and snapshots expose only safe summaries, never raw transcripts, secrets, or unbounded payloads.
+      - Daemon and UI tests cover every effect, rejection, confirmation, cancellation, restart, recovery, policy/budget denial, and the 80% coverage requirement.
+    notes: Added 2026-08-09 from the approved wireframe clarification that ticket AI should support all task-relevant requests. Do not substitute a UI-only composer for the typed daemon contract.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary
@@ -517,7 +531,7 @@ tasks:
   - id: UX-006
     epic: UX
     title: Redesign task detail, review, and recovery with progressive disclosure
-    status: ready
+    status: done
     priority: P1
     depends_on: [UX-001, UX-008, UX-004, ORCH-003, REL-001]
     acceptance_criteria:
@@ -526,7 +540,19 @@ tasks:
       - Failed, interrupted, awaiting-input, review, and done states have distinct language, visual treatment, keyboard actions, and recovery consequences.
       - Bounded activity-stream and evidence privacy rules remain intact; no raw transcript, secret, or unbounded payload becomes part of the card or board snapshot.
       - Tests cover progressive-disclosure state, focus management, evidence/recovery presentation, and the normal/reduced-motion responsive layouts.
-    notes: Split presentational components by responsibility before implementation; the source-structure rule applies to every new component and test file.
+    notes: >-
+      Completed 2026-08-09. Task detail now leads with the daemon-owned decision,
+      evidence status, principal worker, and permitted next action. It uses
+      progressive disclosures for criteria, dependencies, activity, attempts,
+      evidence, decision history, and connected work; recovery and review retain
+      their existing typed daemon commands. Board cards now name both the worker
+      and the next relevant fact without exposing workspace/session detail.
+      BookCtx — _User Story Mapping_, Jeff Patton, “The Other Secret to Good
+      Estimation” (chunk 6): deliver a thin end-to-end slice before adding
+      breadth. Project inference: make the current decision and action visible
+      first, while revealing supporting context only when it is needed. ORCH-008
+      tracks the separate typed daemon contract for the full ticket-prompt action
+      set; this UI deliberately does not imply unsupported effects.
 
   - id: UX-007
     epic: UX

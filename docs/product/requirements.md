@@ -53,10 +53,11 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   native directory picker. The command boundary validates the repository and
   generates project and board identifiers; IDs are implementation details,
   available only in advanced support details.
-- Base ref and policy configuration have safe defaults and are disclosed as
-  advanced settings with their consequences. Invalid or unavailable repositories
-  provide an actionable recovery choice and cannot silently create a different
-  project/board.
+- The normal setup path resolves the project's primary starting point and
+  standard safety policy without Git or policy vocabulary. A deliberately opened
+  plain-language starting-point override remains available for teams that need
+  it. Invalid or unavailable repositories provide an actionable recovery choice
+  and cannot silently create a different project/board.
 - The first empty-board experience leads with an outcome prompt and the existing
   reviewed plan-preview/confirmation flow. Manual task creation remains available
   but is not the primary path; no UX shortcut may start a worker before plan and

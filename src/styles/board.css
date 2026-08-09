@@ -84,13 +84,7 @@
   overflow-wrap: anywhere;
 }
 
-.safe-defaults {
-  padding: 0.9rem 1rem;
-  border-inline-start: 3px solid var(--primary);
-  background: color-mix(in oklch, var(--primary), transparent 94%);
-}
-
-.safe-defaults p:last-child {
+.setup-reassurance {
   margin-bottom: 0;
   color: var(--foreground);
   font-size: 0.88rem;
@@ -366,7 +360,7 @@
   background: transparent;
 }
 
-@media (max-width: 76rem) {
+@media (max-width: 60rem) {
   .board-layout,
   .board-setup {
     grid-template-columns: 1fr;

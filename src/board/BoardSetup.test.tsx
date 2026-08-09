@@ -22,18 +22,20 @@ describe("BoardSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Choose repository" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose project folder" }),
+    );
 
     expect(
       await screen.findByText(
-        "No repository selected. No board has been created.",
+        "No project folder selected. No board has been created.",
       ),
     ).toBeVisible();
     expect(onCreate).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Create board" })).toBeDisabled();
   });
 
-  it("shows safe defaults, allows advanced overrides, and creates only after confirmation", async () => {
+  it("keeps ordinary setup compact and creates with the automatic starting point", async () => {
     const onCreate = vi.fn().mockResolvedValue(undefined);
     render(
       <BoardSetup
@@ -45,26 +47,55 @@ describe("BoardSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Choose repository" }));
-    expect(await screen.findByText("Git root")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose project folder" }),
+    );
+    expect(await screen.findByText("Selected project")).toBeVisible();
     expect(screen.getByLabelText("Board name")).toHaveValue("Reliable app");
     expect(
-      screen.getByText("Base branch: release · Policy: Standard"),
+      screen.getByText(
+        "Kanban will prepare a separate workspace for each task.",
+      ),
     ).toBeVisible();
-    fireEvent.click(screen.getByText("Advanced setup"));
-    fireEvent.change(screen.getByLabelText("Base branch"), {
-      target: { value: "staging" },
+    expect(screen.queryByText("Policy: Standard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Base branch")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Create board" }));
+
+    expect(onCreate).toHaveBeenCalledWith({
+      name: "Reliable app",
+      repositoryPath: "/projects/reliable-app",
+      baseRef: "release",
+      policySetId: "standard",
     });
-    fireEvent.change(screen.getByLabelText("Policy"), {
-      target: { value: "restricted" },
+  });
+
+  it("reveals a plain-language override only when someone asks for it", async () => {
+    const onCreate = vi.fn().mockResolvedValue(undefined);
+    render(
+      <BoardSetup
+        busy={false}
+        onBack={vi.fn()}
+        onCreate={onCreate}
+        onInspectRepository={vi.fn().mockResolvedValue(repository)}
+        repositoryPicker={async () => repository.repositoryPath}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose project folder" }),
+    );
+    await screen.findByText("Use a different starting point");
+    fireEvent.click(screen.getByText("Use a different starting point"));
+    fireEvent.change(screen.getByLabelText("Start new work from"), {
+      target: { value: "release/next" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create board" }));
 
     expect(onCreate).toHaveBeenCalledWith({
       name: "Reliable app",
       repositoryPath: "/projects/reliable-app",
-      baseRef: "staging",
-      policySetId: "restricted",
+      baseRef: "release/next",
+      policySetId: "standard",
     });
   });
 
@@ -83,11 +114,13 @@ describe("BoardSetup", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Choose repository" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose project folder" }),
+    );
 
     expect(
       await screen.findByText(
-        "Choose the Git repository root, not a subdirectory.",
+        "Choose the top-level folder for your project, not a folder inside it.",
       ),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Create board" })).toBeDisabled();

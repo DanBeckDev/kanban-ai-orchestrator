@@ -1,6 +1,7 @@
 mod error;
 mod git_cli;
 mod path;
+mod repository_branch;
 
 use std::{
     fs,
@@ -319,7 +320,7 @@ fn repository_setup(
     }
     let base_ref = requested_base_ref
         .map(str::to_owned)
-        .unwrap_or(git.current_branch(&detected_path)?);
+        .unwrap_or(git.preferred_base_branch(&detected_path)?);
     git.validate_revision(&detected_path, &base_ref)?;
     let suggested_board_name = detected_path
         .file_name()

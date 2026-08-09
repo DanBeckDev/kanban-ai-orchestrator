@@ -15,6 +15,7 @@ pub(crate) enum ProcessEventProtocol {
     Normalized,
     Codex,
     ClaudeCode,
+    ClinePass,
 }
 
 enum ProcessEventDecoder {
@@ -32,6 +33,9 @@ impl ProcessEventProtocol {
             Self::ClaudeCode => ProcessEventDecoder::Native(NativeEventDecoder::new(
                 NativeEventProtocol::ClaudeCode,
             )),
+            Self::ClinePass => {
+                ProcessEventDecoder::Native(NativeEventDecoder::new(NativeEventProtocol::ClinePass))
+            }
         }
     }
 }

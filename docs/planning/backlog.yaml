@@ -122,6 +122,18 @@ tasks:
       - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
     notes: Completed on 2026-08-08 with three provider-neutral execution profiles: a generic structured JSONL bridge, a native Codex CLI wrapper, and a native Claude Code wrapper. Each runs without a production shell, receives the brief through stdin, converts bounded structured output to safe normalized events, and passes one shared non-interactive conformance suite. The desktop profile and launch UI show the selected provider and its unavailable feedback, session-recovery, and safe process-tree cancellation capabilities before start. Codex protocol/sandbox controls and Claude protocol/permission controls are adapter-owned and profile validation rejects attempts to override them. Resume, interactive feedback, and process-tree cancellation remain explicitly unsupported until future provider/platform adapters prove them.
 
+  - id: EXEC-004
+    epic: EXEC
+    title: Add a ClinePass CLI worker adapter
+    status: done
+    priority: P1
+    depends_on: [EXEC-003]
+    acceptance_criteria:
+      - A ClinePass profile starts Cline's documented JSON event stream from the assigned worktree.
+      - Cline account credentials and ClinePass entitlement selection never enter board metadata or SQLite.
+      - Provider, credentials, approval, worktree, and protocol options remain adapter-owned and Cline lifecycle events pass the common conformance suite.
+    notes: Completed on 2026-08-09 with a dedicated ClinePass CLI profile. It uses the user's separately authenticated Cline account, fixes the Cline provider and noninteractive event/approval flags at the adapter boundary, normalizes only fixed Cline lifecycle summaries and usage, and rejects profile arguments that could supply a key, change billing/provider choice, detach the session, replace the worktree, or weaken the event contract.
+
   - id: ORCH-001
     epic: ORCH
     title: Implement policy, budget, and approval decisions

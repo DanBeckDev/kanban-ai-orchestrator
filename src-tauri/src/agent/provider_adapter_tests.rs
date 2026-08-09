@@ -1,7 +1,6 @@
 use super::{
-    AgentAdapter, AgentProfile, AgentProfileKind, ClaudeCodeAdapter, CodexCliAdapter,
-    NormalizedAgentEventKind, ProcessAgentDefinition, WorkerAgentAdapter,
-    provider_adapter::{claude_code_definition, codex_definition},
+    AgentAdapter, AgentProfile, AgentProfileKind, NativeProcessAdapter, NormalizedAgentEventKind,
+    ProcessAgentDefinition, WorkerAgentAdapter, provider_adapter::native_definition,
 };
 
 fn profile(kind: AgentProfileKind, program: &str, arguments: Vec<&str>) -> AgentProfile {
@@ -15,7 +14,7 @@ fn profile(kind: AgentProfileKind, program: &str, arguments: Vec<&str>) -> Agent
 
 #[test]
 fn native_profiles_own_their_protocol_and_safety_arguments() {
-    let codex = codex_definition(
+    let codex = native_definition(
         profile(
             AgentProfileKind::CodexCli,
             "codex",
@@ -23,11 +22,19 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
         ),
         "execution-1",
     );
-    let claude = claude_code_definition(
+    let claude = native_definition(
         profile(
             AgentProfileKind::ClaudeCode,
             "claude",
             vec!["--model", "sonnet"],
+        ),
+        "execution-1",
+    );
+    let cline_pass = native_definition(
+        profile(
+            AgentProfileKind::ClinePassCli,
+            "cline",
+            vec!["--thinking", "high"],
         ),
         "execution-1",
     );
@@ -59,6 +66,19 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "sonnet",
         ]
     );
+    assert_eq!(cline_pass.name, "local-provider-execution-1");
+    assert_eq!(
+        cline_pass.arguments,
+        [
+            "--json",
+            "--provider",
+            "cline",
+            "--auto-approve",
+            "true",
+            "--thinking",
+            "high",
+        ]
+    );
 }
 
 #[test]
@@ -75,11 +95,16 @@ fn worker_adapter_selects_the_profile_protocol_at_the_runtime_boundary() {
         profile(AgentProfileKind::ClaudeCode, "provider", Vec::new()),
         "execution-1",
     );
+    let cline_pass = WorkerAgentAdapter::from_profile_for_execution(
+        profile(AgentProfileKind::ClinePassCli, "provider", Vec::new()),
+        "execution-1",
+    );
 
     assert!(matches!(structured, WorkerAgentAdapter::Structured(_)));
-    assert!(matches!(codex, WorkerAgentAdapter::Codex(_)));
-    assert!(matches!(claude, WorkerAgentAdapter::ClaudeCode(_)));
-    for adapter in [&structured, &codex, &claude] {
+    assert!(matches!(codex, WorkerAgentAdapter::Native(_)));
+    assert!(matches!(claude, WorkerAgentAdapter::Native(_)));
+    assert!(matches!(cline_pass, WorkerAgentAdapter::Native(_)));
+    for adapter in [&structured, &codex, &claude, &cline_pass] {
         let capabilities = adapter
             .discover()
             .expect("runtime adapter capabilities should be available");
@@ -92,11 +117,40 @@ fn worker_adapter_selects_the_profile_protocol_at_the_runtime_boundary() {
 }
 
 #[test]
-fn codex_cli_adapter_passes_the_noninteractive_conformance_suite() {
-    let mut adapter = CodexCliAdapter::for_test(scripted_adapter(
-        "codex-fixture",
-        "IFS= read -r brief; [ \"$brief\" = \"Build the bounded task.\" ] || exit 7; printf '%s\\n' '{\"type\":\"turn.started\"}' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":21,\"output_tokens\":8}}'",
+fn cline_pass_cli_adapter_passes_the_noninteractive_conformance_suite() {
+    let mut adapter = NativeProcessAdapter::for_test(
+        scripted_adapter(
+            "cline-pass-fixture",
+            "IFS= read -r brief; [ \"$brief\" = \"Build the bounded task.\" ] || exit 7; printf '%s\\n' '{\"type\":\"agent_event\",\"event\":{\"type\":\"iteration_start\"}}' '{\"type\":\"agent_event\",\"event\":{\"type\":\"usage\",\"usage\":{\"inputTokens\":13,\"outputTokens\":5}}}' '{\"type\":\"agent_event\",\"event\":{\"type\":\"done\"}}'",
+        ),
+        AgentProfileKind::ClinePassCli,
+    );
+
+    let events = super::conformance_tests::assert_noninteractive_conformance(
+        &mut adapter,
+        3,
+        "ClinePass completed the task and is ready for review.",
+    );
+
+    assert!(matches!(
+        events[1].kind,
+        NormalizedAgentEventKind::UsageUpdated {
+            input_tokens: 13,
+            output_tokens: 5,
+            cost_micros: None,
+        }
     ));
+}
+
+#[test]
+fn codex_cli_adapter_passes_the_noninteractive_conformance_suite() {
+    let mut adapter = NativeProcessAdapter::for_test(
+        scripted_adapter(
+            "codex-fixture",
+            "IFS= read -r brief; [ \"$brief\" = \"Build the bounded task.\" ] || exit 7; printf '%s\\n' '{\"type\":\"turn.started\"}' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":21,\"output_tokens\":8}}'",
+        ),
+        AgentProfileKind::CodexCli,
+    );
 
     let events = super::conformance_tests::assert_noninteractive_conformance(
         &mut adapter,
@@ -116,10 +170,13 @@ fn codex_cli_adapter_passes_the_noninteractive_conformance_suite() {
 
 #[test]
 fn claude_code_adapter_passes_the_noninteractive_conformance_suite() {
-    let mut adapter = ClaudeCodeAdapter::for_test(scripted_adapter(
-        "claude-fixture",
-        "IFS= read -r brief; [ \"$brief\" = \"Build the bounded task.\" ] || exit 7; printf '%s\\n' '{\"type\":\"system\",\"subtype\":\"init\"}' '{\"type\":\"result\",\"usage\":{\"input_tokens\":11,\"output_tokens\":4,\"total_cost_usd\":0.000015}}'",
-    ));
+    let mut adapter = NativeProcessAdapter::for_test(
+        scripted_adapter(
+            "claude-fixture",
+            "IFS= read -r brief; [ \"$brief\" = \"Build the bounded task.\" ] || exit 7; printf '%s\\n' '{\"type\":\"system\",\"subtype\":\"init\"}' '{\"type\":\"result\",\"usage\":{\"input_tokens\":11,\"output_tokens\":4,\"total_cost_usd\":0.000015}}'",
+        ),
+        AgentProfileKind::ClaudeCode,
+    );
 
     let events = super::conformance_tests::assert_noninteractive_conformance(
         &mut adapter,

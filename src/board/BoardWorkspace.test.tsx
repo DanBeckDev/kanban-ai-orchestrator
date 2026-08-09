@@ -393,14 +393,14 @@ describe("board workspace", () => {
       name: "Save agent profile",
     });
     fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
-      target: { value: "codex-worker" },
+      target: { value: "cline-pass-worker" },
     });
     fireEvent.change(within(profileForm).getByLabelText("Adapter"), {
-      target: { value: "codex_cli" },
+      target: { value: "cline_pass_cli" },
     });
-    expect(within(profileForm).getByLabelText("Program")).toHaveValue("codex");
+    expect(within(profileForm).getByLabelText("Program")).toHaveValue("cline");
     expect(
-      within(profileForm).getByText(/native structured event protocol/i),
+      within(profileForm).getByText(/locally configured clinepass account/i),
     ).toBeVisible();
     fireEvent.click(
       within(profileForm).getByRole("button", { name: "Save profile" }),
@@ -410,7 +410,7 @@ describe("board workspace", () => {
       name: "Start agent for Task ready-task",
     });
     fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
-      target: { value: "codex-worker" },
+      target: { value: "cline-pass-worker" },
     });
 
     expect(

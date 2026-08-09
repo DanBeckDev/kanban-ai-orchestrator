@@ -6,6 +6,7 @@ use super::{NormalizedAgentEvent, NormalizedAgentEventKind};
 pub(super) enum NativeEventProtocol {
     Codex,
     ClaudeCode,
+    ClinePass,
 }
 
 pub(super) struct NativeEventDecoder {
@@ -26,9 +27,10 @@ impl NativeEventDecoder {
             .map_err(|error| format!("invalid provider JSON event: {error}"))?;
         let event_type = required_string(&event, "type", "provider event type")?;
         let kinds = match self.protocol {
-            NativeEventProtocol::Codex => codex_event_kinds(event_type, &event),
-            NativeEventProtocol::ClaudeCode => claude_event_kinds(event_type, &event),
-        };
+            NativeEventProtocol::Codex => Ok(codex_event_kinds(event_type, &event)),
+            NativeEventProtocol::ClaudeCode => Ok(claude_event_kinds(event_type, &event)),
+            NativeEventProtocol::ClinePass => cline_pass_event_kinds(event_type, &event),
+        }?;
         Ok(kinds.into_iter().map(|kind| self.event(kind)).collect())
     }
 
@@ -74,6 +76,35 @@ fn claude_event_kinds(event_type: &str, event: &Value) -> Vec<NormalizedAgentEve
     }
 }
 
+fn cline_pass_event_kinds(
+    event_type: &str,
+    event: &Value,
+) -> Result<Vec<NormalizedAgentEventKind>, String> {
+    if event_type == "error" {
+        return Ok(vec![failed("ClinePass reported an error.")]);
+    }
+    if event_type != "agent_event" {
+        return Ok(Vec::new());
+    }
+
+    let agent_event = event
+        .get("event")
+        .ok_or_else(|| "ClinePass agent event is required".to_owned())?;
+    let agent_event_type = required_string(agent_event, "type", "ClinePass agent event type")?;
+    Ok(match agent_event_type {
+        "iteration_start" => vec![activity("ClinePass started an iteration.")],
+        "iteration_end" => vec![activity("ClinePass completed an iteration.")],
+        "usage" => agent_event
+            .get("usage")
+            .and_then(cline_pass_usage_updated)
+            .into_iter()
+            .collect(),
+        "done" => cline_pass_completed_with_usage(agent_event),
+        "error" => vec![failed("ClinePass reported an error.")],
+        _ => Vec::new(),
+    })
+}
+
 fn completed_with_usage(usage: Option<&Value>, summary: &str) -> Vec<NormalizedAgentEventKind> {
     let mut kinds = usage
         .and_then(usage_updated)
@@ -81,6 +112,18 @@ fn completed_with_usage(usage: Option<&Value>, summary: &str) -> Vec<NormalizedA
         .collect::<Vec<_>>();
     kinds.push(NormalizedAgentEventKind::Completed {
         summary: summary.to_owned(),
+    });
+    kinds
+}
+
+fn cline_pass_completed_with_usage(event: &Value) -> Vec<NormalizedAgentEventKind> {
+    let mut kinds = event
+        .get("usage")
+        .and_then(cline_pass_usage_updated)
+        .into_iter()
+        .collect::<Vec<_>>();
+    kinds.push(NormalizedAgentEventKind::Completed {
+        summary: "ClinePass completed the task and is ready for review.".to_owned(),
     });
     kinds
 }
@@ -95,15 +138,43 @@ fn usage_updated(usage: &Value) -> Option<NormalizedAgentEventKind> {
     })
 }
 
+fn cline_pass_usage_updated(usage: &Value) -> Option<NormalizedAgentEventKind> {
+    let input_tokens = unsigned_any(usage, &["input_tokens", "inputTokens"])?;
+    let output_tokens = unsigned_any(usage, &["output_tokens", "outputTokens"])?;
+    Some(NormalizedAgentEventKind::UsageUpdated {
+        input_tokens,
+        output_tokens,
+        cost_micros: cost_micros_any(usage),
+    })
+}
+
 fn unsigned(value: &Value, field: &str) -> Option<u64> {
     value.get(field)?.as_u64()
 }
 
+fn unsigned_any(value: &Value, fields: &[&str]) -> Option<u64> {
+    fields.iter().find_map(|field| unsigned(value, field))
+}
+
 fn cost_micros(usage: &Value) -> Option<u64> {
-    let dollars = usage
-        .get("total_cost_usd")
-        .or_else(|| usage.get("cost_usd"))?
-        .as_f64()?;
+    cost_micros_for_fields(usage, &["total_cost_usd", "cost_usd"])
+}
+
+fn cost_micros_any(usage: &Value) -> Option<u64> {
+    cost_micros_for_fields(
+        usage,
+        &[
+            "total_cost_usd",
+            "cost_usd",
+            "totalCostUsd",
+            "costUsd",
+            "cost",
+        ],
+    )
+}
+
+fn cost_micros_for_fields(usage: &Value, fields: &[&str]) -> Option<u64> {
+    let dollars = fields.iter().find_map(|field| usage.get(field)?.as_f64())?;
     (dollars.is_finite() && dollars >= 0.0 && dollars <= u64::MAX as f64 / 1_000_000.0)
         .then(|| (dollars * 1_000_000.0).round() as u64)
 }
@@ -128,170 +199,5 @@ fn activity(summary: &str) -> NormalizedAgentEventKind {
 fn failed(reason: &str) -> NormalizedAgentEventKind {
     NormalizedAgentEventKind::Failed {
         reason: reason.to_owned(),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{NativeEventDecoder, NativeEventProtocol};
-    use crate::agent::NormalizedAgentEventKind;
-
-    #[test]
-    fn maps_codex_lifecycle_and_usage_without_retaining_agent_text() {
-        let mut decoder = NativeEventDecoder::new(NativeEventProtocol::Codex);
-        let item = decoder
-            .decode_line(
-                br#"{"type":"item.completed","item":{"type":"agent_message","text":"secret"}}"#,
-            )
-            .expect("Codex event should decode");
-        let completed = decoder
-            .decode_line(
-                br#"{"type":"turn.completed","usage":{"input_tokens":21,"output_tokens":8}}"#,
-            )
-            .expect("Codex completion should decode");
-
-        assert!(matches!(
-            item[0].kind,
-            NormalizedAgentEventKind::Activity { ref summary }
-                if summary == "Codex completed a tool or message item."
-        ));
-        assert!(matches!(
-            completed[0].kind,
-            NormalizedAgentEventKind::UsageUpdated {
-                input_tokens: 21,
-                output_tokens: 8,
-                cost_micros: None,
-            }
-        ));
-        assert!(matches!(
-            completed[1].kind,
-            NormalizedAgentEventKind::Completed { ref summary }
-                if summary == "Codex completed the task and is ready for review."
-        ));
-        assert_eq!(completed[1].sequence, 3);
-    }
-
-    #[test]
-    fn maps_claude_result_cost_and_failure_without_retaining_result_text() {
-        let mut decoder = NativeEventDecoder::new(NativeEventProtocol::ClaudeCode);
-        let completed = decoder
-            .decode_line(
-                br#"{"type":"result","result":"secret","usage":{"input_tokens":11,"output_tokens":4,"total_cost_usd":0.000015}}"#,
-            )
-            .expect("Claude result should decode");
-        let failed = decoder
-            .decode_line(br#"{"type":"result","is_error":true,"result":"secret"}"#)
-            .expect("Claude failed result should decode");
-
-        assert!(matches!(
-            completed[0].kind,
-            NormalizedAgentEventKind::UsageUpdated {
-                input_tokens: 11,
-                output_tokens: 4,
-                cost_micros: Some(15),
-            }
-        ));
-        assert!(matches!(
-            completed[1].kind,
-            NormalizedAgentEventKind::Completed { ref summary }
-                if summary == "Claude Code completed the task and is ready for review."
-        ));
-        assert!(matches!(
-            failed[0].kind,
-            NormalizedAgentEventKind::Failed { ref reason }
-                if reason == "Claude Code reported a failed result."
-        ));
-    }
-
-    #[test]
-    fn rejects_malformed_or_typeless_native_events() {
-        let mut decoder = NativeEventDecoder::new(NativeEventProtocol::Codex);
-
-        assert!(decoder.decode_line(b"not JSON").is_err());
-        assert!(decoder.decode_line(br#"{"usage":{}}"#).is_err());
-    }
-
-    #[test]
-    fn maps_safe_progress_and_failure_events_without_replaying_provider_text() {
-        let mut codex = NativeEventDecoder::new(NativeEventProtocol::Codex);
-        let mut claude = NativeEventDecoder::new(NativeEventProtocol::ClaudeCode);
-
-        assert_eq!(
-            codex
-                .decode_line(br#"{"type":"turn.started"}"#)
-                .expect("Codex turn start should decode")[0]
-                .kind,
-            NormalizedAgentEventKind::Activity {
-                summary: "Codex started a turn.".to_owned(),
-            }
-        );
-        assert_eq!(
-            codex
-                .decode_line(br#"{"type":"turn.failed","message":"secret"}"#)
-                .expect("Codex turn failure should decode")[0]
-                .kind,
-            NormalizedAgentEventKind::Failed {
-                reason: "Codex reported a failed turn.".to_owned(),
-            }
-        );
-        assert!(
-            codex
-                .decode_line(br#"{"type":"unrecognized","secret":"secret"}"#)
-                .expect("unknown Codex events should be ignored")
-                .is_empty()
-        );
-        assert!(
-            claude
-                .decode_line(br#"{"type":"system","subtype":"other","secret":"secret"}"#)
-                .expect("unknown Claude system events should be ignored")
-                .is_empty()
-        );
-        assert_eq!(
-            claude
-                .decode_line(br#"{"type":"assistant","message":"secret"}"#)
-                .expect("Claude progress should decode")[0]
-                .kind,
-            NormalizedAgentEventKind::Activity {
-                summary: "Claude Code produced an agent message.".to_owned(),
-            }
-        );
-        assert_eq!(
-            claude
-                .decode_line(br#"{"type":"error","message":"secret"}"#)
-                .expect("Claude errors should decode")[0]
-                .kind,
-            NormalizedAgentEventKind::Failed {
-                reason: "Claude Code reported an error.".to_owned(),
-            }
-        );
-    }
-
-    #[test]
-    fn completes_when_usage_is_missing_or_incomplete() {
-        let mut codex = NativeEventDecoder::new(NativeEventProtocol::Codex);
-        let mut claude = NativeEventDecoder::new(NativeEventProtocol::ClaudeCode);
-
-        assert_eq!(
-            codex
-                .decode_line(br#"{"type":"turn.completed"}"#)
-                .expect("Codex completion should decode"),
-            vec![super::NormalizedAgentEvent {
-                sequence: 1,
-                kind: NormalizedAgentEventKind::Completed {
-                    summary: "Codex completed the task and is ready for review.".to_owned(),
-                },
-            }]
-        );
-        assert_eq!(
-            claude
-                .decode_line(br#"{"type":"result","usage":{"input_tokens":4,"cost_usd":0.00002}}"#,)
-                .expect("Claude completion should decode"),
-            vec![super::NormalizedAgentEvent {
-                sequence: 1,
-                kind: NormalizedAgentEventKind::Completed {
-                    summary: "Claude Code completed the task and is ready for review.".to_owned(),
-                },
-            }]
-        );
     }
 }

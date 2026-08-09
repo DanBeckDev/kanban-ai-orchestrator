@@ -36,6 +36,14 @@ const presentationByKind: Record<AgentProfileKind, AgentProfilePresentation> = {
     protocolSummary:
       "Runs Claude Code through its native structured event protocol; this profile cannot override the desktop protocol or permission controls.",
   },
+  cline_pass_cli: {
+    kind: "cline_pass_cli",
+    label: "Cline CLI (ClinePass)",
+    defaultProgram: "cline",
+    argumentHint: "--thinking\nhigh",
+    protocolSummary:
+      "Runs Cline's native structured event protocol with the locally configured ClinePass account; this profile cannot override provider, credentials, approval, worktree, or protocol controls.",
+  },
 };
 
 export const agentProfilePresentations = Object.values(presentationByKind);

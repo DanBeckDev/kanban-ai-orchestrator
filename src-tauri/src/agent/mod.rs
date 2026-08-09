@@ -15,7 +15,7 @@ pub use fake_adapter::FakeAgentAdapter;
 pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
 pub use profile::{AgentProfile, AgentProfileError, AgentProfileKind};
-pub use provider_adapter::{ClaudeCodeAdapter, CodexCliAdapter, WorkerAgentAdapter};
+pub use provider_adapter::{NativeProcessAdapter, WorkerAgentAdapter};
 
 #[cfg(test)]
 mod tests;
@@ -28,3 +28,6 @@ mod process_adapter_tests;
 
 #[cfg(all(test, unix))]
 mod provider_adapter_tests;
+
+#[cfg(test)]
+mod provider_event_decoder_tests;

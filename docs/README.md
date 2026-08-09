@@ -7,6 +7,7 @@ This documentation is deliberately small, versioned, and task-oriented. It is de
 | `product/vision.md` | Long-lived product intent and boundaries | The target user or product promise changes |
 | `product/requirements.md` | Testable product requirements | A user-visible behavior changes |
 | `architecture/overview.md` | System components, authority boundaries, and data model | A component or interface changes |
+| `integrations/cline-pass.md` | ClinePass worker setup, credential boundary, and supported profile options | Changing the ClinePass adapter |
 | `integrations/linear.md` | Linear connector contract and sync rules | Linear-facing behavior changes |
 | `quality/code-requirements.md` | Mandatory code quality, remediation, coverage, and verification policy | Any quality gate or coverage rule changes |
 | `quality/review-receipt.template.yaml` | Required evidence format for code-bearing work | The quality evidence contract changes |

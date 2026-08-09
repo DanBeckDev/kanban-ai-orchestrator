@@ -308,7 +308,8 @@ export type TransitionWorkItemRequest = Readonly<{
 export type AgentProfileKind =
   | "structured_process"
   | "codex_cli"
-  | "claude_code";
+  | "claude_code"
+  | "cline_pass_cli";
 
 export type AgentProfile = Readonly<{
   name: string;

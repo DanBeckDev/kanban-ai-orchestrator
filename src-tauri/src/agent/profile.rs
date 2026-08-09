@@ -13,6 +13,7 @@ pub enum AgentProfileKind {
     StructuredProcess,
     CodexCli,
     ClaudeCode,
+    ClinePassCli,
 }
 
 impl AgentProfileKind {
@@ -66,6 +67,32 @@ impl AgentProfileKind {
                     "--add-dir",
                     "--settings",
                     "--mcp-config",
+                ],
+            ),
+            Self::ClinePassCli => matches_argument(
+                argument,
+                &[
+                    "--json",
+                    "--provider",
+                    "-P",
+                    "--model",
+                    "-m",
+                    "--key",
+                    "-k",
+                    "--auto-approve",
+                    "--yolo",
+                    "-y",
+                    "--zen",
+                    "-z",
+                    "--tui",
+                    "-i",
+                    "--cwd",
+                    "-c",
+                    "--data-dir",
+                    "--worktree",
+                    "--config",
+                    "--acp",
+                    "--kanban",
                 ],
             ),
         }
@@ -235,6 +262,16 @@ mod tests {
                 kind: AgentProfileKind::ClaudeCode,
                 program: "claude".to_owned(),
                 arguments: vec!["--permission-mode".to_owned()],
+            }
+            .validate(),
+            Err(AgentProfileError::ReservedArgument { .. })
+        ));
+        assert!(matches!(
+            AgentProfile {
+                name: "cline".to_owned(),
+                kind: AgentProfileKind::ClinePassCli,
+                program: "cline".to_owned(),
+                arguments: vec!["--key=secret".to_owned()],
             }
             .validate(),
             Err(AgentProfileError::ReservedArgument { .. })

@@ -1,0 +1,134 @@
+work_item: UI-001
+scope:
+  - "Initialize the Vite desktop client with source-owned shadcn Nova/Radix primitives and semantic theme tokens."
+  - "Apply one responsive visual hierarchy to the application shell, board library, guided setup, board controls, and state feedback."
+  - "Preserve the typed daemon gateway and existing observable board workflows while making board controls progressively disclosed."
+source_structure:
+  reviewed_files:
+    - path: src/App.tsx
+      meaningful_lines: 39
+      responsibilities: "Composes the application chrome, tooltip context, and injectable board dependencies."
+      decision: kept cohesive
+    - path: src/board/BoardLibrary.tsx
+      meaningful_lines: 151
+      responsibilities: "Presents recognized local boards and the single clear create/re-entry actions."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 204
+      responsibilities: "Presents the guided repository-first board setup through reusable form and feedback primitives."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 228
+      responsibilities: "Coordinates the board columns and progressively disclosed plan, organization, and connection controls."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 387
+      responsibilities: "Coordinates board-library, setup, active-board, and gateway-backed status state."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 72
+      responsibilities: "Covers Linear connection behavior after selecting the Connections control tab."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 27
+      responsibilities: "Provides focused board-creation and accessible tab-selection test actions."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 383
+      responsibilities: "Covers board workflows, including organization controls and agent profile behavior."
+      decision: kept cohesive
+    - path: src/components/ui/alert.tsx
+      meaningful_lines: 69
+      responsibilities: "Defines source-owned alert roles and visual variants."
+      decision: kept cohesive
+    - path: src/components/ui/badge.tsx
+      meaningful_lines: 44
+      responsibilities: "Defines source-owned compact status variants."
+      decision: kept cohesive
+    - path: src/components/ui/button.tsx
+      meaningful_lines: 62
+      responsibilities: "Defines source-owned button variants and composition behavior."
+      decision: kept cohesive
+    - path: src/components/ui/card.tsx
+      meaningful_lines: 94
+      responsibilities: "Defines source-owned card layout primitives for discrete actionable units."
+      decision: kept cohesive
+    - path: src/components/ui/empty.tsx
+      meaningful_lines: 95
+      responsibilities: "Defines source-owned empty-state composition primitives."
+      decision: kept cohesive
+    - path: src/components/ui/field.tsx
+      meaningful_lines: 216
+      responsibilities: "Defines source-owned field layout, descriptions, separators, and validation feedback."
+      decision: kept cohesive
+    - path: src/components/ui/input.tsx
+      meaningful_lines: 16
+      responsibilities: "Defines the source-owned themed native input primitive."
+      decision: kept cohesive
+    - path: src/components/ui/label.tsx
+      meaningful_lines: 20
+      responsibilities: "Defines the source-owned accessible label primitive."
+      decision: kept cohesive
+    - path: src/components/ui/separator.tsx
+      meaningful_lines: 23
+      responsibilities: "Defines the source-owned semantic separator primitive."
+      decision: kept cohesive
+    - path: src/components/ui/tabs.tsx
+      meaningful_lines: 82
+      responsibilities: "Defines source-owned accessible tab primitives and variants."
+      decision: kept cohesive
+    - path: src/components/ui/textarea.tsx
+      meaningful_lines: 15
+      responsibilities: "Defines the source-owned themed native textarea primitive."
+      decision: kept cohesive
+    - path: src/components/ui/tooltip.tsx
+      meaningful_lines: 49
+      responsibilities: "Defines source-owned tooltip provider and overlay primitives."
+      decision: kept cohesive
+    - path: src/lib/utils.ts
+      meaningful_lines: 5
+      responsibilities: "Provides the shared class-name composition utility required by generated primitives."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T10:56:04+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "Board controls could have remained as one long always-visible action stack."
+        resolution: implemented
+        rationale: "Tabs give plan creation, organization, and integrations distinct jobs while preserving all existing gateway operations and native/Radix keyboard semantics."
+        decision_reference: ADR-0021
+      - finding: "The generated primitive source initially contained lint and accessibility conflicts with the repository baseline."
+        resolution: implemented
+        rationale: "The code now uses type-only imports, strict equality, stable error-message keys, and native semantics instead of an unnecessary group role."
+        decision_reference: UI-001
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Generated shadcn source did not initially conform to this repository's lint and accessibility rules."
+    change: "Applied the repository formatter, converted type-only imports, removed the redundant ARIA group role, used strict comparison, and keyed unique validation errors by message."
+  - finding: "Tests clicked tabs, but Radix correctly activates its accessible tabs on primary mouse-down."
+    change: "Added a focused test helper that models the real activation event and updated organization and Linear flow tests."
+  - finding: "The shadcn initializer added TypeScript's retired baseUrl option."
+    change: "Kept the path aliases and removed baseUrl so the current TypeScript compiler type-checks the project."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 85.79
+        statements: 85.26
+        functions: 80.65
+        branches: 84.04
+      - package_or_crate: src-tauri-rust
+        lines: 83.98
+        statements: 80.11
+        functions: 83.76
+        branches: 80.52
+    threshold_met: true
+exceptions: []

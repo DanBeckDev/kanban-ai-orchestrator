@@ -1,0 +1,252 @@
+.form-panel,
+.form-panel form,
+.agent-launch-form,
+.review-check-form,
+.recovery-actions,
+.execution-control,
+.linear-connection-panel,
+.linear-import-panel,
+.linear-connection-panel form,
+.linear-import-panel form,
+.linear-sync-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.form-panel form,
+.linear-connection-panel form,
+.linear-import-panel form {
+  margin: 0;
+}
+
+.form-panel label,
+.agent-launch-form label,
+.review-check-form label,
+.transition-form label,
+.linear-connection-panel label,
+.linear-import-panel label,
+.linear-sync-panel label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 620;
+}
+
+.form-panel input:not([data-slot]),
+.form-panel select,
+.form-panel textarea:not([data-slot]),
+.agent-launch-form input,
+.agent-launch-form select,
+.agent-launch-form textarea,
+.review-check-form input,
+.review-check-form select,
+.review-check-form textarea,
+.transition-form input,
+.transition-form select,
+.transition-form textarea,
+.linear-connection-panel input,
+.linear-connection-panel select,
+.linear-connection-panel textarea,
+.linear-import-panel input,
+.linear-import-panel select,
+.linear-import-panel textarea,
+.linear-sync-panel input,
+.linear-sync-panel select,
+.linear-sync-panel textarea {
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.form-panel textarea:not([data-slot]),
+.agent-launch-form textarea,
+.review-check-form textarea,
+.transition-form textarea,
+.linear-connection-panel textarea,
+.linear-import-panel textarea,
+.linear-sync-panel textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.form-panel input:not([data-slot]):focus,
+.form-panel select:focus,
+.form-panel textarea:not([data-slot]):focus,
+.agent-launch-form input:focus,
+.agent-launch-form select:focus,
+.agent-launch-form textarea:focus,
+.review-check-form input:focus,
+.review-check-form select:focus,
+.review-check-form textarea:focus,
+.transition-form input:focus,
+.transition-form select:focus,
+.transition-form textarea:focus,
+.linear-connection-panel input:focus,
+.linear-connection-panel select:focus,
+.linear-connection-panel textarea:focus,
+.linear-import-panel input:focus,
+.linear-import-panel select:focus,
+.linear-import-panel textarea:focus,
+.linear-sync-panel input:focus,
+.linear-sync-panel select:focus,
+.linear-sync-panel textarea:focus {
+  border-color: var(--ring);
+  outline: 3px solid color-mix(in oklch, var(--ring), transparent 78%);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.55rem !important;
+  font-weight: 500 !important;
+}
+
+.checkbox-label input {
+  width: auto;
+  accent-color: var(--primary);
+}
+
+fieldset {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+legend {
+  padding: 0 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.profile-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-list li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+
+.profile-list li:first-child {
+  padding-top: 0;
+}
+
+.profile-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.profile-list span {
+  color: var(--muted-foreground);
+}
+
+.transition-form {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.recovery-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.latest-attempt {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.65rem;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.latest-attempt dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.plan-preview > p {
+  margin-bottom: 0;
+}
+
+.plan-preview .budget-summary {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.linear-connection-panel > p,
+.linear-import-panel > p {
+  margin-bottom: 0;
+}
+
+.linear-connection-panel section,
+.linear-import-panel section,
+.linear-sync-panel section {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.linear-sync-panel ul,
+.linear-connection-panel ul,
+.linear-import-panel ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.error-notice {
+  margin-bottom: 0.25rem;
+}
+
+.inline-error {
+  margin: 0;
+  color: var(--status-danger);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 34rem) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    align-items: stretch;
+  }
+}

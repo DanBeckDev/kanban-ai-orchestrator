@@ -18,6 +18,8 @@ epics:
     title: Orchestration, policy, and review
   - id: UX
     title: Usable desktop experience and design validation
+  - id: UI
+    title: Cohesive desktop visual system
   - id: APP
     title: Local desktop board experience
   - id: LIN
@@ -251,7 +253,7 @@ tasks:
   - id: UX-002
     epic: UX
     title: Build a durable board library and recognition-based re-entry
-    status: completed
+    status: done
     priority: P0
     depends_on: [UX-001, UX-008, APP-001]
     acceptance_criteria:
@@ -271,7 +273,7 @@ tasks:
   - id: UX-003
     epic: UX
     title: Replace ID-driven board setup with a guided repository-first flow
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [UX-001, UX-008, UX-002, APP-002]
     acceptance_criteria:
@@ -281,11 +283,32 @@ tasks:
       - Cancelling or failing validation does not persist a partial project/board. A successful creation opens the board home and preserves all existing project-boundary protections.
       - Tests exercise picker cancellation, invalid/non-root repository selection, generated identifiers, default/advanced configuration, and successful creation at the required coverage threshold.
     notes: >-
-      This is intentionally a separate PR from UX-002 because it adds a Tauri
-      capability, migration-safe command changes, and a user-facing form
-      replacement. On 2026-08-09, the product owner directed continued
-      incremental delivery while UX-008's representative walkthrough evidence
-      remains in progress. UX-008's completion gate remains unchanged.
+      Completed on 2026-08-09 in a focused pull request. This work added a
+      Tauri capability, migration-safe command changes, and a user-facing form
+      replacement. UX-008's representative-walkthrough completion gate remains
+      unchanged.
+
+  - id: UI-001
+    epic: UI
+    title: Establish a polished shadcn visual system across the desktop board
+    status: done
+    priority: P0
+    depends_on: [UX-001, UX-002, UX-003, APP-003]
+    acceptance_criteria:
+      - shadcn/ui is initialized for the Vite desktop client with its project-local agent skill, semantic CSS tokens, source-owned primitives, and a documented component boundary.
+      - The app shell, board library, repository-first setup, active board, action panels, forms, task cards, status feedback, and empty/error states use one coherent visual hierarchy rather than repeated nested bordered containers.
+      - Primary next actions, supporting actions, destructive/recovery actions, daemon status, task state, and unavailable-repository feedback are distinguishable without relying only on colour.
+      - Components retain native semantics, keyboard focus, label associations, and live feedback; the UI does not change daemon scheduling, persistence, policy, or execution authority.
+      - Focused component tests cover the new shadcn-composed primary flows and the repository quality gate remains at or above 80% for every required metric.
+    notes: >-
+      Completed on 2026-08-09 as one goal and one pull request, as requested.
+      The Vite client now has shadcn's project-local skill, Nova/Radix source
+      primitives, semantic tokens, a responsive shell, composed board library
+      and setup flows, styled status/empty/error feedback, and tabbed board
+      controls. ADR 0021 records the shadcn/Radix boundary and the BookCtx
+      design-system decision. Full quality verification passed with frontend
+      coverage at 85.79% lines, 85.26% statements, 80.65% functions, and
+      84.04% branches; Rust remains at or above 80% for every metric.
 
   - id: UX-004
     epic: UX

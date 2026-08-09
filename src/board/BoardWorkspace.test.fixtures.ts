@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 
 import { linearGatewayMethods } from "./BoardWorkspace.test.linear.fixtures";
+import { executionGatewayMethods } from "./BoardWorkspace.test.execution.fixtures";
 
 import type {
   AgentProfile,
@@ -13,6 +14,7 @@ import type {
   GeneratePlanRequest,
   ProposePlanRequest,
   PlannerProfile,
+  ProjectAgentSettings,
   TransitionWorkItemRequest,
   WorkItemState,
 } from "./types";
@@ -51,6 +53,8 @@ export function workItem(
       budget: {},
       state,
       requiresHumanReview: state === "review",
+      assignedAgentModel: { kind: "provider_default" },
+      assignedAgentEffort: "provider_default",
     },
   };
 }
@@ -79,6 +83,7 @@ export function gateway(
   let current = initialSnapshot;
   let profiles: readonly AgentProfile[] = [];
   let plannerProfiles: readonly PlannerProfile[] = [];
+  let agentSettings: ProjectAgentSettings | undefined;
   let savedPlan: BoardPlan | undefined;
   let proposedPlan: ProposePlanRequest | undefined;
   return {
@@ -113,6 +118,10 @@ export function gateway(
               budget: request.budget,
               state: "inbox",
               requiresHumanReview: request.requiresHumanReview,
+              assignedAgentProfileName:
+                agentSettings?.ticketWorker?.agentProfileName,
+              assignedAgentModel: { kind: "provider_default" },
+              assignedAgentEffort: "provider_default",
             },
           },
         ]);
@@ -147,8 +156,16 @@ export function gateway(
             workItems: request.workItems.map((workItem) => ({
               id: workItem.workItemId,
               title: workItem.title,
+              description: workItem.description,
               acceptanceCriteria: workItem.acceptanceCriteria,
               budget: workItem.budget,
+              requiresHumanReview: workItem.requiresHumanReview,
+              assignedAgentProfileName: workItem.assignedAgentProfileName,
+              assignedAgentModel: workItem.assignedAgentModel ?? {
+                kind: "provider_default",
+              },
+              assignedAgentEffort:
+                workItem.assignedAgentEffort ?? "provider_default",
             })),
             dependencies: request.dependencies.map((dependency) => ({
               id: dependency.dependencyId,
@@ -208,6 +225,12 @@ export function gateway(
                 budget: workItem.budget,
                 state: "inbox" as const,
                 requiresHumanReview: workItem.requiresHumanReview,
+                assignedAgentProfileName: workItem.assignedAgentProfileName,
+                assignedAgentModel: workItem.assignedAgentModel ?? {
+                  kind: "provider_default",
+                },
+                assignedAgentEffort:
+                  workItem.assignedAgentEffort ?? "provider_default",
               },
             })),
           ],
@@ -274,6 +297,15 @@ export function gateway(
         return profile;
       }),
     plannerProfiles: vi.fn().mockImplementation(async () => plannerProfiles),
+    saveProjectAgentSettings: vi.fn().mockImplementation(async (request) => {
+      agentSettings = {
+        projectId: current.board.projectId,
+        organiser: request.organiser,
+        ticketWorker: request.ticketWorker,
+      };
+      return agentSettings;
+    }),
+    projectAgentSettings: vi.fn().mockImplementation(async () => agentSettings),
     generatePlan: vi
       .fn()
       .mockImplementation(async (request: GeneratePlanRequest) => {
@@ -302,8 +334,16 @@ export function gateway(
             workItems: proposedPlan.workItems.map((workItem) => ({
               id: workItem.workItemId,
               title: workItem.title,
+              description: workItem.description,
               acceptanceCriteria: workItem.acceptanceCriteria,
               budget: workItem.budget,
+              requiresHumanReview: workItem.requiresHumanReview,
+              assignedAgentProfileName: workItem.assignedAgentProfileName,
+              assignedAgentModel: workItem.assignedAgentModel ?? {
+                kind: "provider_default",
+              },
+              assignedAgentEffort:
+                workItem.assignedAgentEffort ?? "provider_default",
             })),
             dependencies: [],
             criticalPath: ["generated-foundation"],
@@ -320,78 +360,11 @@ export function gateway(
         };
         return savedPlan;
       }),
-    startExecution: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        workItems: current.workItems.map((materializedWorkItem) =>
-          materializedWorkItem.workItem.id === request.workItemId
-            ? {
-                ...materializedWorkItem,
-                workItem: {
-                  ...materializedWorkItem.workItem,
-                  state: "running",
-                },
-              }
-            : materializedWorkItem,
-        ),
-      };
-      return current;
-    }),
-    coordinateBoard: vi.fn().mockImplementation(async () => current),
-    stopExecution: vi.fn().mockImplementation(async () => current),
-    executionActivity: vi
-      .fn()
-      .mockResolvedValue({ chunks: [], hasMore: false }),
-    recordReviewCheck: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        evidence: [
-          ...current.evidence,
-          {
-            id: request.evidenceId,
-            workItemId: request.workItemId,
-            kind: "quality_gate",
-            result: request.passed ? "passed" : "failed",
-            summary: request.summary,
-            recordedAt: request.recordedAt,
-          },
-        ],
-      };
-      return current;
-    }),
-    recordReviewDecision: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        evidence: [
-          ...current.evidence,
-          {
-            id: request.evidenceId,
-            workItemId: request.workItemId,
-            kind: "review_decision",
-            result: request.accepted ? "passed" : "failed",
-            summary: `${request.reviewer}: ${request.summary}`,
-            recordedAt: request.recordedAt,
-          },
-        ],
-      };
-      return current;
-    }),
-    recordCleanCodeReview: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        evidence: [
-          ...current.evidence,
-          {
-            id: request.evidenceId,
-            workItemId: request.workItemId,
-            kind: "clean_code_review",
-            result: request.actionableFindingCount === 0 ? "passed" : "failed",
-            summary: request.summary,
-            recordedAt: request.recordedAt,
-          },
-        ],
-      };
-      return current;
+    ...executionGatewayMethods({
+      current: () => current,
+      replace: (snapshot) => {
+        current = snapshot;
+      },
     }),
     ...linearGatewayMethods({
       current: () => current,

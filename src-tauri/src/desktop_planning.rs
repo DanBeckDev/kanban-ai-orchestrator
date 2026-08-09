@@ -3,7 +3,10 @@ use std::path::Path;
 use tauri::State;
 
 use crate::{
-    application::{BoardPlan, GeneratePlanRequest, generated_plan_request},
+    application::{
+        BoardPlan, GeneratePlanRequest, SaveProjectAgentSettingsRequest, generated_plan_request,
+    },
+    domain::ProjectAgentSettings,
     orchestration::{PlannerProfile, ProcessPlanGenerator},
 };
 
@@ -25,6 +28,26 @@ pub(crate) fn planner_profiles(
 ) -> Result<Vec<PlannerProfile>, String> {
     lock_service(&state)?
         .planner_profiles()
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn save_project_agent_settings(
+    state: State<'_, BoardDaemonState>,
+    request: SaveProjectAgentSettingsRequest,
+) -> Result<ProjectAgentSettings, String> {
+    lock_service(&state)?
+        .save_project_agent_settings(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn project_agent_settings(
+    state: State<'_, BoardDaemonState>,
+    board_id: String,
+) -> Result<Option<ProjectAgentSettings>, String> {
+    lock_service(&state)?
+        .project_agent_settings_for_board(&board_id)
         .map_err(error_message)
 }
 

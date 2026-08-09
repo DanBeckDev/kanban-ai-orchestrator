@@ -23,11 +23,13 @@ import type {
   ObserveLinearSharedFieldRequest,
   ProposePlanRequest,
   PlannerProfile,
+  ProjectAgentSettings,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   RepositorySetup,
   QueueLinearCommentRequest,
+  SaveProjectAgentSettingsRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -91,6 +93,20 @@ export const tauriBoardGateway: BoardGateway = {
   },
   plannerProfiles(): Promise<readonly PlannerProfile[]> {
     return invoke("planner_profiles");
+  },
+  saveProjectAgentSettings(
+    request: SaveProjectAgentSettingsRequest,
+  ): Promise<ProjectAgentSettings> {
+    return invoke("save_project_agent_settings", { request });
+  },
+  async projectAgentSettings(
+    boardId: string,
+  ): Promise<ProjectAgentSettings | undefined> {
+    const settings = await invoke<ProjectAgentSettings | null>(
+      "project_agent_settings",
+      { boardId },
+    );
+    return settings ?? undefined;
   },
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan> {
     return invoke("generate_plan", { request });

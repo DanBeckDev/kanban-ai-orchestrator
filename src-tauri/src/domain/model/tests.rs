@@ -41,6 +41,9 @@ fn versioned_domain_records_start_at_the_current_schema() {
         },
         state: WorkItemState::Inbox,
         requires_human_review: true,
+        assigned_agent_profile_name: None,
+        assigned_agent_model: Default::default(),
+        assigned_agent_effort: Default::default(),
     };
     let dependency = Dependency {
         schema: SchemaMetadata::current(),
@@ -130,6 +133,9 @@ fn serialized_records_preserve_the_schema_version_for_future_migrations() {
         budget: WorkItemBudget::default(),
         state: WorkItemState::Inbox,
         requires_human_review: false,
+        assigned_agent_profile_name: None,
+        assigned_agent_model: Default::default(),
+        assigned_agent_effort: Default::default(),
     };
 
     let serialized = serde_json::to_value(work_item).expect("work item should serialize");

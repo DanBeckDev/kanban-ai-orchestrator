@@ -28,6 +28,7 @@ where
             .ok_or_else(|| BoardServiceError::BoardNotFound {
                 board_id: board_id.clone(),
             })?;
+        let request = self.assign_default_worker(request, &board)?;
         let proposal = plan_proposal(request, &board);
         let scheduler =
             DaemonScheduler::propose(proposal.clone()).map_err(BoardServiceError::PlanProposal)?;
@@ -94,6 +95,52 @@ where
     }
 }
 
+impl<Repository> BoardService<Repository>
+where
+    Repository: BoardRepository,
+{
+    fn assign_default_worker(
+        &self,
+        mut request: ProposePlanRequest,
+        board: &Board,
+    ) -> Result<ProposePlanRequest, BoardServiceError<Repository::Error>> {
+        let default_worker = self
+            .repository
+            .project_agent_settings(&board.project_id)
+            .map_err(BoardServiceError::Repository)?
+            .and_then(|settings| settings.ticket_worker);
+        for work_item in &mut request.work_items {
+            if work_item.assigned_agent_profile_name.is_none() {
+                work_item.assigned_agent_profile_name = default_worker
+                    .as_ref()
+                    .map(|defaults| defaults.agent_profile_name.clone());
+            }
+            if work_item.assigned_agent_model.is_none() {
+                work_item.assigned_agent_model = default_worker
+                    .as_ref()
+                    .map(|defaults| defaults.model.clone());
+            }
+            if work_item.assigned_agent_effort.is_none() {
+                work_item.assigned_agent_effort =
+                    default_worker.as_ref().map(|defaults| defaults.effort);
+            }
+            if let Some(profile_name) = &work_item.assigned_agent_profile_name {
+                let exists = self
+                    .repository
+                    .agent_profile(profile_name)
+                    .map_err(BoardServiceError::Repository)?
+                    .is_some();
+                if !exists {
+                    return Err(BoardServiceError::AgentProfileNotFound {
+                        profile_name: profile_name.clone(),
+                    });
+                }
+            }
+        }
+        Ok(request)
+    }
+}
+
 fn validate_proposal_request<RepositoryError>(
     request: &ProposePlanRequest,
 ) -> Result<(), BoardServiceError<RepositoryError>> {
@@ -153,6 +200,9 @@ fn plan_proposal(request: ProposePlanRequest, board: &Board) -> PlanProposal {
                 budget: work_item.budget,
                 state: WorkItemState::Inbox,
                 requires_human_review: work_item.requires_human_review,
+                assigned_agent_profile_name: work_item.assigned_agent_profile_name,
+                assigned_agent_model: work_item.assigned_agent_model.unwrap_or_default(),
+                assigned_agent_effort: work_item.assigned_agent_effort.unwrap_or_default(),
             })
             .collect(),
         dependencies: request

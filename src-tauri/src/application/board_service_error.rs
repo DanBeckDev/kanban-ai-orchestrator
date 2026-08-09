@@ -29,6 +29,9 @@ pub enum BoardServiceError<RepositoryError> {
     WorkItemNotFound {
         work_item_id: WorkItemId,
     },
+    AgentProfileNotFound {
+        profile_name: String,
+    },
     ExecutionNotFound {
         execution_id: ExecutionId,
     },
@@ -127,6 +130,9 @@ where
             }
             Self::WorkItemNotFound { work_item_id } => {
                 write!(formatter, "work item {} was not found", work_item_id.0)
+            }
+            Self::AgentProfileNotFound { profile_name } => {
+                write!(formatter, "agent profile {profile_name} was not found")
             }
             Self::ExecutionNotFound { execution_id } => {
                 write!(formatter, "execution {} was not found", execution_id.0)
@@ -258,6 +264,7 @@ where
             | Self::RepositoryUnavailable { .. }
             | Self::BoardNotFound { .. }
             | Self::WorkItemNotFound { .. }
+            | Self::AgentProfileNotFound { .. }
             | Self::ExecutionNotFound { .. }
             | Self::ExecutionNotPending { .. }
             | Self::WorkItemNotReady { .. }

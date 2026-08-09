@@ -46,6 +46,9 @@ pub(super) fn work_item(id: &str, budget: WorkItemBudget) -> WorkItem {
         budget,
         state: WorkItemState::Ready,
         requires_human_review: false,
+        assigned_agent_profile_name: None,
+        assigned_agent_model: Default::default(),
+        assigned_agent_effort: Default::default(),
     }
 }
 

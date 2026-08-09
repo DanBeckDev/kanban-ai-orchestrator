@@ -16,6 +16,7 @@ mod external_link_store;
 mod local_board_store;
 mod plan_store;
 mod planner_profile_store;
+mod project_agent_settings_store;
 pub(crate) mod sqlite_event_store;
 
 pub use board_store_error::BoardStoreError;
@@ -24,6 +25,9 @@ pub use sqlite_event_store::SqliteEventStore;
 
 #[cfg(test)]
 mod board_store_tests;
+
+#[cfg(test)]
+mod board_store_test_fixtures;
 
 #[cfg(test)]
 mod sqlite_event_store_tests;

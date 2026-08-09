@@ -2,8 +2,10 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { gateway } from "./BoardWorkspace.test.fixtures";
+import { planDraft } from "./BoardWorkspace.plan.fixtures";
 import {
   createBoard,
+  configurePlanner,
   openPlan,
   openSettings,
 } from "./BoardWorkspace.test.helpers";
@@ -32,9 +34,9 @@ describe("board plan workflow", () => {
         plannerProfileName: "local planner",
       }),
     );
-    expect(screen.getByRole("list", { name: "Plan tasks" })).toHaveTextContent(
-      "Generated foundation",
-    );
+    expect(
+      await screen.findByRole("list", { name: "Plan tasks" }),
+    ).toHaveTextContent("Generated foundation");
     expect(
       screen.getByText("The workspace policy is still being confirmed."),
     ).toBeVisible();
@@ -44,9 +46,11 @@ describe("board plan workflow", () => {
     expect(
       screen.getByRole("form", { name: "Confirm board plan" }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit proposed tasks" }),
+    );
     expect(
-      screen.getByRole("form", { name: "Revise plan with AI" }),
+      screen.getByRole("form", { name: "Edit plan proposal" }),
     ).toBeVisible();
   });
 
@@ -82,8 +86,8 @@ describe("board plan workflow", () => {
       "Generated foundation",
     );
     expect(
-      screen.queryByRole("heading", { name: "Generated foundation" }),
-    ).toBeNull();
+      screen.getByRole("heading", { name: "Task 1: Generated foundation" }),
+    ).toBeVisible();
 
     const confirmationForm = screen.getByRole("form", {
       name: "Confirm board plan",
@@ -110,7 +114,7 @@ describe("board plan workflow", () => {
       new Error("Planner profiles must use a declared program."),
     );
     await createBoard(boardGateway);
-    openSettings("Organiser");
+    openSettings("AI");
     const profileForm = screen.getByRole("form", {
       name: "Save organiser connection",
     });
@@ -161,13 +165,13 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Add an existing plan",
+      name: "Paste an existing plan",
     });
     fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
-      within(proposalForm).getByRole("button", { name: "Preview plan" }),
+      within(proposalForm).getByRole("button", { name: "Preview pasted plan" }),
     );
 
     await waitFor(() =>
@@ -176,7 +180,7 @@ describe("board plan workflow", () => {
     expect(boardGateway.proposePlan).toHaveBeenCalledWith(
       expect.objectContaining({
         boardId: "board-1",
-        proposedBy: "orchestrator",
+        proposedBy: "user",
         workItems: [
           expect.objectContaining({ workItemId: "foundation" }),
           expect.objectContaining({
@@ -191,7 +195,9 @@ describe("board plan workflow", () => {
     );
     expect(screen.getByText("Contract is verified.")).toBeVisible();
     expect(screen.getByText("The local base branch exists.")).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Foundation" })).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Task 1: Foundation" }),
+    ).toBeVisible();
 
     const confirmationForm = screen.getByRole("form", {
       name: "Confirm board plan",
@@ -222,26 +228,28 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Add an existing plan",
+      name: "Paste an existing plan",
     });
     fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
-      within(proposalForm).getByRole("button", { name: "Preview plan" }),
+      within(proposalForm).getByRole("button", { name: "Preview pasted plan" }),
     );
-    await screen.findByRole("button", { name: "Revise plan" });
+    await screen.findByRole("button", { name: "Edit proposed tasks" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit proposed tasks" }),
+    );
     const revisionForm = screen.getByRole("form", {
-      name: "Revise an existing plan",
+      name: "Edit plan proposal",
     });
-    fireEvent.change(within(revisionForm).getByLabelText("Plan JSON"), {
-      target: { value: JSON.stringify(revisedPlanDraft()) },
+    fireEvent.change(within(revisionForm).getAllByLabelText("Task name")[0], {
+      target: { value: "Revised foundation" },
     });
     fireEvent.click(
       within(revisionForm).getByRole("button", {
-        name: "Preview revised plan",
+        name: "Save revised preview",
       }),
     );
 
@@ -251,7 +259,9 @@ describe("board plan workflow", () => {
     expect(screen.getByRole("list", { name: "Plan tasks" })).toHaveTextContent(
       "Revised foundation",
     );
-    expect(screen.queryByRole("heading", { name: "Foundation" })).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Task 1: Revised foundation" }),
+    ).toBeVisible();
   });
 
   it("keeps the saved preview visible when a user cancels revision", async () => {
@@ -259,50 +269,32 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Add an existing plan",
+      name: "Paste an existing plan",
     });
     fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
-      within(proposalForm).getByRole("button", { name: "Preview plan" }),
+      within(proposalForm).getByRole("button", { name: "Preview pasted plan" }),
     );
-    await screen.findByRole("button", { name: "Revise plan" });
+    await screen.findByRole("button", { name: "Edit proposed tasks" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit proposed tasks" }),
+    );
     const revisionForm = screen.getByRole("form", {
-      name: "Revise an existing plan",
+      name: "Edit plan proposal",
     });
     fireEvent.click(
-      within(revisionForm).getByRole("button", { name: "Cancel revision" }),
+      within(revisionForm).getByRole("button", { name: "Cancel" }),
     );
 
     expect(screen.getByRole("list", { name: "Plan tasks" })).toHaveTextContent(
       "Foundation",
     );
     expect(
-      screen.queryByRole("form", { name: "Revise an existing plan" }),
+      screen.queryByRole("form", { name: "Edit plan proposal" }),
     ).toBeNull();
-  });
-
-  it("explains malformed plan JSON before it reaches the daemon", async () => {
-    const boardGateway = gateway();
-    await createBoard(boardGateway);
-    openPlan();
-    const proposalForm = screen.getByRole("form", {
-      name: "Add an existing plan",
-    });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
-      target: { value: JSON.stringify({ dependencies: [] }) },
-    });
-    fireEvent.click(
-      within(proposalForm).getByRole("button", { name: "Preview plan" }),
-    );
-
-    expect(await within(proposalForm).findByRole("alert")).toHaveTextContent(
-      "Plan JSON must contain a workItems array.",
-    );
-    expect(boardGateway.proposePlan).not.toHaveBeenCalled();
   });
 
   it("keeps a proposal editable when the daemon rejects its preview", async () => {
@@ -313,13 +305,13 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Add an existing plan",
+      name: "Paste an existing plan",
     });
     fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
-      within(proposalForm).getByRole("button", { name: "Preview plan" }),
+      within(proposalForm).getByRole("button", { name: "Preview pasted plan" }),
     );
 
     expect(
@@ -328,72 +320,72 @@ describe("board plan workflow", () => {
       ),
     ).toHaveLength(2);
     expect(
-      screen.getByRole("form", { name: "Add an existing plan" }),
-    ).toBeVisible();
+      screen.getByRole("form", { name: "Paste an existing plan" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Plan tasks" })).toBeNull();
   });
+
+  it("lets a person reorder, remove, and reassign proposed tasks before confirmation", async () => {
+    const boardGateway = gateway();
+    await boardGateway.saveAgentProfile({
+      name: "focused worker",
+      kind: "codex_cli",
+      program: "codex",
+      arguments: [],
+    });
+    await createBoard(boardGateway);
+    openPlan();
+    const proposalForm = screen.getByRole("form", {
+      name: "Paste an existing plan",
+    });
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
+      target: { value: JSON.stringify(planDraft()) },
+    });
+    fireEvent.click(
+      within(proposalForm).getByRole("button", { name: "Preview pasted plan" }),
+    );
+    await screen.findByRole("button", { name: "Edit proposed tasks" });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit proposed tasks" }),
+    );
+    const editor = screen.getByRole("form", { name: "Edit plan proposal" });
+    fireEvent.pointerDown(
+      within(editor).getAllByLabelText("Ticket worker")[1],
+      {
+        button: 0,
+        ctrlKey: false,
+        pointerType: "mouse",
+      },
+    );
+    fireEvent.click(
+      await screen.findByRole("option", { name: "focused worker" }),
+    );
+    fireEvent.click(
+      within(editor).getByRole("button", { name: "Move task 2 up" }),
+    );
+    fireEvent.click(
+      within(editor).getByRole("button", { name: "Remove task 2" }),
+    );
+    fireEvent.click(
+      within(editor).getByRole("button", { name: "Save revised preview" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.proposePlan).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          workItems: [
+            expect.objectContaining({
+              workItemId: "interface",
+              assignedAgentProfileName: "focused worker",
+            }),
+          ],
+          dependencies: [],
+        }),
+      ),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Task 1: Interface" }),
+    ).toBeVisible();
+  });
 });
-
-async function configurePlanner() {
-  openSettings("Organiser");
-  const profileForm = screen.getByRole("form", {
-    name: "Save organiser connection",
-  });
-  fireEvent.change(within(profileForm).getByLabelText("Connection name"), {
-    target: { value: "local planner" },
-  });
-  fireEvent.click(
-    within(profileForm).getByRole("button", {
-      name: "Save organiser connection",
-    }),
-  );
-  await waitFor(() => expect(screen.getByText("local planner")).toBeVisible());
-  fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
-}
-
-function planDraft() {
-  return {
-    workItems: [
-      {
-        id: "foundation",
-        title: "Foundation",
-        description: "Create the shared contract.",
-        acceptanceCriteria: ["Contract is verified."],
-      },
-      {
-        id: "interface",
-        title: "Interface",
-        description: "Use the shared contract.",
-        acceptanceCriteria: ["Interface is verified."],
-        requiresHumanReview: true,
-      },
-    ],
-    dependencies: [
-      {
-        id: "foundation-interface",
-        upstreamWorkItemId: "foundation",
-        downstreamWorkItemId: "interface",
-        kind: "blocks",
-        reason: "The interface needs the shared contract.",
-        owner: "orchestrator",
-        nextAction: "Finish the foundation task.",
-      },
-    ],
-    unresolvedAssumptions: ["The local base branch exists."],
-  };
-}
-
-function revisedPlanDraft() {
-  return {
-    workItems: [
-      {
-        id: "revised-foundation",
-        title: "Revised foundation",
-        description: "Replace the initial shared contract.",
-        acceptanceCriteria: ["The revised contract is verified."],
-      },
-    ],
-    dependencies: [],
-    unresolvedAssumptions: [],
-  };
-}

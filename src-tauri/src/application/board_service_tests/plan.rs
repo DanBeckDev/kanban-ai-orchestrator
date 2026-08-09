@@ -356,6 +356,9 @@ fn work_item(id: &str) -> ProposedPlanWorkItemRequest {
         acceptance_criteria: vec![format!("{id} behavior is verified")],
         budget: Default::default(),
         requires_human_review: false,
+        assigned_agent_profile_name: None,
+        assigned_agent_model: None,
+        assigned_agent_effort: None,
     }
 }
 

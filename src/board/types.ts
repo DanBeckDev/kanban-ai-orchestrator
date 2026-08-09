@@ -1,3 +1,5 @@
+import type { AgentEffort, AgentModelPreference } from "./agentSettingsTypes";
+
 export type WorkItemState =
   | "inbox"
   | "planned"
@@ -54,6 +56,9 @@ export type WorkItem = Readonly<{
   budget: WorkItemBudget;
   state: WorkItemState;
   requiresHumanReview: boolean;
+  assignedAgentProfileName?: string;
+  assignedAgentModel: AgentModelPreference;
+  assignedAgentEffort: AgentEffort;
 }>;
 
 export type MaterializedWorkItem = Readonly<{
@@ -198,44 +203,6 @@ export type BoardSnapshot = Readonly<{
   connectorReconciliationItems: readonly ConnectorReconciliationItem[];
 }>;
 
-export type PlanWorkItemPreview = Readonly<{
-  id: string;
-  title: string;
-  acceptanceCriteria: readonly string[];
-  budget: WorkItemBudget;
-}>;
-
-export type PlanBudgetSummary = Readonly<{
-  maxAgentTurns?: number;
-  maxDurationSeconds?: number;
-  maxCostMicros?: number;
-  workItemsMissingAgentTurnBudget: readonly string[];
-  workItemsMissingDurationBudget: readonly string[];
-  workItemsMissingCostBudget: readonly string[];
-}>;
-
-export type PlanPreview = Readonly<{
-  id: string;
-  projectId: string;
-  workItems: readonly PlanWorkItemPreview[];
-  dependencies: readonly Dependency[];
-  criticalPath: readonly string[];
-  parallelStages: readonly (readonly string[])[];
-  budget: PlanBudgetSummary;
-  unresolvedAssumptions: readonly string[];
-}>;
-
-export type PlanConfirmation = Readonly<{
-  planId: string;
-  confirmedBy: string;
-  confirmedAt: string;
-}>;
-
-export type BoardPlan = Readonly<{
-  preview: PlanPreview;
-  confirmation?: PlanConfirmation;
-}>;
-
 export type CreateProjectRequest = Readonly<{
   projectId: string;
   name: string;
@@ -292,42 +259,6 @@ export type AddDependencyRequest = Readonly<{
   createdAt: string;
 }>;
 
-export type ProposedPlanWorkItemRequest = Readonly<{
-  workItemId: string;
-  title: string;
-  description: string;
-  acceptanceCriteria: readonly string[];
-  budget: WorkItemBudget;
-  requiresHumanReview: boolean;
-}>;
-
-export type ProposedPlanDependencyRequest = Readonly<{
-  dependencyId: string;
-  upstreamWorkItemId: string;
-  downstreamWorkItemId: string;
-  kind: DependencyKind;
-  reason: string;
-  owner: string;
-  nextAction: string;
-}>;
-
-export type ProposePlanRequest = Readonly<{
-  planId: string;
-  boardId: string;
-  proposedBy: string;
-  proposedAt: string;
-  workItems: readonly ProposedPlanWorkItemRequest[];
-  dependencies: readonly ProposedPlanDependencyRequest[];
-  unresolvedAssumptions: readonly string[];
-}>;
-
-export type ConfirmPlanRequest = Readonly<{
-  boardId: string;
-  planId: string;
-  confirmedBy: string;
-  confirmedAt: string;
-}>;
-
 export type TransitionWorkItemRequest = Readonly<{
   eventId: string;
   workItemId: string;
@@ -362,6 +293,9 @@ export type PlannerProfile = Readonly<{
   program: string;
   arguments: readonly string[];
 }>;
+
+export type * from "./agentSettingsTypes";
+export type * from "./planTypes";
 
 export type GeneratePlanRequest = Readonly<{
   boardId: string;

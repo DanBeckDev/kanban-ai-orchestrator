@@ -14,8 +14,8 @@ describe("board task agents", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
-    openSettings("Agent");
-    fireEvent.click(screen.getByText("Set up a custom agent"));
+    openSettings("AI");
+    fireEvent.click(screen.getByText("Set up a custom ticket worker"));
     const profileForm = screen.getByRole("form", { name: /save agent/i });
     fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
       target: { value: "structured-worker" },
@@ -68,8 +68,8 @@ describe("board task agents", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
-    openSettings("Agent");
-    fireEvent.click(screen.getByText("Set up a custom agent"));
+    openSettings("AI");
+    fireEvent.click(screen.getByText("Set up a custom ticket worker"));
     const profileForm = screen.getByRole("form", { name: /save agent/i });
     fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
       target: { value: "cline-pass-worker" },

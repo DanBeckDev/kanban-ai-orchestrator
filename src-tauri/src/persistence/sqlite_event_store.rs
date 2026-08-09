@@ -18,14 +18,14 @@ use super::{
     event_store_schema::{
         create_agent_profile_schema, create_connector_sync_schema, create_execution_schema,
         create_external_link_schema, create_initial_schema, create_planner_profile_schema,
-        create_policy_audit_schema,
+        create_policy_audit_schema, create_project_agent_settings_schema,
     },
     event_store_support::{
         deserialize_recorded_event, event_sequence, idempotent_creation, idempotent_transition,
     },
 };
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 11;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 12;
 pub struct SqliteEventStore {
     pub(crate) connection: Connection,
 }
@@ -307,6 +307,11 @@ impl SqliteEventStore {
         if current_version < 11 {
             crate::persistence::board_library_store::create_board_library_schema(&transaction)?;
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [11])?;
+        }
+
+        if current_version < 12 {
+            create_project_agent_settings_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [12])?;
         }
 
         transaction.commit()?;

@@ -146,7 +146,10 @@ without its existing authorization.
   equivalence. UX-006 implements the focused ticket entry and progressive
   disclosure; ORCH-008 supplies the typed daemon contract for the complete
   ticket-prompt action set.
-- ORCH-006 implements draft editing plus distinct organiser/worker selection;
+- ORCH-006 completed draft editing plus distinct durable organiser/worker
+  selection on 2026-08-10. It uses each provider's signed-in default model and
+  stores a safe effort preference without exposing raw command flags; verified
+  model discovery and provider-native argument mapping remain adapter work.
   ORCH-007 implements durable autonomous supervision. These product surfaces
   must use their daemon-authoritative contracts rather than UI timers.
 - UX-007 validates a current build with representative developers. Its findings

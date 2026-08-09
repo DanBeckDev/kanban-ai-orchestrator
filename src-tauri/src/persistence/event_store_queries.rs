@@ -125,6 +125,9 @@ mod tests {
                     budget: WorkItemBudget::default(),
                     state: WorkItemState::Inbox,
                     requires_human_review: false,
+                    assigned_agent_profile_name: None,
+                    assigned_agent_model: Default::default(),
+                    assigned_agent_effort: Default::default(),
                 },
                 recorded_at: "2026-08-08T00:00:00Z".to_owned(),
             })

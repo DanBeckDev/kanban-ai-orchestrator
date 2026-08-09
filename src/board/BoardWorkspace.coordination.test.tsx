@@ -10,16 +10,20 @@ describe("board coordination", () => {
   });
 
   it("starts bounded coordination only after the user enables it", async () => {
-    window.localStorage.setItem(
-      "kanban-ai-orchestrator.default-agent-profile",
-      "codex-cli",
-    );
     const boardGateway = gateway(snapshot([workItem("foundation", "inbox")]));
     await boardGateway.saveAgentProfile({
       name: "codex-cli",
       kind: "codex_cli",
       program: "codex",
       arguments: [],
+    });
+    await boardGateway.saveProjectAgentSettings({
+      boardId: "board-1",
+      ticketWorker: {
+        agentProfileName: "codex-cli",
+        model: { kind: "provider_default" },
+        effort: "provider_default",
+      },
     });
 
     await createBoard(boardGateway);

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import { App } from "../App";
 import type { BoardGateway } from "./types";
@@ -36,9 +42,7 @@ export function openDependencies() {
   selectBoardView("Dependencies");
 }
 
-export function openSettings(
-  section?: "Agent" | "Organiser" | "Linear" | "Project",
-) {
+export function openSettings(section?: "AI" | "Linear" | "Project") {
   selectBoardView("Settings");
   if (section !== undefined) {
     selectTab(section);
@@ -53,6 +57,27 @@ export function openTask(title: string) {
     throw new Error(`No task action is available for ${title}.`);
   }
   fireEvent.click(action);
+}
+
+export async function configurePlanner() {
+  openSettings("AI");
+  const profileForm = screen.getByRole("form", {
+    name: "Save organiser connection",
+  });
+  fireEvent.change(within(profileForm).getByLabelText("Connection name"), {
+    target: { value: "local planner" },
+  });
+  fireEvent.click(
+    within(profileForm).getByRole("button", {
+      name: "Save organiser connection",
+    }),
+  );
+  await waitFor(() => {
+    if (screen.queryAllByText("local planner").length === 0) {
+      throw new Error("The organiser connection has not been saved yet.");
+    }
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
 }
 
 export async function selectOption(label: string, name: string | RegExp) {

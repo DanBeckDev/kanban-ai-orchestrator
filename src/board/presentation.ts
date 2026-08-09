@@ -43,6 +43,24 @@ export function workItemsForColumn(
     .filter((workItem) => column.states.includes(workItem.state));
 }
 
+export function boardSummary(snapshot: BoardSnapshot): string {
+  const workItems = snapshot.workItems.map(({ workItem }) => workItem);
+  const activeCount = workItems.filter(
+    ({ state }) => state === "running",
+  ).length;
+  const attentionCount = workItems.filter(({ state }) =>
+    ["awaiting_input", "review", "blocked", "failed", "interrupted"].includes(
+      state,
+    ),
+  ).length;
+  if (attentionCount > 0) {
+    return `${activeCount} active · ${attentionCount} need your attention`;
+  }
+  return activeCount > 0
+    ? `${activeCount} active · everything else is moving normally`
+    : `${workItems.length} tasks · nothing needs your attention`;
+}
+
 export function blockersFor(
   snapshot: BoardSnapshot,
   workItemId: string,

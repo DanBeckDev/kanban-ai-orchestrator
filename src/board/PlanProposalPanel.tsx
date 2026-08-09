@@ -1,8 +1,14 @@
 import { useState, type FormEvent } from "react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
 import { GoalPlanForm } from "./GoalPlanForm";
+import { PlanDraftEditor } from "./PlanDraftEditor";
+import { PlanPreview } from "./PlanPreview";
 import { timestamp } from "./presentation";
 import type {
+  AgentProfile,
   BoardPlan,
   ConfirmPlanRequest,
   DependencyKind,
@@ -13,13 +19,16 @@ import type {
 } from "./types";
 
 type PlanProposalPanelProps = Readonly<{
+  agentProfiles: readonly AgentProfile[];
   boardId: string;
   busy: boolean;
+  defaultPlannerProfileName?: string;
+  defaultTicketWorkerProfileName?: string;
   plan?: BoardPlan;
+  plannerProfiles: readonly PlannerProfile[];
   onConfirm: (request: ConfirmPlanRequest) => Promise<void>;
   onGenerate: (request: GeneratePlanRequest) => Promise<void>;
   onPropose: (request: ProposePlanRequest) => Promise<void>;
-  plannerProfiles: readonly PlannerProfile[];
 }>;
 
 type PlanDraft = Readonly<{
@@ -35,6 +44,7 @@ type PlanDraftWorkItem = Readonly<{
   acceptanceCriteria: readonly string[];
   budget?: WorkItemBudget;
   requiresHumanReview?: boolean;
+  assignedAgentProfileName?: string;
 }>;
 
 type PlanDraftDependency = Readonly<{
@@ -47,49 +57,22 @@ type PlanDraftDependency = Readonly<{
   nextAction: string;
 }>;
 
-const draftExample = `{
-  "workItems": [
-    {
-      "id": "foundation",
-      "title": "Define the contract",
-      "description": "Create the shared data contract.",
-      "acceptanceCriteria": ["Contract tests pass."],
-      "budget": { "maxAgentTurns": 8 },
-      "requiresHumanReview": true
-    }
-  ],
-  "dependencies": [],
-  "unresolvedAssumptions": []
-}`;
-
 export function PlanProposalPanel({
+  agentProfiles,
   boardId,
   busy,
+  defaultPlannerProfileName,
+  defaultTicketWorkerProfileName,
   plan,
+  plannerProfiles,
   onConfirm,
   onGenerate,
   onPropose,
-  plannerProfiles,
 }: PlanProposalPanelProps) {
-  const [proposedBy, setProposedBy] = useState("orchestrator");
-  const [draftText, setDraftText] = useState(draftExample);
   const [confirmedBy, setConfirmedBy] = useState("");
-  const [draftError, setDraftError] = useState<string>();
+  const [draftText, setDraftText] = useState("");
   const [editing, setEditing] = useState(false);
-
-  async function propose(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      const proposedAt = timestamp();
-      await onPropose(
-        planRequest({ boardId, draftText, proposedAt, proposedBy }),
-      );
-      setDraftError(undefined);
-      setEditing(false);
-    } catch (error) {
-      setDraftError(errorMessage(error));
-    }
-  }
+  const [error, setError] = useState<string>();
 
   async function confirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,48 +85,74 @@ export function PlanProposalPanel({
     });
   }
 
+  async function saveRevision(request: ProposePlanRequest) {
+    try {
+      await onPropose(request);
+      setError(undefined);
+      setEditing(false);
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+      throw operationError;
+    }
+  }
+
+  async function submitPastedPlan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      await onPropose(planRequest(boardId, draftText));
+      setError(undefined);
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+    }
+  }
+
+  if (plan !== undefined && editing) {
+    return (
+      <section
+        aria-labelledby="plan-proposal-title"
+        className="panel form-panel"
+      >
+        <h3 id="plan-proposal-title">Plan with AI</h3>
+        {error !== undefined && <ErrorNotice message={error} />}
+        <PlanDraftEditor
+          agentProfiles={agentProfiles}
+          boardId={boardId}
+          busy={busy}
+          defaultTicketWorkerProfileName={defaultTicketWorkerProfileName}
+          plan={plan}
+          onCancel={() => setEditing(false)}
+          onSave={saveRevision}
+        />
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="plan-proposal-title" className="panel form-panel">
       <div>
         <h3 id="plan-proposal-title">Plan with AI</h3>
         <p className="field-hint">
-          Ask an organiser to break down the outcome. You can review every task
-          and its dependencies before anything is added to your board.
+          Ask the organiser to break an outcome into a reviewable plan. No task
+          is created or started until you confirm the proposal.
         </p>
       </div>
-      {plan === undefined || editing ? (
+      {error !== undefined && <ErrorNotice message={error} />}
+      {plan === undefined ? (
         <>
-          {plan !== undefined && (
-            <p className="field-hint">
-              Replace this unconfirmed proposal with a revised plan. The earlier
-              proposal will not create any tasks.
-            </p>
-          )}
           <GoalPlanForm
             boardId={boardId}
             busy={busy}
-            hasProposal={plan !== undefined}
+            defaultPlannerProfileName={defaultPlannerProfileName}
+            hasProposal={false}
             onGenerate={onGenerate}
             profiles={plannerProfiles}
           />
-          <form
-            aria-label={
-              plan === undefined
-                ? "Add an existing plan"
-                : "Revise an existing plan"
-            }
-            onSubmit={propose}
-          >
-            <details>
-              <summary>Advanced: paste an existing plan</summary>
-              <label>
-                Who made this plan
-                <input
-                  required
-                  value={proposedBy}
-                  onChange={(event) => setProposedBy(event.target.value)}
-                />
-              </label>
+          <details className="advanced-disclosure">
+            <summary>Paste an existing plan</summary>
+            <form
+              aria-label="Paste an existing plan"
+              onSubmit={submitPastedPlan}
+            >
               <label>
                 Plan JSON
                 <textarea
@@ -152,150 +161,43 @@ export function PlanProposalPanel({
                   onChange={(event) => setDraftText(event.target.value)}
                 />
               </label>
-              {draftError !== undefined && (
-                <p className="inline-error" role="alert">
-                  {draftError}
-                </p>
-              )}
-              <button disabled={busy} type="submit">
-                {plan === undefined ? "Preview plan" : "Preview revised plan"}
-              </button>
-            </details>
-            {plan !== undefined && (
-              <button
-                disabled={busy}
-                onClick={() => setEditing(false)}
-                type="button"
-              >
-                Cancel revision
-              </button>
-            )}
-          </form>
+              <Button disabled={busy} type="submit" variant="outline">
+                Preview pasted plan
+              </Button>
+            </form>
+          </details>
         </>
       ) : (
         <PlanPreview
+          agentProfiles={agentProfiles}
           busy={busy}
           confirmedBy={confirmedBy}
+          plan={plan}
           onConfirmedByChange={setConfirmedBy}
           onConfirm={confirm}
           onEdit={() => setEditing(true)}
-          plan={plan}
         />
       )}
     </section>
   );
 }
 
-function PlanPreview({
-  busy,
-  confirmedBy,
-  onConfirmedByChange,
-  onConfirm,
-  onEdit,
-  plan,
-}: Readonly<{
-  busy: boolean;
-  confirmedBy: string;
-  onConfirmedByChange: (value: string) => void;
-  onConfirm: (event: FormEvent<HTMLFormElement>) => Promise<void>;
-  onEdit: () => void;
-  plan: BoardPlan;
-}>) {
-  const { preview } = plan;
-  const taskNames = new Map(
-    preview.workItems.map((workItem) => [workItem.id, workItem.title]),
-  );
+function ErrorNotice({ message }: Readonly<{ message: string }>) {
   return (
-    <div className="plan-preview">
-      <p>Proposed plan · {preview.workItems.length} tasks</p>
-      <p>
-        Work that must happen in order:{" "}
-        {formatTaskSequence(preview.criticalPath, taskNames) || "None"}
-      </p>
-      <ol aria-label="Plan tasks" className="criteria-list">
-        {preview.workItems.map((workItem) => (
-          <li key={workItem.id}>
-            <strong>{workItem.title}</strong>
-            <span className="budget-summary">
-              {formatBudget(workItem.budget)}
-            </span>
-            <ul>
-              {workItem.acceptanceCriteria.map((criterion) => (
-                <li key={criterion}>{criterion}</li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ol>
-      <p>
-        Work that can happen together:{" "}
-        {formatStages(preview.parallelStages, taskNames)}
-      </p>
-      <p className="budget-summary">
-        {formatPlanBudget(preview.budget, taskNames)}
-      </p>
-      {preview.dependencies.length > 0 && (
-        <ul aria-label="Plan dependencies" className="criteria-list">
-          {preview.dependencies.map((dependency) => (
-            <li key={dependency.id}>
-              {taskName(dependency.upstreamWorkItemId, taskNames)} must happen
-              before {taskName(dependency.downstreamWorkItemId, taskNames)}
-            </li>
-          ))}
-        </ul>
-      )}
-      {preview.unresolvedAssumptions.length > 0 && (
-        <ul aria-label="Unresolved plan assumptions" className="criteria-list">
-          {preview.unresolvedAssumptions.map((assumption) => (
-            <li key={assumption}>{assumption}</li>
-          ))}
-        </ul>
-      )}
-      {plan.confirmation === undefined ? (
-        <>
-          <button disabled={busy} onClick={onEdit} type="button">
-            Revise plan
-          </button>
-          <form aria-label="Confirm board plan" onSubmit={onConfirm}>
-            <label>
-              Your name
-              <input
-                required
-                value={confirmedBy}
-                onChange={(event) => onConfirmedByChange(event.target.value)}
-              />
-            </label>
-            <button disabled={busy} type="submit">
-              Confirm and create tasks
-            </button>
-          </form>
-        </>
-      ) : (
-        <p className="local-status">
-          Confirmed by {plan.confirmation.confirmedBy} at{" "}
-          {plan.confirmation.confirmedAt}
-        </p>
-      )}
-    </div>
+    <Alert role="alert" variant="destructive">
+      <AlertTitle>Kanban could not update the plan preview</AlertTitle>
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
   );
 }
 
-function planRequest({
-  boardId,
-  draftText,
-  proposedAt,
-  proposedBy,
-}: Readonly<{
-  boardId: string;
-  draftText: string;
-  proposedAt: string;
-  proposedBy: string;
-}>): ProposePlanRequest {
+function planRequest(boardId: string, draftText: string): ProposePlanRequest {
   const draft = parseDraft(draftText);
+  const proposedAt = timestamp();
   return {
     planId: `plan-${proposedAt}`,
     boardId,
-    proposedBy,
+    proposedBy: "user",
     proposedAt,
     workItems: draft.workItems.map((workItem) => ({
       workItemId: workItem.id,
@@ -304,6 +206,9 @@ function planRequest({
       acceptanceCriteria: workItem.acceptanceCriteria,
       budget: workItem.budget ?? {},
       requiresHumanReview: workItem.requiresHumanReview ?? false,
+      assignedAgentProfileName: workItem.assignedAgentProfileName,
+      assignedAgentModel: undefined,
+      assignedAgentEffort: undefined,
     })),
     dependencies: (draft.dependencies ?? []).map((dependency) => ({
       dependencyId: dependency.id,
@@ -329,67 +234,6 @@ function parseDraft(draftText: string): PlanDraft {
     throw new Error("Plan JSON must contain a workItems array.");
   }
   return parsed as PlanDraft;
-}
-
-function formatTaskSequence(
-  taskIds: readonly string[],
-  taskNames: ReadonlyMap<string, string>,
-): string {
-  return taskIds.map((taskId) => taskName(taskId, taskNames)).join(" → ");
-}
-
-function formatStages(
-  stages: readonly (readonly string[])[],
-  taskNames: ReadonlyMap<string, string>,
-): string {
-  return stages
-    .map(
-      (stage, index) => `${index + 1}: ${formatTaskSequence(stage, taskNames)}`,
-    )
-    .join(" · ");
-}
-
-function taskName(
-  taskId: string,
-  taskNames: ReadonlyMap<string, string>,
-): string {
-  return taskNames.get(taskId) ?? taskId;
-}
-
-function formatBudget(budget: WorkItemBudget): string {
-  const limits = [
-    budget.maxAgentTurns === undefined
-      ? undefined
-      : `turns ${budget.maxAgentTurns}`,
-    budget.maxDurationSeconds === undefined
-      ? undefined
-      : `seconds ${budget.maxDurationSeconds}`,
-    budget.maxCostMicros === undefined
-      ? undefined
-      : `cost µ${budget.maxCostMicros}`,
-  ].filter((limit): limit is string => limit !== undefined);
-  return limits.length > 0
-    ? `Budget: ${limits.join(" · ")}`
-    : "Budget: not set";
-}
-
-function formatPlanBudget(
-  budget: BoardPlan["preview"]["budget"],
-  taskNames: ReadonlyMap<string, string>,
-): string {
-  const totals = formatBudget(budget);
-  const missing = [
-    ...budget.workItemsMissingAgentTurnBudget.map(
-      (id) => `${taskName(id, taskNames)} has no turn limit`,
-    ),
-    ...budget.workItemsMissingDurationBudget.map(
-      (id) => `${taskName(id, taskNames)} has no duration limit`,
-    ),
-    ...budget.workItemsMissingCostBudget.map(
-      (id) => `${taskName(id, taskNames)} has no cost limit`,
-    ),
-  ];
-  return missing.length > 0 ? `${totals}. ${missing.join("; ")}.` : totals;
 }
 
 function errorMessage(error: unknown): string {

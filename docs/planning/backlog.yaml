@@ -224,7 +224,7 @@ tasks:
   - id: ORCH-006
     epic: ORCH
     title: Complete reviewable AI plan editing and separate organiser selection
-    status: ready
+    status: done
     priority: P0
     depends_on: [ORCH-005, UX-004, UX-006]
     acceptance_criteria:
@@ -232,7 +232,15 @@ tasks:
       - Project settings enables detected installed providers and stores separate, effective defaults for the organiser and new ticket workers: provider, safe model choice, and effort. Those choices are used by the typed plan/worker contracts, survive reopening, and never expose command flags or credentials on the normal path.
       - The plan review replaces opaque task IDs with names everywhere, shows scope and assumptions, and preserves confirmation as the only materialization authority.
       - Tests cover edited/rejected/approved plans, worker reassignment, unavailable providers, and preservation of dependency and confirmation validation.
-    notes: This completes the human-supervised organiser experience before any model assesses worker outcomes automatically.
+    notes: >-
+      Completed on 2026-08-10 with durable project-scoped organiser and ticket-worker
+      defaults, provider-default model handling, effort preference, one-click installed
+      worker selection, a non-opaque editable plan review, and typed worker assignments
+      that survive reopening. BookCtx — AI Engineering, Chip Huyen, “Planning overview”
+      (chunk 26) supports the project-specific inference that plan generation, review,
+      and execution must stay separate and retain human confirmation before material
+      changes. Provider-native model discovery and argument mapping remain adapter work;
+      the normal product path never stores credentials or exposes command flags.
 
   - id: ORCH-007
     epic: ORCH

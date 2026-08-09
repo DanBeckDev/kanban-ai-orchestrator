@@ -19,12 +19,14 @@ import type {
   LinearIssueSummary,
   LinearOAuthConfiguration,
   PlannerProfile,
+  ProjectAgentSettings,
   ProposePlanRequest,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   RepositorySetup,
   StartExecutionRequest,
+  SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
 } from "./types";
 import type {
@@ -55,6 +57,12 @@ export interface BoardGateway {
   agentProviderAvailability(): Promise<readonly AgentProviderAvailability[]>;
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile>;
   plannerProfiles(): Promise<readonly PlannerProfile[]>;
+  saveProjectAgentSettings(
+    request: SaveProjectAgentSettingsRequest,
+  ): Promise<ProjectAgentSettings>;
+  projectAgentSettings(
+    boardId: string,
+  ): Promise<ProjectAgentSettings | undefined>;
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   coordinateBoard(

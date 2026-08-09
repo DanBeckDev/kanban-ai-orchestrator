@@ -3,6 +3,7 @@ import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
 import { LinearImportForm } from "./LinearImportForm";
+import { LinearSyncPanel } from "./LinearSyncPanel";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { PlannerProfileForm } from "./PlannerProfileForm";
 import { TaskForm } from "./TaskForm";
@@ -21,6 +22,7 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  QueueLinearCommentRequest,
   ProposePlanRequest,
   PlannerProfile,
   RecordCleanCodeReviewRequest,
@@ -45,6 +47,10 @@ type BoardViewProps = Readonly<{
   linearConnectionStatus: LinearConnectionStatus;
   linearIssues: readonly LinearIssueSummary[];
   onConnectLinear: (configuration: LinearOAuthConfiguration) => Promise<void>;
+  onEnableLinearCommentAccess: () => Promise<void>;
+  onQueueLinearComment: (request: QueueLinearCommentRequest) => Promise<void>;
+  onDeliverLinearComment: (outboxItemId: string) => Promise<void>;
+  onRefreshLinearSharedFields: (externalLinkId: string) => Promise<void>;
   onLoadLinearIssues: () => Promise<void>;
   onProposePlan: (request: ProposePlanRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
@@ -80,6 +86,10 @@ export function BoardView({
   linearConnectionStatus,
   linearIssues,
   onConnectLinear,
+  onEnableLinearCommentAccess,
+  onQueueLinearComment,
+  onDeliverLinearComment,
+  onRefreshLinearSharedFields,
   onLoadLinearIssues,
   onProposePlan,
   onSaveAgentProfile,
@@ -171,6 +181,7 @@ export function BoardView({
             busy={busy}
             status={linearConnectionStatus}
             onConnect={onConnectLinear}
+            onEnableCommentAccess={onEnableLinearCommentAccess}
           />
           <LinearImportForm
             busy={busy}
@@ -180,6 +191,13 @@ export function BoardView({
             onImportBlocker={onImportLinearBlocker}
             onImportIssue={onImportLinearIssue}
             onLoadIssues={onLoadLinearIssues}
+          />
+          <LinearSyncPanel
+            busy={busy}
+            snapshot={snapshot}
+            onDeliver={onDeliverLinearComment}
+            onQueue={onQueueLinearComment}
+            onRefresh={onRefreshLinearSharedFields}
           />
         </aside>
       </div>

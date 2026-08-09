@@ -1,7 +1,8 @@
 use std::{error::Error, fmt};
 
 use crate::domain::{
-    BoardId, EvidenceKind, EvidenceResult, ExecutionId, ProjectId, WorkItemId, WorkItemState,
+    BoardId, EvidenceKind, EvidenceResult, ExecutionId, ExternalLinkId, ProjectId, WorkItemId,
+    WorkItemState,
 };
 
 #[derive(Debug)]
@@ -63,6 +64,19 @@ pub enum BoardServiceError<RepositoryError> {
     ExternalResourceNotLinked {
         connector_id: &'static str,
         external_id: String,
+    },
+    ExternalLinkNotFound {
+        link_id: ExternalLinkId,
+    },
+    ExternalSyncRequiresLinkedExecution {
+        work_item_id: WorkItemId,
+    },
+    InvalidPublicExternalComment {
+        reason: &'static str,
+    },
+    ExternalSyncValueTooLong {
+        field: &'static str,
+        maximum_bytes: usize,
     },
     MissingRecordedEvidence {
         work_item_id: WorkItemId,
@@ -174,6 +188,27 @@ where
                 formatter,
                 "external resource {connector_id}:{external_id} is not linked to a local task"
             ),
+            Self::ExternalLinkNotFound { link_id } => {
+                write!(formatter, "external link {} was not found", link_id.0)
+            }
+            Self::ExternalSyncRequiresLinkedExecution { work_item_id } => write!(
+                formatter,
+                "work item {} needs a Linear linked-execution connection before it can queue an external update",
+                work_item_id.0
+            ),
+            Self::InvalidPublicExternalComment { reason } => {
+                write!(
+                    formatter,
+                    "public Linear comment is not safe to queue: {reason}"
+                )
+            }
+            Self::ExternalSyncValueTooLong {
+                field,
+                maximum_bytes,
+            } => write!(
+                formatter,
+                "{field} exceeds the {maximum_bytes}-byte connector-sync limit"
+            ),
             Self::MissingRecordedEvidence {
                 work_item_id,
                 kind,
@@ -221,6 +256,10 @@ where
             | Self::CleanCodeReviewAlreadyRecorded { .. }
             | Self::CleanCodeReviewSummaryTooLong { .. }
             | Self::ExternalResourceNotLinked { .. }
+            | Self::ExternalLinkNotFound { .. }
+            | Self::ExternalSyncRequiresLinkedExecution { .. }
+            | Self::InvalidPublicExternalComment { .. }
+            | Self::ExternalSyncValueTooLong { .. }
             | Self::MissingRecordedEvidence { .. }
             | Self::PlanNotFound { .. } => None,
         }

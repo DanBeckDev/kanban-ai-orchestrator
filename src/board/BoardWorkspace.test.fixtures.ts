@@ -1,5 +1,7 @@
 import { vi } from "vitest";
 
+import { linearGatewayMethods } from "./BoardWorkspace.test.linear.fixtures";
+
 import type {
   AgentProfile,
   BoardGateway,
@@ -8,9 +10,6 @@ import type {
   ConfirmPlanRequest,
   CreateWorkItemRequest,
   GeneratePlanRequest,
-  LinearConnectionStatus,
-  LinearIssueSummary,
-  LinearOAuthConfiguration,
   ProposePlanRequest,
   PlannerProfile,
   TransitionWorkItemRequest,
@@ -31,6 +30,8 @@ export function snapshot(
     executions,
     evidence,
     externalLinks: [],
+    connectorOutboxItems: [],
+    connectorReconciliationItems: [],
   };
 }
 
@@ -55,8 +56,6 @@ export function workItem(
 
 export function gateway(initialSnapshot = snapshot()): BoardGateway {
   let current = initialSnapshot;
-  let linearConnectionStatus: LinearConnectionStatus = { kind: "disconnected" };
-  const linearIssues: readonly LinearIssueSummary[] = [];
   let profiles: readonly AgentProfile[] = [];
   let plannerProfiles: readonly PlannerProfile[] = [];
   let savedPlan: BoardPlan | undefined;
@@ -337,59 +336,11 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
       };
       return current;
     }),
-    beginLinearOAuth: vi
-      .fn()
-      .mockImplementation(async (_configuration: LinearOAuthConfiguration) => {
-        linearConnectionStatus = { kind: "awaiting_authorization" };
-        return linearConnectionStatus;
-      }),
-    linearConnectionStatus: vi
-      .fn()
-      .mockImplementation(async () => linearConnectionStatus),
-    linearAssignedIssues: vi.fn().mockImplementation(async () => linearIssues),
-    importLinearIssue: vi.fn().mockImplementation(async (request) => {
-      current = {
-        ...current,
-        externalLinks: [
-          ...current.externalLinks,
-          {
-            id: request.externalLinkId,
-            workItemId: request.workItemId,
-            connectorId: "linear",
-            provenance: "imported",
-            externalId: request.issueId,
-            displayIdentifier: request.displayIdentifier,
-            url: request.url,
-            connectionMode: request.connectionMode,
-          },
-        ],
-      };
-      return current;
-    }),
-    importLinearBlocker: vi.fn().mockImplementation(async (request) => {
-      const upstream = current.externalLinks.find(
-        (link) => link.externalId === request.upstreamIssueId,
-      );
-      const downstream = current.externalLinks.find(
-        (link) => link.externalId === request.downstreamIssueId,
-      );
-      current = {
-        ...current,
-        dependencies: [
-          ...current.dependencies,
-          {
-            id: request.dependencyId,
-            upstreamWorkItemId: upstream?.workItemId ?? request.upstreamIssueId,
-            downstreamWorkItemId:
-              downstream?.workItemId ?? request.downstreamIssueId,
-            kind: "blocks",
-            reason: request.reason,
-            owner: request.owner,
-            nextAction: request.nextAction,
-          },
-        ],
-      };
-      return current;
+    ...linearGatewayMethods({
+      current: () => current,
+      replace: (snapshot) => {
+        current = snapshot;
+      },
     }),
     boardSnapshot: vi.fn().mockImplementation(async () => current),
   };

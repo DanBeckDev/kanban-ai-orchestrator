@@ -14,6 +14,8 @@ mod execution_start_request;
 mod generated_plan_service;
 mod linear_import_request;
 mod linear_import_service;
+mod linear_sync_request;
+mod linear_sync_service;
 mod plan_requests;
 mod plan_service;
 mod planner_profile_service;
@@ -39,6 +41,8 @@ pub use execution_launch::{
 pub use execution_start_request::StartExecutionRequest;
 pub use generated_plan_service::generated_plan_request;
 pub use linear_import_request::{ImportLinearBlockerRequest, ImportLinearIssueRequest};
+pub use linear_sync_request::{ObserveLinearSharedFieldRequest, QueueLinearCommentRequest};
+pub use linear_sync_service::{LinearCommentDelivery, LinearIssueSyncTarget};
 pub use plan_requests::{
     ConfirmPlanRequest, GeneratePlanRequest, ProposePlanRequest, ProposedPlanDependencyRequest,
     ProposedPlanWorkItemRequest,
@@ -52,6 +56,9 @@ mod board_service_tests;
 
 #[cfg(test)]
 mod linear_import_service_tests;
+
+#[cfg(test)]
+mod linear_sync_service_tests;
 
 #[cfg(test)]
 mod execution_event_controller_tests;

@@ -8,12 +8,14 @@ type LinearConnectionPanelProps = Readonly<{
   busy: boolean;
   status: LinearConnectionStatus;
   onConnect: (configuration: LinearOAuthConfiguration) => Promise<void>;
+  onEnableCommentAccess?: () => Promise<void>;
 }>;
 
 export function LinearConnectionPanel({
   busy,
   status,
   onConnect,
+  onEnableCommentAccess,
 }: LinearConnectionPanelProps) {
   const [clientId, setClientId] = useState("");
   const [redirectUri, setRedirectUri] = useState(defaultRedirectUri);
@@ -56,6 +58,18 @@ export function LinearConnectionPanel({
           Connect Linear
         </button>
       </form>
+      {status.kind === "connected" &&
+        !status.scopes.includes("comments:create") &&
+        !status.scopes.includes("write") &&
+        onEnableCommentAccess !== undefined && (
+          <button
+            disabled={busy}
+            type="button"
+            onClick={() => void onEnableCommentAccess()}
+          >
+            Enable manually sent Linear comments
+          </button>
+        )}
       <p aria-live="polite">{statusDescription(status)}</p>
     </section>
   );

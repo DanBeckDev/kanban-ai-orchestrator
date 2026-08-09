@@ -12,13 +12,15 @@ pub use events::{
     RestartReconciliationCommand, TransitionWorkItemCommand, WorkItemEvent, WorkItemEventKind,
 };
 pub use model::{
-    Board, BoardId, CURRENT_SCHEMA_VERSION, Dependency, DependencyId, DependencyKind,
-    DependencySource, Evidence, EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId,
-    ExecutionRole, ExecutionStatus, ExecutionUsage, ExternalConnectionMode, ExternalLink,
-    ExternalLinkId, ExternalLinkProvenance, PlanId, PolicyAction, PolicyDecision, PolicyDecisionId,
-    PolicyDecisionKind, Project, ProjectId, ProtectedGitAction, SchemaMetadata, SchemaVersion,
-    ToolScope, VersionedSchema, WorkItem, WorkItemBudget, WorkItemEventId, WorkItemId,
-    WorkItemState,
+    Board, BoardId, CURRENT_SCHEMA_VERSION, ConnectorOutboxItem, ConnectorOutboxItemId,
+    ConnectorOutboxOperation, ConnectorOutboxState, ConnectorReconciliationItem,
+    ConnectorReconciliationItemId, ConnectorReconciliationState, ConnectorSharedField, Dependency,
+    DependencyId, DependencyKind, DependencySource, Evidence, EvidenceId, EvidenceKind,
+    EvidenceResult, Execution, ExecutionId, ExecutionRole, ExecutionStatus, ExecutionUsage,
+    ExternalConnectionMode, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PlanId,
+    PolicyAction, PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId,
+    ProtectedGitAction, SchemaMetadata, SchemaVersion, ToolScope, VersionedSchema, WorkItem,
+    WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
 };
 pub use state_machine::{
     CompletionEvidence, TransitionConfig, TransitionError, transition_work_item,

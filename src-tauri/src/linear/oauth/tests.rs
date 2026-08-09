@@ -10,6 +10,7 @@ use super::{
 };
 
 mod callback;
+mod comment_scope;
 
 #[derive(Default)]
 struct MemoryCredentialStore {
@@ -155,6 +156,37 @@ fn begins_a_read_only_pkce_authorization_and_marks_it_awaiting() {
     assert_eq!(
         service.connection_status().expect("status should load"),
         LinearConnectionStatus::AwaitingAuthorization
+    );
+}
+
+#[test]
+fn requests_targeted_comment_access_only_after_an_existing_connection() {
+    let mut existing = credentials(
+        "client-id".to_owned(),
+        "http://127.0.0.1:38471/linear/oauth/callback".to_owned(),
+        Utc::now() + Duration::hours(1),
+    );
+    existing.scopes.push("comments:create".to_owned());
+    let store = MemoryCredentialStore {
+        credentials: RefCell::new(Some(existing)),
+    };
+    let mut service = LinearOAuthService::new(store);
+
+    let authorization_url = service
+        .begin_comment_access()
+        .expect("existing connection should be re-authorizable for comments");
+    let parsed_url = Url::parse(&authorization_url).expect("authorization URL should be valid");
+    let parameters = parsed_url.query_pairs().collect::<Vec<_>>();
+
+    assert!(
+        parameters
+            .iter()
+            .any(|(name, value)| name == "scope" && value == "read,comments:create")
+    );
+    assert!(
+        service
+            .comments_are_authorized()
+            .expect("credentials should remain readable")
     );
 }
 

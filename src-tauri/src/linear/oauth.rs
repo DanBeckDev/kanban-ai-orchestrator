@@ -17,6 +17,12 @@ pub struct LinearOAuthConfiguration {
     pub redirect_uri: String,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LinearOAuthScope {
+    Read,
+    CommentsCreate,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(
     tag = "kind",
@@ -119,6 +125,43 @@ where
         &mut self,
         configuration: LinearOAuthConfiguration,
     ) -> Result<String, LinearOAuthError> {
+        self.begin_with_scopes(configuration, &[LinearOAuthScope::Read])
+    }
+
+    pub fn begin_comment_access(&mut self) -> Result<String, LinearOAuthError> {
+        self.begin_with_scopes(
+            self.comment_access_configuration()?,
+            &[LinearOAuthScope::Read, LinearOAuthScope::CommentsCreate],
+        )
+    }
+
+    pub fn comment_access_configuration(
+        &self,
+    ) -> Result<LinearOAuthConfiguration, LinearOAuthError> {
+        let credentials = self
+            .credential_store
+            .load()?
+            .ok_or(LinearOAuthError::NotConnected)?;
+        Ok(LinearOAuthConfiguration {
+            client_id: credentials.client_id,
+            redirect_uri: credentials.redirect_uri,
+        })
+    }
+
+    pub fn comments_are_authorized(&self) -> Result<bool, LinearOAuthError> {
+        Ok(self.credential_store.load()?.is_some_and(|credentials| {
+            credentials
+                .scopes
+                .iter()
+                .any(|scope| scope == "comments:create" || scope == "write")
+        }))
+    }
+
+    fn begin_with_scopes(
+        &mut self,
+        configuration: LinearOAuthConfiguration,
+        scopes: &[LinearOAuthScope],
+    ) -> Result<String, LinearOAuthError> {
         validate_configuration(&configuration)?;
         if self.pending.is_some() {
             return Err(LinearOAuthError::AuthenticationAlreadyPending);
@@ -126,7 +169,7 @@ where
 
         let code_verifier = secure_value();
         let state = secure_value();
-        let authorization_url = authorization_url(&configuration, &state, &code_verifier)?;
+        let authorization_url = authorization_url(&configuration, &state, &code_verifier, scopes)?;
         self.pending = Some(PendingAuthorization {
             configuration,
             code_verifier,
@@ -239,17 +282,29 @@ fn authorization_url(
     configuration: &LinearOAuthConfiguration,
     state: &str,
     code_verifier: &str,
+    scopes: &[LinearOAuthScope],
 ) -> Result<String, LinearOAuthError> {
     let mut url = Url::parse(LINEAR_AUTHORIZE_URL).expect("Linear authorization URL is valid");
     url.query_pairs_mut()
         .append_pair("client_id", &configuration.client_id)
         .append_pair("redirect_uri", &configuration.redirect_uri)
         .append_pair("response_type", "code")
-        .append_pair("scope", "read")
+        .append_pair("scope", &scope_parameter(scopes))
         .append_pair("state", state)
         .append_pair("code_challenge", &pkce_challenge(code_verifier))
         .append_pair("code_challenge_method", "S256");
     Ok(url.into())
+}
+
+fn scope_parameter(scopes: &[LinearOAuthScope]) -> String {
+    scopes
+        .iter()
+        .map(|scope| match scope {
+            LinearOAuthScope::Read => "read",
+            LinearOAuthScope::CommentsCreate => "comments:create",
+        })
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn validate_configuration(
@@ -313,6 +368,7 @@ pub enum LinearOAuthError {
     InvalidRedirectUri,
     MissingAuthorizationCode,
     MissingClientId,
+    MissingCommentScope,
     NotConnected,
     TokenExchange(String),
 }
@@ -350,6 +406,9 @@ impl fmt::Display for LinearOAuthError {
                 formatter.write_str("Linear callback did not include an authorization code")
             }
             Self::MissingClientId => formatter.write_str("Linear OAuth client ID is required"),
+            Self::MissingCommentScope => {
+                formatter.write_str("Linear comment updates require the comments:create permission")
+            }
             Self::NotConnected => formatter.write_str("no Linear account is connected"),
             Self::TokenExchange(error) => {
                 write!(formatter, "Linear token exchange failed: {error}")

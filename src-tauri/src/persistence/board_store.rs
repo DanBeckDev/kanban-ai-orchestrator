@@ -177,6 +177,9 @@ impl SqliteEventStore {
                 RECENT_EVIDENCE_LIMIT_PER_WORK_ITEM,
             )?,
             external_links: self.external_links_for_work_items(&work_item_ids)?,
+            connector_outbox_items: self.connector_outbox_items_for_work_items(&work_item_ids)?,
+            connector_reconciliation_items: self
+                .connector_reconciliation_items_for_work_items(&work_item_ids)?,
         })
     }
 

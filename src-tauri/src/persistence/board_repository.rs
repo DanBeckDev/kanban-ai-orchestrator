@@ -1,5 +1,6 @@
 use crate::domain::{
-    Board, BoardId, CreateWorkItemCommand, Dependency, Evidence, Execution, ExternalLink,
+    Board, BoardId, ConnectorOutboxItem, ConnectorOutboxItemId, ConnectorReconciliationItem,
+    CreateWorkItemCommand, Dependency, Evidence, Execution, ExternalLink, ExternalLinkId,
     MaterializedWorkItem, Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
 };
 use crate::{
@@ -113,6 +114,10 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::record_external_link(self, link).map_err(BoardStoreError::from)
     }
 
+    fn external_link(&self, link_id: &ExternalLinkId) -> Result<Option<ExternalLink>, Self::Error> {
+        SqliteEventStore::external_link(self, link_id).map_err(BoardStoreError::from)
+    }
+
     fn external_link_for_connector_resource(
         &self,
         connector_id: &str,
@@ -127,6 +132,61 @@ impl BoardRepository for SqliteEventStore {
         work_item_ids: &[WorkItemId],
     ) -> Result<Vec<ExternalLink>, Self::Error> {
         SqliteEventStore::external_links_for_work_items(self, work_item_ids)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn record_connector_outbox_item(
+        &mut self,
+        item: ConnectorOutboxItem,
+    ) -> Result<ConnectorOutboxItem, Self::Error> {
+        SqliteEventStore::record_connector_outbox_item(self, item).map_err(BoardStoreError::from)
+    }
+
+    fn claim_connector_outbox_item(
+        &mut self,
+        item_id: &ConnectorOutboxItemId,
+    ) -> Result<ConnectorOutboxItem, Self::Error> {
+        SqliteEventStore::claim_connector_outbox_item(self, item_id).map_err(BoardStoreError::from)
+    }
+
+    fn mark_connector_outbox_delivered(
+        &mut self,
+        item_id: &ConnectorOutboxItemId,
+        delivered_at: String,
+    ) -> Result<ConnectorOutboxItem, Self::Error> {
+        SqliteEventStore::mark_connector_outbox_delivered(self, item_id, delivered_at)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn mark_connector_outbox_delivery_uncertain(
+        &mut self,
+        item_id: &ConnectorOutboxItemId,
+    ) -> Result<ConnectorOutboxItem, Self::Error> {
+        SqliteEventStore::mark_connector_outbox_delivery_uncertain(self, item_id)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn connector_outbox_items_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ConnectorOutboxItem>, Self::Error> {
+        SqliteEventStore::connector_outbox_items_for_work_items(self, work_item_ids)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn record_connector_reconciliation_item(
+        &mut self,
+        item: ConnectorReconciliationItem,
+    ) -> Result<ConnectorReconciliationItem, Self::Error> {
+        SqliteEventStore::record_connector_reconciliation_item(self, item)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn connector_reconciliation_items_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ConnectorReconciliationItem>, Self::Error> {
+        SqliteEventStore::connector_reconciliation_items_for_work_items(self, work_item_ids)
             .map_err(BoardStoreError::from)
     }
 

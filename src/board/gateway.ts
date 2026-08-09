@@ -16,11 +16,13 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  ObserveLinearSharedFieldRequest,
   ProposePlanRequest,
   PlannerProfile,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
+  QueueLinearCommentRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -97,6 +99,9 @@ export const tauriBoardGateway: BoardGateway = {
   ): Promise<LinearConnectionStatus> {
     return invoke("begin_linear_oauth", { configuration });
   },
+  beginLinearCommentAccess(): Promise<LinearConnectionStatus> {
+    return invoke("begin_linear_comment_access");
+  },
   linearConnectionStatus(): Promise<LinearConnectionStatus> {
     return invoke("linear_connection_status");
   },
@@ -110,6 +115,22 @@ export const tauriBoardGateway: BoardGateway = {
     request: ImportLinearBlockerRequest,
   ): Promise<BoardSnapshot> {
     return invoke("import_linear_blocker", { request });
+  },
+  queueLinearComment(
+    request: QueueLinearCommentRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("queue_linear_comment", { request });
+  },
+  observeLinearSharedField(
+    request: ObserveLinearSharedFieldRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("observe_linear_shared_field", { request });
+  },
+  syncLinearSharedFields(externalLinkId: string): Promise<BoardSnapshot> {
+    return invoke("sync_linear_shared_fields", { externalLinkId });
+  },
+  deliverLinearComment(outboxItemId: string): Promise<BoardSnapshot> {
+    return invoke("deliver_linear_comment", { outboxItemId });
   },
   boardSnapshot(boardId: string): Promise<BoardSnapshot> {
     return invoke("board_snapshot", { boardId });

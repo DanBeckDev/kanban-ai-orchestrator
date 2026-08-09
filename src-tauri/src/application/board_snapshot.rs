@@ -1,8 +1,9 @@
 use serde::Serialize;
 
 use crate::domain::{
-    Board, CompletionEvidence, Dependency, Evidence, Execution, ExternalLink, MaterializedWorkItem,
-    RecordedWorkItemEvent, WorkItemEventKind, WorkItemId,
+    Board, CompletionEvidence, ConnectorOutboxItem, ConnectorReconciliationItem, Dependency,
+    Evidence, Execution, ExternalLink, MaterializedWorkItem, RecordedWorkItemEvent,
+    WorkItemEventKind, WorkItemId,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -15,6 +16,8 @@ pub struct BoardSnapshot {
     pub executions: Vec<Execution>,
     pub evidence: Vec<Evidence>,
     pub external_links: Vec<ExternalLink>,
+    pub connector_outbox_items: Vec<ConnectorOutboxItem>,
+    pub connector_reconciliation_items: Vec<ConnectorReconciliationItem>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

@@ -1,10 +1,11 @@
 use std::error::Error;
 
 use crate::domain::{
-    Board, BoardId, CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence,
-    Execution, ExecutionId, ExternalLink, MaterializedWorkItem, Project, ProjectId,
-    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
-    WorkItemEventId, WorkItemId, WorkItemState,
+    Board, BoardId, ConnectorOutboxItem, ConnectorReconciliationItem, CreateWorkItemCommand,
+    Dependency, DependencyId, DependencySource, Evidence, Execution, ExecutionId, ExternalLink,
+    ExternalLinkId, MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
+    SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem, WorkItemEventId,
+    WorkItemId, WorkItemState,
 };
 use crate::orchestration::{PlanConfirmation, PlanProposal};
 use crate::{agent::AgentProfile, orchestration::PlannerProfile};
@@ -57,6 +58,7 @@ pub trait BoardRepository {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error>;
     fn record_external_link(&mut self, link: ExternalLink) -> Result<ExternalLink, Self::Error>;
+    fn external_link(&self, link_id: &ExternalLinkId) -> Result<Option<ExternalLink>, Self::Error>;
     fn external_link_for_connector_resource(
         &self,
         connector_id: &str,
@@ -66,6 +68,35 @@ pub trait BoardRepository {
         &self,
         work_item_ids: &[WorkItemId],
     ) -> Result<Vec<ExternalLink>, Self::Error>;
+    fn record_connector_outbox_item(
+        &mut self,
+        item: ConnectorOutboxItem,
+    ) -> Result<ConnectorOutboxItem, Self::Error>;
+    fn claim_connector_outbox_item(
+        &mut self,
+        item_id: &crate::domain::ConnectorOutboxItemId,
+    ) -> Result<ConnectorOutboxItem, Self::Error>;
+    fn mark_connector_outbox_delivered(
+        &mut self,
+        item_id: &crate::domain::ConnectorOutboxItemId,
+        delivered_at: String,
+    ) -> Result<ConnectorOutboxItem, Self::Error>;
+    fn mark_connector_outbox_delivery_uncertain(
+        &mut self,
+        item_id: &crate::domain::ConnectorOutboxItemId,
+    ) -> Result<ConnectorOutboxItem, Self::Error>;
+    fn connector_outbox_items_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ConnectorOutboxItem>, Self::Error>;
+    fn record_connector_reconciliation_item(
+        &mut self,
+        item: ConnectorReconciliationItem,
+    ) -> Result<ConnectorReconciliationItem, Self::Error>;
+    fn connector_reconciliation_items_for_work_items(
+        &self,
+        work_item_ids: &[WorkItemId],
+    ) -> Result<Vec<ConnectorReconciliationItem>, Self::Error>;
     fn evidence_for_work_item(
         &self,
         work_item_id: &WorkItemId,

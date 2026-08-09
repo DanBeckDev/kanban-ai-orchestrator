@@ -3,7 +3,8 @@ use std::{error::Error, fmt};
 use crate::{
     agent::AgentProfileError,
     domain::{
-        EvidenceId, ExecutionId, ExternalLinkId, PolicyDecisionId, WorkItemEventId, WorkItemId,
+        ConnectorOutboxItemId, ConnectorReconciliationItemId, EvidenceId, ExecutionId,
+        ExternalLinkId, PolicyDecisionId, WorkItemEventId, WorkItemId,
     },
     orchestration::PlannerProfileError,
 };
@@ -44,6 +45,27 @@ pub enum EventStoreError {
     ExternalResourceAlreadyLinked {
         connector_id: String,
         external_id: String,
+    },
+    ExternalLinkNotFound {
+        link_id: ExternalLinkId,
+    },
+    ConnectorOutboxItemConflict {
+        item_id: ConnectorOutboxItemId,
+    },
+    ConnectorOutboxIdempotencyConflict {
+        connector_id: String,
+        idempotency_key: String,
+    },
+    ConnectorOutboxCannotTransition {
+        item_id: ConnectorOutboxItemId,
+    },
+    ConnectorReconciliationItemConflict {
+        item_id: ConnectorReconciliationItemId,
+    },
+    ConnectorReconciliationRevisionConflict {
+        external_link_id: ExternalLinkId,
+        field: String,
+        remote_revision: String,
     },
     EventIdConflict {
         event_id: WorkItemEventId,
@@ -131,6 +153,42 @@ impl fmt::Display for EventStoreError {
             } => write!(
                 formatter,
                 "external resource {connector_id}:{external_id} is already linked"
+            ),
+            Self::ExternalLinkNotFound { link_id } => {
+                write!(formatter, "external link {} was not found", link_id.0)
+            }
+            Self::ConnectorOutboxItemConflict { item_id } => {
+                write!(
+                    formatter,
+                    "connector outbox item {} conflicts with an existing item",
+                    item_id.0
+                )
+            }
+            Self::ConnectorOutboxIdempotencyConflict {
+                connector_id,
+                idempotency_key,
+            } => write!(
+                formatter,
+                "connector outbox key {connector_id}:{idempotency_key} conflicts with an existing item"
+            ),
+            Self::ConnectorOutboxCannotTransition { item_id } => write!(
+                formatter,
+                "connector outbox item {} is not pending delivery",
+                item_id.0
+            ),
+            Self::ConnectorReconciliationItemConflict { item_id } => write!(
+                formatter,
+                "connector reconciliation item {} conflicts with an existing item",
+                item_id.0
+            ),
+            Self::ConnectorReconciliationRevisionConflict {
+                external_link_id,
+                field,
+                remote_revision,
+            } => write!(
+                formatter,
+                "connector reconciliation revision {}:{}:{} conflicts with an existing item",
+                external_link_id.0, field, remote_revision
             ),
             Self::EventIdConflict { event_id } => write!(
                 formatter,

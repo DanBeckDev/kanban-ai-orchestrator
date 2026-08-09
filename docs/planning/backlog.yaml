@@ -237,13 +237,14 @@ tasks:
   - id: LIN-003
     epic: LIN
     title: Implement conflict-safe Linear synchronization and comments
-    status: ready
+    status: done
     priority: P1
     depends_on: [CORE-003, ORCH-003, LIN-002]
     acceptance_criteria:
       - Outbound changes use a durable idempotent outbox.
       - Concurrent shared-field edits create reconciliation items instead of overwriting data.
       - Transcripts, secrets, and private diffs are excluded from outbound comments by default.
+    notes: Completed on 2026-08-09. Linear linked-execution comments use a durable SQLite outbox with local idempotency, guarded pending-to-delivering-to-delivered transitions, targeted comments:create reauthorization, and explicit user send. A network or restart ambiguity becomes visible delivery_uncertain state with no automatic duplicate retry. An explicit per-issue refresh records immutable title, description, and workflow-state comparisons keyed by Linear revision; conflicts show both values and never overwrite either system. The manually entered one-line public comment input excludes raw agent transcripts, terminal output, secrets, and diffs. Full local quality:verify passed with all source paths under 400 meaningful lines and every required frontend/Rust coverage metric at least 80%.
 
   - id: REL-001
     epic: REL

@@ -11,8 +11,8 @@ The initial connector is not a background copy process. It provides user-trigger
 | Mode | Permissions | Use case |
 | --- | --- | --- |
 | Read-only | Read issues, projects, labels, and relationships | Observe a Linear plan before adoption |
-| Linked execution | Read plus selected issue/comment/status writes | Run existing Linear work with agent evidence |
-| Plan publishing | Linked execution plus issue creation | Approve an orchestrator plan and publish its tickets to Linear |
+| Linked execution | Read plus an explicitly reauthorized, manually sent safe comment | Run existing Linear work with agent evidence while retaining the human as the remote-write authority |
+| Plan publishing | Future: linked execution plus issue creation | Approve an orchestrator plan and publish its tickets to Linear |
 
 OAuth is the release path. A personal API key may be offered only for private development/testing and is stored in the OS keychain.
 
@@ -26,7 +26,7 @@ The app accepts only an explicit HTTP loopback IP address, port, and path. It ge
 
 Access and refresh tokens, together with the public connection metadata needed to refresh them, are serialized only into the operating system credential store: Keychain Services on macOS, Credential Manager on Windows, and Secret Service on Linux. SQLite, diagnostics, activity history, and board snapshots never contain a token. A refresh happens only when an access token is within one minute of expiry; the existing credential is preserved until its replacement has been validated and saved. This produces no background polling and respects Linear's guidance to avoid it.
 
-The desktop currently requests the least-privileged `read` scope. Linked execution may be selected for an imported task, but remote writes, app-actor installation, comments, status mapping, outbox processing, and webhooks are still separate, opt-in work; choosing the mode must not grant those powers early. See Linear's [OAuth documentation](https://linear.app/developers/oauth-2-0-authentication) and [rate-limit guidance](https://linear.app/developers/rate-limiting).
+The desktop initially requests the least-privileged `read` scope. A connected user may explicitly reauthorize only manually sent comments with `read,comments:create`; it does not request Linear's broad `write` scope. A previously granted `write` token is recognized as sufficient, but the app never broadens its authorization automatically. Status mapping, app-actor installation, issue creation, webhooks, and automatic remote writes remain separate work. See Linear's [OAuth documentation](https://linear.app/developers/oauth-2-0-authentication) and [rate-limit guidance](https://linear.app/developers/rate-limiting).
 
 ## Current API verification
 
@@ -38,14 +38,14 @@ After the connection status is explicitly `connected`, the user may press **Load
 
 ## Mapping and provenance
 
-Each link stores the immutable Linear UUID, display identifier, URL, last observed revision, field provenance, and sync state. Never use a mutable title or identifier alone as the key.
+Each external link stores the immutable Linear UUID, display identifier, URL, provenance, and connection mode. Each reconciliation record stores the observed remote revision, field, and both values. Never use a mutable title or identifier alone as the key.
 
 | Field | Default source | Sync rule |
 | --- | --- | --- |
 | Team, project, cycle, assignee, estimate | Linear | Read into the app; app changes require explicit user action |
 | Agent execution, workspace, logs, cost, evidence | App | Never mirror raw details to Linear automatically |
-| Title, description, priority | Configured per board | Present conflicts for review; no last-write-wins |
-| Workflow state | Configured mapping | Mirror only approved state transitions |
+| Title, description | Local board and Linear | An explicit refresh records a comparison; a mismatch is visible and never overwrites either side |
+| Workflow state | Local board and Linear | An explicit refresh records a comparison; automatic status writes are not implemented |
 | Dependencies | Both, with provenance | Import Linear blockers and publish eligible app-created hard blockers when enabled |
 
 ## Dependency semantics
@@ -56,11 +56,11 @@ The dependency graph view shows both systems' edges, identifies imported/externa
 
 ## Sync design
 
-1. Write local changes to a durable outbox with an idempotency key.
-2. Apply remote events to an inbox, validate them against the graph and state machine, then record a reconciliation outcome.
-3. When both sides changed a shared field, create a visible reconciliation item; do not overwrite either value.
-4. Batch and deduplicate outbound status/comments to avoid noisy activity logs.
-5. A deleted or inaccessible Linear issue unlinks into a recoverable local state; it never deletes local execution history.
+1. A user queues a concise public Linear comment locally with a connector-local idempotency key; the outbox payload is immutable.
+2. Sending is a deliberate user action. The daemon claims the item, releases the state lock for the GraphQL request, and records the confirmed result afterward.
+3. A confirmed send is `delivered`. A timeout, rejected response, process stop, or restart while sending becomes `delivery_uncertain`; it is never retried automatically because the remote side may already have accepted it.
+4. An explicit **Refresh shared fields** action reads the linked issue's title, description, and workflow state and records immutable reconciliation items keyed by Linear's `updatedAt` revision.
+5. When local and remote values differ, the board shows both as `needs_resolution`; refresh cannot overwrite a work item, dependency, or Linear issue.
 
 ## Webhook and desktop constraint
 
@@ -69,6 +69,6 @@ Linear webhooks require a public HTTPS endpoint. The initial local-first connect
 ## Privacy controls
 
 - The user selects which Linear teams/projects may be connected.
-- Status mapping and automatic comments are opt-in per board.
-- Agent transcript, secrets, command output, and private diffs are excluded from Linear by default.
-- Generated comments are previewable when a board is configured for manual external updates.
+- Manual comments require an explicit targeted OAuth reauthorization and an explicit **Send** action for each queued item.
+- A comment is generated only from a user-entered, one-line public summary (maximum 512 bytes) and a typed local task state; agent transcripts, secrets, command output, and private diffs are excluded by the input model and validation.
+- Pending, delivered, uncertain, matched, and conflicting records are visible in the board. The app never silently resolves a conflict or duplicates an uncertain comment.

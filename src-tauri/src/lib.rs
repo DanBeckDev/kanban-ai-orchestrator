@@ -61,10 +61,15 @@ pub fn run() {
             desktop::record_review_decision,
             desktop::record_clean_code_review,
             desktop::begin_linear_oauth,
+            desktop::linear_sync::begin_linear_comment_access,
             desktop::linear_connection_status,
             desktop::linear_assigned_issues,
             desktop::import_linear_issue,
             desktop::import_linear_blocker,
+            desktop::linear_sync::queue_linear_comment,
+            desktop::linear_sync::observe_linear_shared_field,
+            desktop::linear_sync::sync_linear_shared_fields,
+            desktop::linear_sync::deliver_linear_comment,
             desktop::board_snapshot,
         ])
         .run(tauri::generate_context!())

@@ -2,6 +2,7 @@ mod agent_profile_store;
 mod board_repository;
 pub(crate) mod board_store;
 mod board_store_error;
+mod connector_sync_store;
 mod event_store_error;
 mod event_store_policy;
 mod event_store_queries;
@@ -39,3 +40,6 @@ mod execution_store_tests;
 
 #[cfg(test)]
 mod evidence_transition_store_tests;
+
+#[cfg(test)]
+mod connector_sync_store_tests;

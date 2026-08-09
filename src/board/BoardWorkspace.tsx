@@ -16,6 +16,7 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  QueueLinearCommentRequest,
   ProposePlanRequest,
   PlannerProfile,
   RecordCleanCodeReviewRequest,
@@ -232,6 +233,30 @@ export function BoardWorkspace({
     }
   }
 
+  async function beginLinearCommentAccess() {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setLinearConnectionStatus(await gateway.beginLinearCommentAccess());
+    } catch (connectionError) {
+      setError(errorMessage(connectionError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function queueLinearComment(request: QueueLinearCommentRequest) {
+    await run(() => gateway.queueLinearComment(request));
+  }
+
+  async function deliverLinearComment(outboxItemId: string) {
+    await run(() => gateway.deliverLinearComment(outboxItemId));
+  }
+
+  async function refreshLinearSharedFields(externalLinkId: string) {
+    await run(() => gateway.syncLinearSharedFields(externalLinkId));
+  }
+
   async function loadLinearAssignedIssues() {
     setBusy(true);
     setError(undefined);
@@ -293,7 +318,11 @@ export function BoardWorkspace({
           linearConnectionStatus={linearConnectionStatus}
           linearIssues={linearIssues}
           onConnectLinear={beginLinearOAuth}
+          onEnableLinearCommentAccess={beginLinearCommentAccess}
           onLoadLinearIssues={loadLinearAssignedIssues}
+          onQueueLinearComment={queueLinearComment}
+          onDeliverLinearComment={deliverLinearComment}
+          onRefreshLinearSharedFields={refreshLinearSharedFields}
           onProposePlan={proposePlan}
           onGeneratePlan={generatePlan}
           onSaveAgentProfile={saveAgentProfile}

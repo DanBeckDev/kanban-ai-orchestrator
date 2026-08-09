@@ -89,3 +89,34 @@ pub(super) fn create_external_link_schema(
             ON external_links (work_item_id, external_link_id);",
     )
 }
+
+pub(super) fn create_connector_sync_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS connector_outbox_items (
+            connector_outbox_item_id TEXT PRIMARY KEY,
+            work_item_id TEXT NOT NULL,
+            connector_id TEXT NOT NULL,
+            external_link_id TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            state TEXT NOT NULL,
+            item_json TEXT NOT NULL,
+            UNIQUE(connector_id, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS connector_outbox_items_by_work_item
+            ON connector_outbox_items (work_item_id, connector_outbox_item_id);
+        CREATE TABLE IF NOT EXISTS connector_reconciliation_items (
+            connector_reconciliation_item_id TEXT PRIMARY KEY,
+            work_item_id TEXT NOT NULL,
+            connector_id TEXT NOT NULL,
+            external_link_id TEXT NOT NULL,
+            field TEXT NOT NULL,
+            remote_revision TEXT NOT NULL,
+            item_json TEXT NOT NULL,
+            UNIQUE(external_link_id, field, remote_revision)
+        );
+        CREATE INDEX IF NOT EXISTS connector_reconciliation_items_by_work_item
+            ON connector_reconciliation_items (work_item_id, connector_reconciliation_item_id);",
+    )
+}

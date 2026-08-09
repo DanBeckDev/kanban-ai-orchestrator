@@ -58,6 +58,30 @@ describe("LinearConnectionPanel", () => {
     expect(screen.queryByLabelText(/client secret|access token/i)).toBeNull();
   });
 
+  it("offers narrowly scoped comment permission after a read-only connection", () => {
+    const onEnableCommentAccess = vi.fn().mockResolvedValue(undefined);
+    render(
+      <LinearConnectionPanel
+        busy={false}
+        status={{
+          kind: "connected",
+          expiresAt: "2026-08-09T12:00:00Z",
+          scopes: ["read"],
+        }}
+        onConnect={vi.fn().mockResolvedValue(undefined)}
+        onEnableCommentAccess={onEnableCommentAccess}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Enable manually sent Linear comments",
+      }),
+    );
+
+    expect(onEnableCommentAccess).toHaveBeenCalledOnce();
+  });
+
   it("shows a connection failure and lets the user try again", () => {
     render(
       <LinearConnectionPanel

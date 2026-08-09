@@ -180,6 +180,8 @@ export type BoardSnapshot = Readonly<{
   executions: readonly Execution[];
   evidence: readonly Evidence[];
   externalLinks: readonly ExternalLink[];
+  connectorOutboxItems: readonly ConnectorOutboxItem[];
+  connectorReconciliationItems: readonly ConnectorReconciliationItem[];
 }>;
 
 export type PlanWorkItemPreview = Readonly<{
@@ -380,43 +382,19 @@ export type ImportLinearBlockerRequest = Readonly<{
   createdAt: string;
 }>;
 
-export interface BoardGateway {
-  createProject(request: CreateProjectRequest): Promise<void>;
-  createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
-  createWorkItem(request: CreateWorkItemRequest): Promise<BoardSnapshot>;
-  addDependency(request: AddDependencyRequest): Promise<BoardSnapshot>;
-  proposePlan(request: ProposePlanRequest): Promise<BoardPlan>;
-  boardPlan(boardId: string): Promise<BoardPlan | undefined>;
-  confirmPlan(request: ConfirmPlanRequest): Promise<BoardSnapshot>;
-  transitionWorkItem(
-    request: TransitionWorkItemRequest,
-  ): Promise<BoardSnapshot>;
-  saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
-  agentProfiles(): Promise<readonly AgentProfile[]>;
-  savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile>;
-  plannerProfiles(): Promise<readonly PlannerProfile[]>;
-  generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
-  startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
-  stopExecution(executionId: string): Promise<BoardSnapshot>;
-  executionActivity(
-    executionId: string,
-    afterSequence?: number,
-  ): Promise<ExecutionActivityPage>;
-  recordReviewCheck(request: RecordReviewCheckRequest): Promise<BoardSnapshot>;
-  recordReviewDecision(
-    request: RecordReviewDecisionRequest,
-  ): Promise<BoardSnapshot>;
-  recordCleanCodeReview(
-    request: RecordCleanCodeReviewRequest,
-  ): Promise<BoardSnapshot>;
-  beginLinearOAuth(
-    configuration: LinearOAuthConfiguration,
-  ): Promise<LinearConnectionStatus>;
-  linearConnectionStatus(): Promise<LinearConnectionStatus>;
-  linearAssignedIssues(): Promise<readonly LinearIssueSummary[]>;
-  importLinearIssue(request: ImportLinearIssueRequest): Promise<BoardSnapshot>;
-  importLinearBlocker(
-    request: ImportLinearBlockerRequest,
-  ): Promise<BoardSnapshot>;
-  boardSnapshot(boardId: string): Promise<BoardSnapshot>;
-}
+export type { BoardGateway } from "./boardGateway";
+import type {
+  ConnectorOutboxItem,
+  ConnectorReconciliationItem,
+} from "./linearSyncTypes";
+
+export type {
+  ConnectorOutboxItem,
+  ConnectorOutboxOperation,
+  ConnectorOutboxState,
+  ConnectorReconciliationItem,
+  ConnectorReconciliationState,
+  ConnectorSharedField,
+  ObserveLinearSharedFieldRequest,
+  QueueLinearCommentRequest,
+} from "./linearSyncTypes";

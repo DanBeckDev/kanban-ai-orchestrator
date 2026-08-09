@@ -17,6 +17,18 @@ query AssignedIssues {
   }
 }
 "#;
+const SHARED_ISSUE_FIELDS_QUERY: &str = r#"
+query SharedIssueFields($id: String!) {
+  issue(id: $id) {
+    title
+    description
+    updatedAt
+    state {
+      name
+    }
+  }
+}
+"#;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,8 +39,21 @@ pub struct LinearIssueSummary {
     pub url: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LinearIssueSharedFields {
+    pub title: String,
+    pub description: String,
+    pub workflow_state: String,
+    pub remote_revision: String,
+}
+
 pub trait LinearGraphQlTransport {
-    fn execute(&self, access_token: &str, query: &str) -> Result<String, LinearOAuthError>;
+    fn execute(
+        &self,
+        access_token: &str,
+        query: &str,
+        variables: Option<&serde_json::Value>,
+    ) -> Result<String, LinearOAuthError>;
 }
 
 pub struct ReqwestLinearGraphQlTransport {
@@ -50,11 +75,16 @@ impl Default for ReqwestLinearGraphQlTransport {
 }
 
 impl LinearGraphQlTransport for ReqwestLinearGraphQlTransport {
-    fn execute(&self, access_token: &str, query: &str) -> Result<String, LinearOAuthError> {
+    fn execute(
+        &self,
+        access_token: &str,
+        query: &str,
+        variables: Option<&serde_json::Value>,
+    ) -> Result<String, LinearOAuthError> {
         self.client
             .post(LINEAR_GRAPHQL_URL)
             .bearer_auth(access_token)
-            .json(&GraphQlRequest { query })
+            .json(&GraphQlRequest { query, variables })
             .send()
             .and_then(reqwest::blocking::Response::error_for_status)
             .and_then(reqwest::blocking::Response::text)
@@ -80,19 +110,33 @@ where
     ) -> Result<Vec<LinearIssueSummary>, LinearOAuthError> {
         let response = self
             .transport
-            .execute(access_token, ASSIGNED_ISSUES_QUERY)?;
+            .execute(access_token, ASSIGNED_ISSUES_QUERY, None)?;
         assigned_issues_from_response(&response)
+    }
+
+    pub fn issue_shared_fields(
+        &self,
+        access_token: &str,
+        issue_id: &str,
+    ) -> Result<LinearIssueSharedFields, LinearOAuthError> {
+        let variables = serde_json::json!({ "id": issue_id });
+        let response =
+            self.transport
+                .execute(access_token, SHARED_ISSUE_FIELDS_QUERY, Some(&variables))?;
+        shared_issue_fields_from_response(&response)
     }
 }
 
 #[derive(Serialize)]
 struct GraphQlRequest<'query> {
     query: &'query str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    variables: Option<&'query serde_json::Value>,
 }
 
 #[derive(Deserialize)]
-struct GraphQlResponse {
-    data: Option<AssignedIssuesData>,
+struct GraphQlResponse<Data> {
+    data: Option<Data>,
     #[serde(default)]
     errors: Vec<GraphQlError>,
 }
@@ -126,12 +170,32 @@ struct IssueNode {
     url: String,
 }
 
+#[derive(Deserialize)]
+struct SharedIssueData {
+    issue: Option<SharedIssueNode>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SharedIssueNode {
+    title: String,
+    description: Option<String>,
+    updated_at: String,
+    state: Option<SharedIssueState>,
+}
+
+#[derive(Deserialize)]
+struct SharedIssueState {
+    name: String,
+}
+
 fn assigned_issues_from_response(
     response: &str,
 ) -> Result<Vec<LinearIssueSummary>, LinearOAuthError> {
-    let response = serde_json::from_str::<GraphQlResponse>(response).map_err(|_| {
-        LinearOAuthError::GraphQl("Linear returned an invalid JSON response".to_owned())
-    })?;
+    let response =
+        serde_json::from_str::<GraphQlResponse<AssignedIssuesData>>(response).map_err(|_| {
+            LinearOAuthError::GraphQl("Linear returned an invalid JSON response".to_owned())
+        })?;
     if !response.errors.is_empty() {
         return Err(LinearOAuthError::GraphQl(
             response
@@ -151,6 +215,47 @@ fn assigned_issues_from_response(
         .into_iter()
         .map(LinearIssueSummary::try_from)
         .collect()
+}
+
+fn shared_issue_fields_from_response(
+    response: &str,
+) -> Result<LinearIssueSharedFields, LinearOAuthError> {
+    let response =
+        serde_json::from_str::<GraphQlResponse<SharedIssueData>>(response).map_err(|_| {
+            LinearOAuthError::GraphQl("Linear returned an invalid JSON response".to_owned())
+        })?;
+    if !response.errors.is_empty() {
+        return Err(LinearOAuthError::GraphQl(
+            response
+                .errors
+                .into_iter()
+                .map(|error| error.message)
+                .collect::<Vec<_>>()
+                .join("; "),
+        ));
+    }
+    let issue = response
+        .data
+        .and_then(|data| data.issue)
+        .ok_or_else(|| LinearOAuthError::GraphQl("Linear response had no issue data".to_owned()))?;
+    let workflow_state = issue
+        .state
+        .map(|state| state.name)
+        .filter(|state| !state.trim().is_empty())
+        .ok_or_else(|| {
+            LinearOAuthError::GraphQl("Linear response had no workflow state".to_owned())
+        })?;
+    if issue.title.trim().is_empty() || issue.updated_at.trim().is_empty() {
+        return Err(LinearOAuthError::GraphQl(
+            "Linear returned incomplete shared fields".to_owned(),
+        ));
+    }
+    Ok(LinearIssueSharedFields {
+        title: issue.title,
+        description: issue.description.unwrap_or_default(),
+        workflow_state,
+        remote_revision: issue.updated_at,
+    })
 }
 
 impl TryFrom<IssueNode> for LinearIssueSummary {
@@ -185,12 +290,13 @@ mod tests {
 
     use super::{
         ASSIGNED_ISSUES_QUERY, LinearGraphQlTransport, LinearIssueReader, LinearOAuthError,
-        assigned_issues_from_response,
+        SHARED_ISSUE_FIELDS_QUERY, assigned_issues_from_response,
+        shared_issue_fields_from_response,
     };
 
     #[derive(Default)]
     struct FakeTransport {
-        requested_queries: std::cell::RefCell<Vec<String>>,
+        requested_queries: std::cell::RefCell<Vec<(String, Option<serde_json::Value>)>>,
         response: RefCell<String>,
     }
 
@@ -204,8 +310,15 @@ mod tests {
     }
 
     impl LinearGraphQlTransport for FakeTransport {
-        fn execute(&self, _access_token: &str, query: &str) -> Result<String, LinearOAuthError> {
-            self.requested_queries.borrow_mut().push(query.to_owned());
+        fn execute(
+            &self,
+            _access_token: &str,
+            query: &str,
+            variables: Option<&serde_json::Value>,
+        ) -> Result<String, LinearOAuthError> {
+            self.requested_queries
+                .borrow_mut()
+                .push((query.to_owned(), variables.cloned()));
             Ok(self.response.borrow().clone())
         }
     }
@@ -213,7 +326,12 @@ mod tests {
     struct FailingTransport;
 
     impl LinearGraphQlTransport for FailingTransport {
-        fn execute(&self, _access_token: &str, _query: &str) -> Result<String, LinearOAuthError> {
+        fn execute(
+            &self,
+            _access_token: &str,
+            _query: &str,
+            _variables: Option<&serde_json::Value>,
+        ) -> Result<String, LinearOAuthError> {
             Err(LinearOAuthError::GraphQl("not authorized".to_owned()))
         }
     }
@@ -231,7 +349,7 @@ mod tests {
 
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].identifier, "KAN-42");
-        let query = &reader.transport.requested_queries.borrow()[0];
+        let query = &reader.transport.requested_queries.borrow()[0].0;
         assert!(query.contains("assignedIssues(first: 50, orderBy: updatedAt)"));
         for field in ["id", "identifier", "title", "url"] {
             assert!(query.contains(field));
@@ -247,6 +365,43 @@ mod tests {
             "not JSON",
         ] {
             assert!(assigned_issues_from_response(response).is_err());
+        }
+    }
+
+    #[test]
+    fn reads_one_explicit_issue_snapshot_for_shared_field_reconciliation() {
+        let transport = FakeTransport::with_response(
+            r#"{"data":{"issue":{"title":"Local-first sync","description":null,"updatedAt":"2026-08-09T12:00:00.000Z","state":{"name":"In Progress"}}}}"#,
+        );
+        let reader = LinearIssueReader::new(transport);
+
+        let fields = reader
+            .issue_shared_fields("access-token", "d290f1ee-6c54-4b01-90e6-d701748f0851")
+            .expect("shared fields should parse");
+        let request = &reader.transport.requested_queries.borrow()[0];
+
+        assert_eq!(fields.description, "");
+        assert_eq!(fields.workflow_state, "In Progress");
+        assert!(request.0.contains(SHARED_ISSUE_FIELDS_QUERY.trim()));
+        assert_eq!(
+            request
+                .1
+                .as_ref()
+                .and_then(|variables| variables["id"].as_str()),
+            Some("d290f1ee-6c54-4b01-90e6-d701748f0851")
+        );
+        assert!(shared_issue_fields_from_response(r#"{"data":{"issue":null}}"#).is_err());
+    }
+
+    #[test]
+    fn rejects_incomplete_or_failed_shared_field_responses() {
+        for response in [
+            r#"{"errors":[{"message":"Not authorized"}]}"#,
+            r#"{"data":{"issue":{"title":"Local-first sync","description":"","updatedAt":"2026-08-09T12:00:00.000Z","state":null}}}"#,
+            r#"{"data":{"issue":{"title":"","description":"","updatedAt":"2026-08-09T12:00:00.000Z","state":{"name":"In Progress"}}}}"#,
+            r#"{"data":{"issue":{"title":"Local-first sync","description":"","updatedAt":"","state":{"name":"In Progress"}}}}"#,
+        ] {
+            assert!(shared_issue_fields_from_response(response).is_err());
         }
     }
 

@@ -27,6 +27,7 @@ The reference project's public issue history is a useful failure-mode catalogue.
 - Cancellation requests stop the owned process tree or report an actionable inability to do so.
 - A failed provider run cannot satisfy completion criteria.
 - External sync conflicts enter a reconciliation queue and preserve both versions.
+- A Linear comment whose remote result is ambiguous is marked `delivery_uncertain` and is never retried automatically.
 
 ### Recovery
 

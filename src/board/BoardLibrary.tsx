@@ -44,7 +44,6 @@ export function BoardLibrary({
     <section aria-labelledby="board-library-title" className="board-library">
       <div className="board-library-heading">
         <div>
-          <p className="eyebrow">Local-first board</p>
           <h2 id="board-library-title">Your boards</h2>
           <p>
             Pick up where you left off. Your board data stays on this device.
@@ -68,7 +67,7 @@ export function BoardLibrary({
             <EmptyMedia variant="icon">
               <FolderGit2Icon />
             </EmptyMedia>
-            <EmptyTitle>No local boards yet</EmptyTitle>
+            <EmptyTitle>No boards yet</EmptyTitle>
             <EmptyDescription>
               Create a board from a repository when you are ready.
             </EmptyDescription>
@@ -113,12 +112,17 @@ export function BoardLibrary({
                 </CardContent>
                 <CardFooter className="board-library-footer">
                   <Button
+                    aria-label={
+                      board.repositoryAvailable
+                        ? `Open ${board.name}`
+                        : `Retry ${board.name}`
+                    }
                     disabled={busy}
                     onClick={() => onOpenBoard(board.boardId)}
                     type="button"
                     variant={board.repositoryAvailable ? "default" : "outline"}
                   >
-                    {board.repositoryAvailable ? "Continue" : "Try again"}
+                    {board.repositoryAvailable ? "Open board" : "Try again"}
                     <ArrowRightIcon data-icon="inline-end" />
                   </Button>
                 </CardFooter>

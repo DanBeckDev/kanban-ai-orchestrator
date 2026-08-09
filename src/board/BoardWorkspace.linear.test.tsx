@@ -12,7 +12,7 @@ import type { BoardGateway } from "./types";
 
 async function openBoard(boardGateway: BoardGateway) {
   render(<App gateway={boardGateway} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Open MVP" }));
   await screen.findByRole("heading", { name: "MVP" });
   selectBoardControlTab("Connections");
 }

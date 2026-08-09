@@ -310,6 +310,59 @@ tasks:
       coverage at 85.79% lines, 85.26% statements, 80.65% functions, and
       84.04% branches; Rust remains at or above 80% for every metric.
 
+  - id: UI-002
+    epic: UI
+    title: Make the desktop concise, dark-first, and accessible
+    status: done
+    priority: P0
+    depends_on: [UI-001]
+    acceptance_criteria:
+      - The visible application, web-document, and native-window name is the concise product name Kanban; technical package, application identifier, and persisted data names remain stable.
+      - The application header and board-entry surfaces describe the user's context, next action, or an immediate consequence. Decorative implementation labels such as Execution authority and Current milestone are removed; diagnostic information remains discoverable only where it helps support or recovery.
+      - A user can explicitly choose Dark or Light appearance. Dark is the default for a first visit, the preference is applied before the app renders, and the choice remains local and survives restart.
+      - The shared semantic tokens provide a bold iris-on-slate visual language in both themes. Text, focus, form, action, destructive, success, and warning roles remain distinguishable without colour alone and meet the documented contrast policy.
+      - Focused tests cover the initial dark preference, stored light preference, switching appearance, and the concise application chrome. The full repository quality gate remains at or above 80% for every required metric.
+    notes: >-
+      Completed on 2026-08-09 as one focused visual-language goal and one pull
+      request. The desktop is now Kanban, applies a persisted Dark or Light
+      preference before React renders (Dark by default), uses an iris-on-slate
+      semantic palette, and replaces implementation-first entry copy with
+      purpose, recovery, and specific re-entry language. The work added the
+      source-owned shadcn Toggle Group, the project-local Vercel Web Interface
+      Guidelines skill, accessible names, a skip link, and visible focus/touch
+      behaviour. ADR 0022 records the enduring decision. Full quality
+      verification passed with frontend coverage at 86.21% lines, 85.71%
+      statements, 81.22% functions, and 83.85% branches; Rust remains at or
+      above 80% for every metric.
+
+  - id: UI-003
+    epic: UI
+    title: Complete an outcome-led copy review across board controls
+    status: ready
+    priority: P1
+    depends_on: [UI-002, UX-004]
+    acceptance_criteria:
+      - A content inventory assigns every persistent board-control string to one of: orient the user, name an action, explain status or consequence, or provide necessary support detail. Strings with no user purpose are removed.
+      - Planning, task, dependency, review, recovery, agent-profile, and Linear controls use the user's vocabulary, active voice, specific actions, and actionable errors; internal implementation terms are progressively disclosed.
+      - Empty, loading, blocked, failed, review, and disconnected states state what happened, why it matters, and the permitted next action without relying on colour, IDs, or raw daemon terminology.
+      - Focused component tests and representative developer walkthroughs cover discovery, understanding, and safe use of the revised language.
+    notes: >-
+      Keep this separate from UI-002: it needs the outcome-first board-home
+      information architecture from UX-004 so that revised wording does not
+      merely polish the current control-heavy layout.
+
+  - id: UI-004
+    epic: UI
+    title: Validate the visual language in themes and assistive settings
+    status: ready
+    priority: P1
+    depends_on: [UI-002, UX-008]
+    acceptance_criteria:
+      - Keyboard-only and screen-reader walkthroughs verify the appearance control, focus treatment, visible state labels, and all top-level entry screens in Dark and Light appearance.
+      - A forced-colours/high-contrast walkthrough confirms that controls, boundaries, focus, and status meaning remain visible when the authored palette is overridden.
+      - At least three representative developers assess comprehension of the product name, first-screen purpose, theme control, and first next action; findings have a recorded disposition and no raw private project data.
+    notes: Treat visual validation as evidence, not permission to add telemetry or retain user data.
+
   - id: UX-004
     epic: UX
     title: Make the board home outcome-first and action-oriented

@@ -25,7 +25,9 @@ describe("board library", () => {
     expect(
       screen.getByText("2 decisions need your attention · 1 agent is working"),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Website reliability" }),
+    );
 
     expect(await screen.findByRole("heading", { name: "MVP" })).toBeVisible();
     expect(boardGateway.openBoard).toHaveBeenCalledWith("board-1");
@@ -49,7 +51,9 @@ describe("board library", () => {
         "Repository unavailable. Restore the local folder, then try again.",
       ),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Retry Moved repository" }),
+    );
 
     await waitFor(() =>
       expect(boardGateway.openBoard).toHaveBeenCalledWith("board-1"),
@@ -66,9 +70,12 @@ describe("board library", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Your boards could not be loaded",
+        name: "Kanban could not load your boards",
       }),
     ).toBeVisible();
+    expect(
+      screen.queryByText("Kanban could not complete that request."),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
     expect(await screen.findByText("MVP")).toBeVisible();
@@ -79,7 +86,7 @@ describe("board library", () => {
     const boardGateway = gateway();
     render(<App gateway={boardGateway} />);
 
-    expect(await screen.findByText("No local boards yet")).toBeVisible();
+    expect(await screen.findByText("No boards yet")).toBeVisible();
     expect(
       screen.getAllByRole("button", { name: "Create a board" }),
     ).toHaveLength(1);
@@ -91,7 +98,7 @@ describe("board library", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Back to your boards" }),
     );
-    expect(await screen.findByText("No local boards yet")).toBeVisible();
+    expect(await screen.findByText("No boards yet")).toBeVisible();
   });
 
   it("does not invent an opening time for a board never opened locally", async () => {

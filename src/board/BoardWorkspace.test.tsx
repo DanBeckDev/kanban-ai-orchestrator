@@ -146,7 +146,7 @@ describe("board workspace", () => {
       .fn()
       .mockRejectedValue(new Error("not found"));
     render(<App gateway={failingGateway} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open MVP" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("not found");
   });
 

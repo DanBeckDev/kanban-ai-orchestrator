@@ -113,7 +113,6 @@ export function BoardView({
     <section aria-labelledby="board-title" className="board-workspace">
       <header className="board-header">
         <div>
-          <p className="eyebrow">Local board</p>
           <h2 id="board-title">{snapshot.board.name}</h2>
           <p>
             {workItems.length} tasks · {snapshot.dependencies.length}{" "}
@@ -121,7 +120,7 @@ export function BoardView({
           </p>
         </div>
         <div>
-          <Badge variant="secondary">Local daemon connected</Badge>
+          <Badge variant="secondary">Board ready</Badge>
           <BoardSupportDetails board={snapshot.board} />
         </div>
       </header>

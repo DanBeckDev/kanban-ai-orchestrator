@@ -158,3 +158,10 @@ as bounded systems of state, guards, actions, permissions, safeguards, and
 termination. The requirement to keep prompt-driven effects typed, policy-gated,
 and attributable is an implementation inference from that model, not a claim
 that the wireframes themselves were user-tested.
+
+**BookCtx — _The Product-Minded Engineer_, Gergely Orosz, “Turn Unknown
+Unknowns into Known Unknowns” (chunk 4).** The chapter recommends clear names
+and redundant explanations that describe how a feature helps its audience,
+rather than its implementation. The dependency view therefore pairs a visual
+map with an equivalent plain-language list and selected-task explanation; that
+is a project-specific implementation inference, not usability-test evidence.

@@ -1,20 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import { DependencyForm } from "./DependencyForm";
 import { TaskForm } from "./TaskForm";
-import type {
-  AddDependencyRequest,
-  CreateWorkItemRequest,
-  WorkItem,
-} from "./types";
+import type { CreateWorkItemRequest } from "./types";
 
 type BoardManagementProps = Readonly<{
   boardId: string;
   busy: boolean;
-  defaultTab: "task" | "dependencies";
-  workItems: readonly WorkItem[];
-  onAddDependency: (request: AddDependencyRequest) => Promise<void>;
   onCreateWorkItem: (request: CreateWorkItemRequest) => Promise<void>;
   onBack: () => void;
 }>;
@@ -22,39 +12,18 @@ type BoardManagementProps = Readonly<{
 export function BoardManagement({
   boardId,
   busy,
-  defaultTab,
-  workItems,
-  onAddDependency,
   onCreateWorkItem,
   onBack,
 }: BoardManagementProps) {
   return (
-    <section
-      aria-labelledby="organise-work-title"
-      className="workspace-surface"
-    >
+    <section aria-labelledby="create-task-title" className="workspace-surface">
       <SurfaceHeader
-        description="Create a standalone task or explain how two tasks depend on one another."
-        headingId="organise-work-title"
+        description="Create one standalone task. Use Dependencies to explain or add relationships between tasks."
+        headingId="create-task-title"
         onBack={onBack}
-        title="Organise work"
+        title="Create task"
       />
-      <Tabs defaultValue={defaultTab}>
-        <TabsList aria-label="Organise work">
-          <TabsTrigger value="task">New task</TabsTrigger>
-          <TabsTrigger value="dependencies">Dependencies</TabsTrigger>
-        </TabsList>
-        <TabsContent value="task">
-          <TaskForm boardId={boardId} busy={busy} onCreate={onCreateWorkItem} />
-        </TabsContent>
-        <TabsContent value="dependencies">
-          <DependencyForm
-            busy={busy}
-            workItems={workItems}
-            onCreate={onAddDependency}
-          />
-        </TabsContent>
-      </Tabs>
+      <TaskForm boardId={boardId} busy={busy} onCreate={onCreateWorkItem} />
     </section>
   );
 }

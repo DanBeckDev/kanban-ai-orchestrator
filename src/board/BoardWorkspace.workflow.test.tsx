@@ -17,7 +17,7 @@ describe("board workflow view", () => {
       screen.getByRole("menuitemradio", { name: "Dependencies" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Organise work" }),
+      await screen.findByRole("heading", { name: "Dependencies" }),
     ).toBeVisible();
 
     fireEvent.pointerDown(

@@ -1,5 +1,23 @@
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { timestamp } from "./presentation";
 import type { AddDependencyRequest, DependencyKind, WorkItem } from "./types";
 
@@ -33,9 +51,15 @@ export function DependencyForm({
   onCreate,
 }: DependencyFormProps) {
   const [input, setInput] = useState(initialDependencyInput);
+  const [showValidation, setShowValidation] = useState(false);
+  const missingTasks = input.upstream === "" || input.downstream === "";
 
   async function addDependency(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (missingTasks) {
+      setShowValidation(true);
+      return;
+    }
     const createdAt = timestamp();
     await onCreate({
       dependencyId: `${input.upstream}-${input.kind}-${input.downstream}`,
@@ -48,104 +72,136 @@ export function DependencyForm({
       createdBy: "user",
       createdAt,
     });
+    setInput(initialDependencyInput);
+    setShowValidation(false);
   }
 
   return (
-    <form
-      aria-labelledby="add-dependency-title"
-      className="panel form-panel"
-      onSubmit={addDependency}
-    >
-      <h3 id="add-dependency-title">Add dependency</h3>
-      <WorkItemSelect
-        label="Upstream task"
-        value={input.upstream}
-        workItems={workItems}
-        onChange={(upstream) => setInput({ ...input, upstream })}
-      />
-      <WorkItemSelect
-        label="Downstream task"
-        value={input.downstream}
-        workItems={workItems}
-        onChange={(downstream) => setInput({ ...input, downstream })}
-      />
-      <label>
-        Type
-        <select
-          value={input.kind}
-          onChange={(event) =>
-            setInput({ ...input, kind: event.target.value as DependencyKind })
-          }
-        >
-          <option value="blocks">Blocks</option>
-          <option value="review_required">Review required</option>
-          <option value="contract">Contract</option>
-          <option value="soft">Soft</option>
-        </select>
-      </label>
-      <label>
-        Reason
-        <input
-          required
-          value={input.reason}
-          onChange={(event) =>
-            setInput({ ...input, reason: event.target.value })
-          }
+    <form aria-labelledby="add-dependency-title" onSubmit={addDependency}>
+      <FieldGroup>
+        <div>
+          <h3 id="add-dependency-title">Add a relationship</h3>
+          <p className="field-hint">
+            Explain why the work is connected so the organiser and ticket agents
+            can act on it safely.
+          </p>
+        </div>
+        <TaskSelect
+          id="dependency-upstream"
+          invalid={showValidation && input.upstream === ""}
+          label="Must happen first"
+          value={input.upstream}
+          workItems={workItems}
+          onChange={(upstream) => setInput({ ...input, upstream })}
         />
-      </label>
-      <label>
-        Owner
-        <input
-          required
-          value={input.owner}
-          onChange={(event) =>
-            setInput({ ...input, owner: event.target.value })
-          }
+        <TaskSelect
+          id="dependency-downstream"
+          invalid={showValidation && input.downstream === ""}
+          label="Depends on it"
+          value={input.downstream}
+          workItems={workItems}
+          onChange={(downstream) => setInput({ ...input, downstream })}
         />
-      </label>
-      <label>
-        Next action
-        <input
-          required
-          value={input.nextAction}
-          onChange={(event) =>
-            setInput({ ...input, nextAction: event.target.value })
-          }
-        />
-      </label>
-      <button disabled={busy || workItems.length < 2} type="submit">
-        Add dependency
-      </button>
+        <Field>
+          <FieldLabel htmlFor="dependency-kind">Relationship</FieldLabel>
+          <Select
+            onValueChange={(kind) =>
+              setInput({ ...input, kind: kind as DependencyKind })
+            }
+            value={input.kind}
+          >
+            <SelectTrigger id="dependency-kind">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="blocks">Must finish first</SelectItem>
+                <SelectItem value="review_required">
+                  Needs review first
+                </SelectItem>
+                <SelectItem value="contract">Shared contract</SelectItem>
+                <SelectItem value="soft">Helpful order</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <FieldDescription>
+            Only the first two types hold up the scheduler.
+          </FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="dependency-reason">Why</FieldLabel>
+          <Input
+            id="dependency-reason"
+            required
+            value={input.reason}
+            onChange={(event) =>
+              setInput({ ...input, reason: event.target.value })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="dependency-owner">Owner</FieldLabel>
+          <Input
+            id="dependency-owner"
+            required
+            value={input.owner}
+            onChange={(event) =>
+              setInput({ ...input, owner: event.target.value })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="dependency-next-action">Next action</FieldLabel>
+          <Input
+            id="dependency-next-action"
+            required
+            value={input.nextAction}
+            onChange={(event) =>
+              setInput({ ...input, nextAction: event.target.value })
+            }
+          />
+        </Field>
+        <Button disabled={busy || workItems.length < 2} type="submit">
+          Add relationship
+        </Button>
+      </FieldGroup>
     </form>
   );
 }
 
-function WorkItemSelect({
+function TaskSelect({
+  id,
+  invalid,
   label,
   value,
   workItems,
   onChange,
 }: Readonly<{
+  id: string;
+  invalid: boolean;
   label: string;
   value: string;
   workItems: readonly WorkItem[];
   onChange: (value: string) => void;
 }>) {
   return (
-    <label>
-      {label}
-      <select
-        required
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">Select task</option>
-        {workItems.map((workItem) => (
-          <option key={workItem.id} value={workItem.id}>
-            {workItem.title} ({workItem.id})
-          </option>
-        ))}
-      </select>
-    </label>
+    <Field data-invalid={invalid || undefined}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <Select onValueChange={onChange} value={value}>
+        <SelectTrigger aria-invalid={invalid} id={id}>
+          <SelectValue placeholder="Choose a task" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {workItems.map((workItem) => (
+              <SelectItem key={workItem.id} value={workItem.id}>
+                {workItem.title}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      {invalid && <FieldError>Select a task to continue.</FieldError>}
+    </Field>
   );
 }

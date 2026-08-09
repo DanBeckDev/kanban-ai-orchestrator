@@ -1,0 +1,109 @@
+work_item: UX-005
+scope:
+  - "Standalone Dependencies view with a visual task map and equivalent accessible list."
+  - "Plain-language upstream, downstream, ownership, next-action, and current-plan explanations."
+  - "Manual relationship editing using existing typed gateway validation."
+  - "Compact workflow-card links to dependency explanations."
+source_structure:
+  reviewed_files:
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 130
+      responsibilities: "Passes task-specific dependency navigation from the workflow canvas to compact cards."
+      decision: kept cohesive
+    - path: src/board/BoardManagement.tsx
+      meaningful_lines: 51
+      responsibilities: "Keeps manual single-task creation separate from relationship management."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 382
+      responsibilities: "Coordinates top-level board surfaces and restores focus after returning to Workflow."
+      decision: kept cohesive
+    - path: src/board/BoardViewMenu.tsx
+      meaningful_lines: 68
+      responsibilities: "Provides the labelled top-level board-view selector and restoration target."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.dependencies.test.tsx
+      meaningful_lines: 69
+      responsibilities: "Covers graph and list selection, blocker explanation, downstream impact, and focus restoration."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 334
+      responsibilities: "Covers the existing board journeys, including persisted manual relationship creation."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.workflow.test.tsx
+      meaningful_lines: 28
+      responsibilities: "Covers top-level navigation into Dependencies."
+      decision: kept cohesive
+    - path: src/board/CompactWorkItemCard.tsx
+      meaningful_lines: 108
+      responsibilities: "Shows a truthful compact blocker signal and routes to its explanation."
+      decision: kept cohesive
+    - path: src/board/DependencyForm.tsx
+      meaningful_lines: 198
+      responsibilities: "Collects a typed manual relationship with clear, user-facing labels."
+      decision: kept cohesive
+    - path: src/board/DependencyInspector.tsx
+      meaningful_lines: 170
+      responsibilities: "Explains the selected task's relationships and non-authoritative plan context."
+      decision: kept cohesive
+    - path: src/board/DependencyMap.tsx
+      meaningful_lines: 133
+      responsibilities: "Renders selectable task-to-task relationship paths without owning graph semantics."
+      decision: kept cohesive
+    - path: src/board/DependencyView.tsx
+      meaningful_lines: 137
+      responsibilities: "Composes the map, accessible list, inspector, and manual relationship disclosure."
+      decision: kept cohesive
+    - path: src/board/dependencyPresentation.test.ts
+      meaningful_lines: 154
+      responsibilities: "Verifies dependency interpretation, stale-plan protection, and all relationship distinctions."
+      decision: kept cohesive
+    - path: src/board/dependencyPresentation.ts
+      meaningful_lines: 205
+      responsibilities: "Derives display-only dependency explanations from the authoritative snapshot and exact matching plan."
+      decision: kept cohesive
+    - path: src/test/setup.ts
+      meaningful_lines: 11
+      responsibilities: "Supplies narrow browser-API shims required by the repository's Radix Select interaction tests."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T22:32:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The visual relationship map repeats a task where it participates in multiple relationships."
+        resolution: accepted
+        rationale: "It keeps each directed relationship readable at responsive widths, while the equivalent task list and inspector provide the complete navigable explanation."
+        decision_reference: UX-005
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "A completed hard prerequisite could still be presented as an active compact-card blocker."
+    change: "The compact signal now names only unfinished hard prerequisites; the inspector distinguishes completed prerequisites from current waiting work."
+  - finding: "Plan-derived critical-route and parallel information could be shown after the dependency graph changed."
+    change: "The display adapter now exposes plan context only when task and dependency identity, endpoints, kind, and explanatory metadata exactly match the current snapshot."
+  - finding: "The manual relationship control appeared even when there were fewer than two tasks."
+    change: "The disclosure is now shown only when a relationship can be created."
+  - finding: "Relationship-type copy lacked regression coverage for all supported meanings."
+    change: "Added parameterized tests for block, review, contract, and advisory relationship labels and descriptions."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 87.92
+        statements: 87.12
+        functions: 84.75
+        branches: 84.18
+      - package_or_crate: src-tauri-rust
+        lines: 84.59
+        statements: 81.04
+        functions: 84.53
+        branches: 80.52
+    threshold_met: true
+exceptions: []

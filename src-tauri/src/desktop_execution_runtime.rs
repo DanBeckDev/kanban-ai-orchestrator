@@ -18,6 +18,8 @@ use crate::desktop_execution_runtime_support::{
     ExecutionRuntimeError, is_terminal_event, lock, timestamp,
 };
 
+#[path = "desktop_execution_runtime_coordination.rs"]
+mod coordination;
 #[path = "desktop_execution_runtime_launch.rs"]
 mod launch;
 

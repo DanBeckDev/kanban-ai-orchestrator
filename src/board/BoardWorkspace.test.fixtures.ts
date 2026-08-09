@@ -330,6 +330,7 @@ export function gateway(
       };
       return current;
     }),
+    coordinateBoard: vi.fn().mockImplementation(async () => current),
     stopExecution: vi.fn().mockImplementation(async () => current),
     executionActivity: vi
       .fn()

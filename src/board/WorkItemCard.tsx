@@ -19,6 +19,7 @@ import { ReviewDecisionForm } from "./ReviewDecisionForm";
 import { ExecutionControl } from "./ExecutionControl";
 import { ExternalLinks } from "./ExternalLinks";
 import { RecoveryActions } from "./RecoveryActions";
+import { correctionTransition } from "./correctionTransition";
 import type {
   BoardSnapshot,
   AgentProfile,
@@ -90,7 +91,11 @@ export function WorkItemCard({
   );
   const liveExecution = executions.find(isLiveExecution);
   const externalLinks = externalLinksFor(snapshot, workItem.id);
-  const options = manualTransitionStates(workItem.state);
+  const options = manualTransitionStates(workItem.state).filter(
+    (nextState) => workItem.state !== "review" || nextState !== "ready",
+  );
+  const onReturnForCorrection = (summary: string, recordedAt: string) =>
+    onTransition(correctionTransition(workItem, summary, recordedAt));
 
   async function submitTransition(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,6 +199,7 @@ export function WorkItemCard({
             busy={busy}
             workItem={workItem}
             onRecord={onRecordReviewDecision}
+            onReturnForCorrection={onReturnForCorrection}
           />
         </>
       )}

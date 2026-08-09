@@ -137,6 +137,7 @@ export function nextTransitionStates(
       ],
       review: [
         "done",
+        "ready",
         "running",
         "blocked",
         "failed",

@@ -34,22 +34,22 @@ export function GoalPlanForm({
 
   return (
     <form
-      aria-label={hasProposal ? "Regenerate board plan" : "Generate board plan"}
+      aria-label={hasProposal ? "Revise plan with AI" : "Plan with AI"}
       onSubmit={submit}
     >
-      <h4>Generate a proposal</h4>
+      <h4>Ask the organiser</h4>
       <p className="field-hint">
-        The planner can only return an unconfirmed proposal. Review the exact
-        tasks and dependencies before creating anything.
+        Describe the outcome in your own words. Kanban will suggest tasks and
+        their order; nothing is created until you review and confirm it.
       </p>
       {profiles.length === 0 ? (
         <p className="field-hint">
-          Save a planner profile below before generating a plan.
+          Set up an organiser connection in Settings before you create a plan.
         </p>
       ) : (
         <>
           <label>
-            Planner profile
+            Use this organiser
             <select
               required
               value={selectedProfile}
@@ -63,7 +63,7 @@ export function GoalPlanForm({
             </select>
           </label>
           <label>
-            Goal
+            What do you want to achieve?
             <textarea
               required
               value={goal}
@@ -76,7 +76,7 @@ export function GoalPlanForm({
             </p>
           )}
           <button disabled={busy} type="submit">
-            {hasProposal ? "Generate revised preview" : "Generate preview"}
+            {hasProposal ? "Create revised preview" : "Create plan preview"}
           </button>
         </>
       )}

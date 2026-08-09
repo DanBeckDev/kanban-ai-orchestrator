@@ -41,16 +41,15 @@ export function PlannerProfileForm({
   return (
     <section className="panel form-panel">
       <div>
-        <h3>Planner profiles</h3>
+        <h3>Organiser connections</h3>
         <p className="field-hint">
-          A planner receives one bounded goal JSON object on standard input and
-          must return one exact plan-draft JSON object on standard output. Use a
-          provider bridge of your choice; the daemon never stores its
-          transcript.
+          Use an existing provider bridge to generate plans. Kanban sends it one
+          outcome and keeps only the proposed tasks and dependencies, not the
+          conversation.
         </p>
       </div>
       {profiles.length > 0 && (
-        <ul aria-label="Saved planner profiles" className="profile-list">
+        <ul aria-label="Saved organiser connections" className="profile-list">
           {profiles.map((profile) => (
             <li key={profile.name}>
               <strong>{profile.name}</strong>
@@ -59,9 +58,9 @@ export function PlannerProfileForm({
           ))}
         </ul>
       )}
-      <form aria-label="Save planner profile" onSubmit={submit}>
+      <form aria-label="Save organiser connection" onSubmit={submit}>
         <label>
-          Profile name
+          Connection name
           <input
             required
             value={name}
@@ -91,7 +90,7 @@ export function PlannerProfileForm({
           </p>
         )}
         <button disabled={busy} type="submit">
-          Save planner profile
+          Save organiser connection
         </button>
       </form>
     </section>

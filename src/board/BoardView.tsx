@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ListPlusIcon, SparklesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { BoardAutomation } from "./BoardAutomation";
 import { BoardManagement, SurfaceHeader } from "./BoardManagement";
 import { BoardSettings } from "./BoardSettings";
 import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
+import { DependencyView } from "./DependencyView";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
@@ -121,11 +122,15 @@ export function BoardView({
 }: BoardViewProps) {
   const [surface, setSurface] = useState<BoardSurface>("workflow");
   const [selectedWorkItemId, setSelectedWorkItemId] = useState<string>();
+  const [restoreBoardFocus, setRestoreBoardFocus] = useState(false);
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
   const selectedWorkItem = workItems.find(
     ({ id }) => id === selectedWorkItemId,
   );
-  const returnToWorkflow = () => setSurface("workflow");
+  const returnToWorkflow = () => {
+    setRestoreBoardFocus(true);
+    setSurface("workflow");
+  };
   const activeView: MainBoardView =
     surface === "dependencies" || surface === "settings" ? surface : "workflow";
   const generatePlanFromWorkflow = async (request: GeneratePlanRequest) => {
@@ -136,6 +141,16 @@ export function BoardView({
     setSelectedWorkItemId(workItemId);
     setSurface("task-detail");
   };
+  const openDependencies = (workItemId?: string) => {
+    if (workItemId !== undefined) setSelectedWorkItemId(workItemId);
+    setSurface("dependencies");
+  };
+
+  useEffect(() => {
+    if (!restoreBoardFocus || surface !== "workflow") return;
+    document.getElementById("board-view-menu")?.focus();
+    setRestoreBoardFocus(false);
+  }, [restoreBoardFocus, surface]);
 
   return (
     <section aria-labelledby="board-title" className="board-workspace">
@@ -163,6 +178,7 @@ export function BoardView({
             plannerProfiles={plannerProfiles}
             snapshot={snapshot}
             onGeneratePlan={generatePlanFromWorkflow}
+            onExplainDependencies={openDependencies}
             onOpenTask={openTask}
           />
         </>
@@ -185,16 +201,23 @@ export function BoardView({
           />
         </section>
       )}
-      {(surface === "new-task" || surface === "dependencies") && (
+      {surface === "new-task" && (
         <BoardManagement
           boardId={snapshot.board.id}
           busy={busy}
-          defaultTab={surface === "new-task" ? "task" : "dependencies"}
-          key={surface}
-          workItems={workItems}
-          onAddDependency={onAddDependency}
           onBack={returnToWorkflow}
           onCreateWorkItem={onCreateWorkItem}
+        />
+      )}
+      {surface === "dependencies" && (
+        <DependencyView
+          boardPlan={boardPlan}
+          busy={busy}
+          selectedWorkItemId={selectedWorkItemId}
+          snapshot={snapshot}
+          onAddDependency={onAddDependency}
+          onBack={returnToWorkflow}
+          onOpenTask={openTask}
         />
       )}
       {surface === "settings" && (

@@ -42,7 +42,7 @@ export function BoardViewMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline">
+        <Button id="board-view-menu" type="button" variant="outline">
           <ActiveIcon data-icon="inline-start" />
           {active?.label ?? "Workflow"}
         </Button>

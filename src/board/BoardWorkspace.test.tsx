@@ -62,18 +62,15 @@ describe("board workspace", () => {
       .calls[0][0].workItemId;
 
     openDependencies();
-    const upstreamTask = screen.getByLabelText("Upstream task");
-    const downstreamTask = screen.getByLabelText("Downstream task");
-    fireEvent.change(upstreamTask, {
-      target: { value: "api" },
-    });
-    fireEvent.change(downstreamTask, {
-      target: { value: createdWorkItemId },
-    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add a relationship manually" }),
+    );
+    await chooseTask("Must happen first", "Task api");
+    await chooseTask("Depends on it", "UI");
     const dependencyForm = screen.getByRole("form", {
-      name: "Add dependency",
+      name: "Add a relationship",
     });
-    fireEvent.change(within(dependencyForm).getByLabelText("Reason"), {
+    fireEvent.change(within(dependencyForm).getByLabelText("Why"), {
       target: { value: "UI needs the API." },
     });
     fireEvent.change(within(dependencyForm).getByLabelText("Owner"), {
@@ -82,9 +79,14 @@ describe("board workspace", () => {
     fireEvent.change(within(dependencyForm).getByLabelText("Next action"), {
       target: { value: "Complete API." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add dependency" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add relationship" }));
 
-    expect(boardGateway.addDependency).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(boardGateway.addDependency).toHaveBeenCalledOnce(),
+    );
+    expect(boardGateway.addDependency).toHaveBeenCalledWith(
+      expect.objectContaining({ downstreamWorkItemId: createdWorkItemId }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     expect(await screen.findByText("Waiting on Task api")).toBeVisible();
     openTask("UI");
@@ -346,3 +348,12 @@ describe("board workspace", () => {
     expect(screen.getByText("Unit tests passed.")).toBeVisible();
   });
 });
+
+async function chooseTask(label: string, name: string) {
+  fireEvent.pointerDown(screen.getByLabelText(label), {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+  fireEvent.click(await screen.findByRole("option", { name }));
+}

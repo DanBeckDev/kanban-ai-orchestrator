@@ -30,6 +30,7 @@ type BoardCanvasProps = Readonly<{
   busy: boolean;
   plannerProfiles: readonly PlannerProfile[];
   onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
+  onExplainDependencies: (workItemId: string) => void;
   onOpenTask: (workItemId: string) => void;
 }>;
 
@@ -38,6 +39,7 @@ export function BoardCanvas({
   busy,
   plannerProfiles,
   onGeneratePlan,
+  onExplainDependencies,
   onOpenTask,
 }: BoardCanvasProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -65,7 +67,11 @@ export function BoardCanvas({
           </EmptyHeader>
         </Empty>
       ) : (
-        <WorkflowLanes snapshot={snapshot} onOpenTask={onOpenTask} />
+        <WorkflowLanes
+          snapshot={snapshot}
+          onExplainDependencies={onExplainDependencies}
+          onOpenTask={onOpenTask}
+        />
       )}
     </>
   );
@@ -73,9 +79,11 @@ export function BoardCanvas({
 
 function WorkflowLanes({
   snapshot,
+  onExplainDependencies,
   onOpenTask,
 }: Readonly<{
   snapshot: BoardSnapshot;
+  onExplainDependencies: (workItemId: string) => void;
   onOpenTask: (workItemId: string) => void;
 }>) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -111,6 +119,7 @@ function WorkflowLanes({
                       snapshot={snapshot}
                       workItem={workItem}
                       workItemTitles={workItemTitles}
+                      onExplainDependencies={onExplainDependencies}
                       onOpen={onOpenTask}
                     />
                   ))}

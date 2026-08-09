@@ -15,6 +15,7 @@ type CompactWorkItemCardProps = Readonly<{
   snapshot: BoardSnapshot;
   workItemTitles: ReadonlyMap<string, string>;
   workItem: WorkItem;
+  onExplainDependencies: (workItemId: string) => void;
   onOpen: (workItemId: string) => void;
 }>;
 
@@ -22,9 +23,17 @@ export function CompactWorkItemCard({
   snapshot,
   workItemTitles,
   workItem,
+  onExplainDependencies,
   onOpen,
 }: CompactWorkItemCardProps) {
   const blockers = blockersFor(snapshot, workItem.id);
+  const waitingOn = blockers.filter((dependency) =>
+    snapshot.workItems.some(
+      ({ workItem: upstream }) =>
+        upstream.id === dependency.upstreamWorkItemId &&
+        upstream.state !== "done",
+    ),
+  );
   const latestExecution = executionsFor(snapshot, workItem.id).at(-1);
 
   return (
@@ -39,10 +48,24 @@ export function CompactWorkItemCard({
         <CardContent>
           <p className="compact-work-item-summary">{workItem.description}</p>
           <p className="compact-work-item-signal">
-            {taskSignal(blockers, workItemTitles, latestExecution?.adapterName)}
+            {taskSignal(
+              waitingOn,
+              workItemTitles,
+              latestExecution?.adapterName,
+            )}
           </p>
         </CardContent>
         <CardFooter>
+          {blockers.length > 0 && (
+            <Button
+              aria-label={`Explore dependencies for ${workItem.title}`}
+              onClick={() => onExplainDependencies(workItem.id)}
+              type="button"
+              variant="link"
+            >
+              Explore dependencies
+            </Button>
+          )}
           <Button
             aria-label={`Open task ${workItem.title}`}
             onClick={() => onOpen(workItem.id)}

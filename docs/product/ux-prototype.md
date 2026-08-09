@@ -1,6 +1,6 @@
 # First-use and returning-user prototype
 
-- Status: Low-fidelity study artifact for UX-008; not production UI
+- Status: Superseded as product direction by the approved wireframes; retained as a later UX-007 study aid
 - Date: 2026-08-09
 - Scope: **Find work → Set up safely → Describe an outcome**
 
@@ -8,7 +8,9 @@ This is deliberately a text prototype. It lets a participant react to the
 information, language, sequence, and safety boundaries before visual styling or
 desktop implementation makes changes expensive. It must be used with the
 protocol in [UX validation](ux-validation.md), not presented as evidence that
-the flow has already been validated.
+the flow has already been validated. The product-owner wireframe handoff is in
+[Approved wireframe specification](approved-wireframes.md); use this older
+prototype only as a study aid when UX-007 validates a current build.
 
 ## Journey slice
 

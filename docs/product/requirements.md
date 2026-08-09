@@ -61,10 +61,13 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
 - Launching the app presents a local board library. A returning user can recognise
   and open a board by its name and repository context, with recently used boards
   prominent; opening a board must never require typing or remembering a durable ID.
-- A user creates a local board by naming it and selecting a repository through a
-  native directory picker. The command boundary validates the repository and
-  generates project and board identifiers; IDs are implementation details,
-  available only in advanced support details.
+- A user sets up a local workspace by linking a GitHub repository, which the app
+  clones into a selected local destination, or by selecting an existing local
+  repository through a native directory picker. The command boundary validates
+  the repository and generates project and board identifiers; IDs are
+  implementation details, available only in advanced support details. GitHub
+  linking uses the person's existing Git credential mechanism and must not store
+  GitHub credentials in board metadata or leave a partly created board on failure.
 - The normal setup path resolves the project's primary starting point and
   standard safety policy without Git or policy vocabulary. A deliberately opened
   plain-language starting-point override remains available for teams that need
@@ -99,19 +102,23 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
 
 ## Agent choice and focused-workspace requirements
 
-- The default Kanban surface is a work surface, not a configuration form. It
-  shows state columns, concise task cards, dependency/attention signals, and
-  clear paths to plan work, create a task, open a task, or open Settings.
+- The default Workflow surface is a work surface, not a configuration form. A
+  top-left view menu reaches Workflow, Dependencies, Settings, and focused task
+  detail. Workflow shows vertically stacked, collapsible Backlog, In progress,
+  Review, and Done lanes; concise task cards; dependency/attention signals; and
+  clear paths to prompt the organiser, create a task, open a task, or open
+  Settings.
   Provider, planner, dependency-editor, and Linear configuration controls must
   not be permanently rendered beside the board.
 - The desktop detects the known local CLI executables for Codex, Claude Code,
   and Cline by resolving trusted program names on `PATH`; discovery must not
   launch a provider, submit credentials, or inspect a provider's private data.
   The settings UI clearly differentiates Installed from Not installed.
-- A person can choose an installed provider with one explicit action. The app
-  creates or reuses its safe, adapter-owned default profile and applies it as
-  the default worker choice. The normal UI never asks for raw command arguments,
-  credentials, approval bypasses, worktree paths, or protocol flags.
+- A person can enable an installed provider for one project with one explicit
+  action. The app creates or reuses its safe, adapter-owned default profile and
+  allows separate enabled-provider, model, and effort defaults for the
+  orchestrator and ticket workers. The normal UI never asks for raw command
+  arguments, credentials, approval bypasses, worktree paths, or protocol flags.
 - Installing a missing provider is always a deliberate external user action.
   The product may link to the provider's official installation guidance, but
   must not install software, change an account, or weaken permissions by itself.
@@ -119,6 +126,11 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   the next permitted action, and blocker/evidence context. Criteria, activity,
   review evidence, worktree details, and recovery history use progressive
   disclosure. A selected task must remain fully operable by keyboard.
+- Task detail includes a ticket-scoped AI prompt that can request any
+  ticket-relevant action, including refinement, worker guidance, start/restart
+  preparation, evidence explanation, correction, and recovery. The daemon
+  evaluates every typed effect against the current manual/autonomous authority,
+  policy, review, and protected-action rules; a prompt cannot bypass them.
 
 ## Linear entry requirements
 

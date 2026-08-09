@@ -1,6 +1,6 @@
 # User experience strategy
 
-- Status: Proposed for the next delivery phase
+- Status: Approved product direction; implementation in progress
 - Date: 2026-08-09
 - Scope: local desktop experience on macOS first, with the same interaction model on Windows and Linux
 
@@ -19,9 +19,9 @@ The next phase makes the desktop app feel like a trustworthy work space:
 
 - Returning people recognise and open a board by name and repository, with the
   most recently used board prominent.
-- New people choose **Create a board**, select a local repository with a native
-  folder picker, name the board, and begin planning. The app creates immutable
-  identifiers and sensible safe defaults behind the scenes.
+- New people set up a workspace by linking a GitHub repository (which clones it)
+  or using an existing local repository, then begin planning. The app creates
+  immutable identifiers and sensible safe defaults behind the scenes.
 - A board opens to the next useful action: describe an outcome, resolve an
   attention item, review work, or observe active agents.
 - Dependencies explain order and impact in plain language. People never have to
@@ -58,17 +58,17 @@ The next phase makes the desktop app feel like a trustworthy work space:
 
 | Place | Primary question answered | Primary action |
 | --- | --- | --- |
-| **Your boards** | “What was I working on, and what needs attention?” | Open a board or create one |
-| **Create a board** | “Which repository and outcome am I coordinating?” | Select repository and create |
+| **Your boards** | “What was I working on, and what needs attention?” | Open a board or set up a workspace |
+| **Set up workspace** | “Which repository and outcome am I coordinating?” | Link GitHub or use a local repository |
 | **Board home** | “What is the safest next move?” | Describe an outcome, resolve attention, or review |
-| **Board** | “What work exists and what is its state?” | Inspect, create, or transition work |
+| **Workflow** | “What work exists and what is its state?” | Prompt the organiser, create, or open work |
 | **Dependencies** | “What is blocked, what can run in parallel, and why?” | Trace an impact or resolve a blocker |
 | **Work detail** | “What evidence and decision are needed for this task?” | Act on the one current decision |
 | **Settings and connections** | “How is this board configured?” | Adjust an advanced setting or connect Linear |
 
-The board home is the default workspace view. The Kanban board, dependency map,
-activity, and settings are named views of the same authoritative local data, not
-separate sources of truth.
+Workflow is the default workspace view. A top-left view menu switches between
+Workflow, Dependencies, Settings, and focused task detail using the same
+authoritative local data; these are not separate sources of truth.
 
 ## Journey backbone and release slices
 
@@ -79,7 +79,7 @@ isolated screen or configuration field.
 
 | Activity | Current pain | Later experience | Minimum release evidence |
 | --- | --- | --- | --- |
-| **Find work** | Remember an opaque board ID | Recognise a recent local board or choose Create a board | Returning user opens a saved board by name and repository context |
+| **Find work** | Remember an opaque board ID | Recognise a recent local board or set up a workspace | Returning user opens a saved board by name and repository context |
 | **Set up safely** | Enter internal IDs, paths, and policy codes | Name a board, choose a repository natively, accept clear safe defaults | New user creates a valid board without an ID or typed path |
 | **Describe an outcome** | Translate an outcome into implementation fields | State the outcome in natural language; the configured organiser drafts the work | User can review an unconfirmed proposal and its assumptions |
 | **Decide the order** | Infer dependency consequences from cards and lines | See why work is blocked, what is safe in parallel, and the next decision | User explains one blocked task and traces its impact |
@@ -108,15 +108,20 @@ and keeps the first release focused on the minimal coherent user outcome.
 
 ### First visit or creating a board
 
-1. The empty library has one clear primary button: **Create a board**.
-2. The concise form asks for a board name and a repository through a native folder
-   picker. The proposed board name defaults to the repository folder name and is
-   editable.
-3. The app validates that the selected folder is a Git repository, resolves the
-   project's primary starting point, generates project/board IDs, selects the
-   safe standard policy, and persists nothing until the person confirms creation.
-   None of those implementation details obstruct ordinary setup.
-4. A closed **Use a different starting point** control is available only for a
+1. The empty library has one clear primary button: **Set up workspace**.
+2. The concise form offers **Link a GitHub repository** or **Use a local
+   repository**. GitHub linking clones into a user-selected local destination;
+   local use opens a native directory picker. The proposed board name defaults
+   to the repository folder name and is editable.
+3. The app validates the selected or cloned repository, derives an editable board
+   name from its folder, resolves the project's primary starting point, generates
+   project/board IDs, selects the safe standard policy, and persists nothing
+   until the person confirms creation. None of those implementation details
+   obstruct ordinary setup.
+4. The app asks which detected providers to enable for this project, then lets
+   the person select model and effort defaults separately for the orchestrator
+   and ticket workers. A closed **Use a different starting point** control is
+   available only for a
    team that needs a different line of work. It uses plain language and explains
    its effect; policy and self-managed integrations belong in later settings,
    not the first-board form.
@@ -155,11 +160,12 @@ It contains:
 - **Delivery picture**: ready work, hard-blocked work, review work, completed
   work, critical path, and safe parallel capacity. Counts always link to a view.
 
-### Board and dependency views
+### Workflow and dependency views
 
-The Board view uses visible state labels and colour as redundant reinforcement.
-It is a focused delivery surface: columns, compact cards, a concise delivery
-summary, and actions to plan work, add a task, open a task, or change Settings.
+Workflow uses visible state labels and colour as redundant reinforcement. It is
+a focused delivery surface: vertically stacked, collapsible Backlog, In
+progress, Review, and Done lanes; compact cards; a concise delivery summary; and
+actions to prompt the organiser, add a task, open a task, or change Settings.
 It never persistently displays provider, planner, raw command, dependency-editor,
 or Linear configuration forms. Cards lead with task title, state, assigned agent
 when one exists, and the one most important next fact; opaque task IDs move to
@@ -169,7 +175,7 @@ card.
 
 ### Plan with AI
 
-**Plan with AI** is a focused conversation about an outcome, not a form for
+**Prompt AI to orchestrate** is a focused conversation about an outcome, not a form for
 creating database records. It begins with one question: **What do you want to
 achieve?** The supporting copy makes the consequence explicit: Kanban will draft
 tasks and their order, and the person decides whether to create them.
@@ -196,16 +202,16 @@ When the organiser returns a task for correction, the task detail says what it
 found, what evidence it considered, and what happens next. It never makes a
 rejected result disappear or look like a completed task.
 
-### Agent and automation settings
+### Project agents and automation settings
 
-Settings is where a person configures the product, not where they supervise a
-board. Its first two questions are **Which installed agent should plan and
-coordinate work?** and **Which installed agent should work on new tasks?** It
-detects Codex CLI, Claude Code, and Cline CLI from the local machine without
-starting them. Each installed option is selectable in one action and shows the
-chosen default. A missing option is marked **Not installed** and links to that
-provider's official installation guidance; Kanban does not install software or
-authenticate an account on the person's behalf.
+Settings is where a person configures the project, not where they supervise a
+board. It first asks which local providers to enable for this project, then
+which enabled provider, model, and effort should default to **Orchestrator** and
+**Ticket workers**. It detects Codex CLI, Claude Code, and Cline CLI from the
+local machine without starting them. Each installed option is selectable in one
+action and shows the chosen role default. A missing option is marked **Not
+installed** and links to that provider's official installation guidance; Kanban
+does not install software or authenticate an account on the person's behalf.
 
 The normal path contains no provider arguments, credentials, permission-bypass
 flags, worktree paths, or event-protocol terminology. An intentionally separate
@@ -231,10 +237,12 @@ provides the same explanation when a visual graph is unavailable or overwhelming
 
 Open a task to see a concise decision summary first: current state, why it is in
 that state, assigned agent/workspace, current evidence, and the permitted next
-action. Expandable sections hold acceptance criteria, dependency context, safe
-activity, checks, review evidence, Git references, and history. Failure and
-interruption states lead with recovery choices and their consequences; they never
-look like successful completion.
+action. A ticket-scoped **Prompt AI** composer can refine the task, request
+worker guidance, prepare start/restart/recovery, explain evidence, or request a
+return for correction. Expandable sections hold acceptance criteria, dependency
+context, safe activity, checks, review evidence, Git references, and history.
+Failure and interruption states lead with recovery choices and their
+consequences; they never look like successful completion.
 
 ## Interaction and accessibility requirements
 

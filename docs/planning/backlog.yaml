@@ -286,6 +286,23 @@ tasks:
       - The desktop clearly distinguishes an unconfirmed preview from a confirmed plan and sends only typed commands to the local daemon.
     notes: Completed on 2026-08-08 with typed desktop commands, a durable SQLite proposal/confirmation record, exact daemon-generated previews, and one atomic materialization transaction. The UI can inspect, revise, cancel, reject, or confirm an unconfirmed proposal; confirmation records identity and time, survives reopening, and is idempotent on retry. Tests cover no partial mutation for mismatched, cross-board, duplicate, collision, and already-confirmed requests. A future provider-neutral orchestrator adapter will generate this same safe proposal contract.
 
+  - id: APP-004
+    epic: APP
+    title: Let people link a GitHub repository or use an existing local repository
+    status: ready
+    priority: P0
+    depends_on: [EXEC-001, UX-008]
+    acceptance_criteria:
+      - Workspace setup offers equally clear Link a GitHub repository and Use a local repository paths; the former clones to a user-selected local destination and the latter validates an existing repository root through the native picker.
+      - The clone path is a typed, safe Git boundary: it visibly identifies the source and destination, uses existing Git credential/SSH configuration without persisting credentials, rejects unsafe destinations, and leaves no partly created project or board after cancellation or failure.
+      - After a repository is valid, project setup can enable detected providers and choose safe provider-neutral model and effort defaults separately for the orchestrator and ticket workers without exposing raw flags or credentials.
+      - Command, gateway, and component tests cover local repository selection, successful and failed/cancelled clone preparation, credential non-persistence, project-scoped role defaults, recovery messaging, and the 80% coverage requirement.
+    notes: >-
+      Added on 2026-08-09 from the approved product-owner wireframes. “Link” is
+      intentionally a local clone because agent work needs a repository on disk;
+      it is not an in-app hosted GitHub browser. Existing Git credential helpers
+      remain outside Kanban’s persistence boundary.
+
   - id: UX-001
     epic: UX
     title: Define the outcome-first desktop experience and acceptance scenarios
@@ -307,16 +324,15 @@ tasks:
     acceptance_criteria:
       - The daemon exposes a typed, local board-library query that contains only the metadata required to recognise and safely open a board: display name, repository context, availability, last-opened time, and derived attention summary.
       - The initial desktop screen lists saved boards in deterministic recent-first order and offers a clear Continue action; opening a board never requires a board or project ID.
-      - An empty library provides a single clear Create a board action. An unavailable repository is diagnosed with a locate/retry path before a board snapshot is loaded.
+      - An empty library provides a single clear Set up workspace action. An unavailable repository is diagnosed with a locate/retry path before a board snapshot is loaded.
       - Last-opened state survives restart, stays local, and does not leak repository metadata to providers or Linear. Rust and frontend tests cover empty, recent, unavailable, and reopened-board paths.
     notes: >-
       Keep this as the first implementation PR. Do not combine it with the
       new-board form, graph, or visual refresh; it establishes the small
-      authoritative directory contract needed by every later UX slice. On
-      2026-08-09, the product owner explicitly accepted a delivery exception:
-      UX-002 may proceed while UX-008's representative walkthroughs are still
-      being collected. UX-008 remains in progress and its study evidence is
-      still required for phase completion.
+      authoritative directory contract needed by every later UX slice. UX-002
+      proceeded under an earlier delivery exception. The product owner
+      subsequently approved an explicit wireframe specification; representative
+      validation is now UX-007 rather than a blocker for this completed task.
 
   - id: UX-003
     epic: UX
@@ -333,8 +349,8 @@ tasks:
     notes: >-
       Completed on 2026-08-09 in a focused pull request. This work added a
       Tauri capability, migration-safe command changes, and a user-facing form
-      replacement. UX-008's representative-walkthrough completion gate remains
-      unchanged.
+      replacement. APP-004 now extends this local-only flow with the approved
+      GitHub clone path and project-scoped agent defaults.
 
   - id: UX-009
     epic: UX
@@ -343,7 +359,7 @@ tasks:
     priority: P0
     depends_on: [UX-003]
     acceptance_criteria:
-      - With a project selected, the ordinary desktop setup path presents the project folder, editable board name, Back, and Create board actions without vertical page scrolling at a 720px-tall desktop viewport.
+      - With a project selected, the ordinary desktop setup path presents the project folder, editable board name, Back, and Set up workspace actions without vertical page scrolling at a 720px-tall desktop viewport.
       - The ordinary path never asks the person to understand or choose a base branch, base ref, policy, Standard policy, Git root, or an internal identifier. It explains only the immediate outcome of creating the board.
       - Repository inspection chooses the configured remote's locally known primary branch when available; otherwise it safely prefers an existing conventional primary branch (main, master, or trunk) before falling back to the checked-out branch. Creation revalidates the resolved reference before any durable state changes.
       - A deliberately opened Use a different starting point control is the only initial override. It uses plain language, explains that it is normally unnecessary, and preserves the existing typed base-reference validation. Policy remains daemon-owned and defaults to standard without appearing in this flow.
@@ -511,23 +527,26 @@ tasks:
   - id: UX-008
     epic: UX
     title: Map and test the first-use and returning-user journeys before production UI work
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [UX-001]
     acceptance_criteria:
       - A now map records how representative developers currently create, reopen, plan, supervise, review, and recover agent work, including pains, workarounds, questions, and the distinction between new and returning use.
       - A later-map prototype covers the Find work, Set up safely, and Describe an outcome backbone activities and explicitly shows board-library, repository-picker, generated-ID, safe-default, and plan-confirmation behaviour.
-      - At least three representative developers, including one keyboard-first or assistive-technology user where possible, complete a moderated scenario walkthrough of the prototype. Their feedback is anonymized and produces a disposition for every critical or recurring finding.
       - The documented prototype decisions identify which defaults are safe, which choices require explicit confirmation, and which advanced controls are intentionally deferred. No production source code is changed in this task.
+      - A product-owner wireframe handoff resolves setup repository sources, project agent defaults, view navigation, manual-mode meaning, ticket-AI scope, and standalone dependency exploration; it is explicitly distinguished from representative-user validation.
     notes: >-
       This is the first executable UX task despite its later identifier. It applies
       the BookCtx User Story Mapping now-map/later-map and release-slicing practice
       before implementation, and the Inclusive Design Needs Walkthrough before a
       graph or card design becomes expensive to change. On 2026-08-09, the
       evidence-based current-journey audit, low-fidelity prototype, and moderated
-      study kit were added in docs/product. Completion still requires three
-      representative walkthroughs and finding dispositions; no production source
-      code is changed in this task.
+      study kit were added in docs/product. On 2026-08-09, a product-owner
+      wireframe handoff and its clarified interaction decisions were recorded in
+      docs/product/approved-wireframes.md. UX-008 is complete as a product
+      direction task; it does not claim user research. UX-007 owns validation of
+      a current build with representative developers. No production source code
+      is changed in this task.
 
   - id: UX-011
     epic: UX

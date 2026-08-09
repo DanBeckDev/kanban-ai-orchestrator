@@ -20,7 +20,7 @@ export async function createBoard(boardGateway: BoardGateway) {
   fireEvent.change(screen.getByLabelText("Board name"), {
     target: { value: "MVP" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Create board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Set up workspace" }));
   await screen.findByRole("heading", { name: "MVP" });
 }
 

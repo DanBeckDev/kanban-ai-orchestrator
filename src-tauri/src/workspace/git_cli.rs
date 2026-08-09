@@ -122,6 +122,29 @@ impl GitCli {
         Ok(())
     }
 
+    pub fn clone(
+        &self,
+        destination_parent: &Path,
+        repository_url: &str,
+        destination: &Path,
+    ) -> Result<(), GitError> {
+        self.successful_text(
+            destination_parent,
+            "clone the selected GitHub repository",
+            &[
+                "clone".into(),
+                "--no-recurse-submodules".into(),
+                "--".into(),
+                repository_url.into(),
+                git_path_argument(destination)
+                    .as_ref()
+                    .as_os_str()
+                    .to_owned(),
+            ],
+        )?;
+        Ok(())
+    }
+
     pub fn attach_existing_branch(
         &self,
         directory: &Path,

@@ -263,6 +263,11 @@ export type CreateLocalBoardRequest = Readonly<{
   policySetId?: string;
 }>;
 
+export type CloneGitHubRepositoryRequest = Readonly<{
+  repositoryUrl: string;
+  destinationParentPath: string;
+}>;
+
 export type CreateWorkItemRequest = Readonly<{
   eventId: string;
   workItemId: string;

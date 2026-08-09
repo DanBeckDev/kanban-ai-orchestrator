@@ -137,7 +137,9 @@ without its existing authorization.
 ## Implementation and validation implications
 
 - The existing repository-first setup must grow to include a safe GitHub clone
-  path and project-scoped agent role defaults. This is APP-004.
+  path. This is APP-004. ORCH-006 implements the durable project-scoped agent
+  role defaults after its typed organiser/worker contracts exist; setup points
+  people to that next configuration rather than persisting inert UI choices.
 - UX-004 implements the Workflow view, organiser composer, manual task route,
   and view-menu structure. It supersedes the earlier card-column assumption.
 - UX-005 implements the standalone Dependencies view and accessible graph/list

@@ -2,6 +2,7 @@ mod error;
 mod git_cli;
 mod path;
 mod repository_branch;
+mod repository_clone;
 
 use std::{
     fs,
@@ -21,6 +22,7 @@ use path::{
 pub use error::WorkspaceError;
 pub use git_cli::GitError;
 pub use path::PathAccess;
+pub use repository_clone::{GitHubRepositoryCloneRequest, clone_github_repository};
 
 #[cfg(test)]
 mod repository_setup_tests;

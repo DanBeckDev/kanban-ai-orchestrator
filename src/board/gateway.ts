@@ -9,6 +9,7 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateBoardRequest,
+  CloneGitHubRepositoryRequest,
   CreateLocalBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
@@ -40,6 +41,11 @@ export const tauriBoardGateway: BoardGateway = {
   },
   inspectRepository(repositoryPath: string): Promise<RepositorySetup> {
     return invoke("inspect_repository", { repositoryPath });
+  },
+  cloneGitHubRepository(
+    request: CloneGitHubRepositoryRequest,
+  ): Promise<RepositorySetup> {
+    return invoke("clone_github_repository", { request });
   },
   createLocalBoard(request: CreateLocalBoardRequest): Promise<BoardSnapshot> {
     return invoke("create_local_board", { request });

@@ -7,6 +7,7 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateBoardRequest,
+  CloneGitHubRepositoryRequest,
   CreateLocalBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
@@ -35,6 +36,9 @@ export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
   inspectRepository(repositoryPath: string): Promise<RepositorySetup>;
+  cloneGitHubRepository(
+    request: CloneGitHubRepositoryRequest,
+  ): Promise<RepositorySetup>;
   createLocalBoard(request: CreateLocalBoardRequest): Promise<BoardSnapshot>;
   boardLibrary(): Promise<readonly BoardLibraryEntry[]>;
   openBoard(boardId: string): Promise<BoardSnapshot>;

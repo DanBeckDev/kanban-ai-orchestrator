@@ -246,7 +246,7 @@ tasks:
       - A product UX strategy defines the board library, first-board, returning-user, planning, dependency, recovery, Linear, accessibility, and cross-platform interaction model.
       - It identifies current internal-ID and dense-setup failures, measurable acceptance scenarios, non-goals, and research evidence.
       - Requirements and the roadmap explicitly make recognition-based re-entry, generated IDs, native repository selection, outcome-first planning, and dependency explanation mandatory.
-    notes: Completed on 2026-08-09 in docs/product/user-experience.md after repository audit and current Apple, Tauri, and Linear documentation research. Book CTX was not installed in the active workspace, so no unavailable skill was represented as evidence.
+    notes: Completed on 2026-08-09 in docs/product/user-experience.md after repository audit, current Apple/Tauri/Linear documentation research, and targeted BookCtx evidence from User Story Mapping, The Product-Minded Engineer, and Inclusive Design for Accessibility. BookCtx is a globally configured local MCP library, not a project-local dependency.
 
   - id: UX-002
     epic: UX

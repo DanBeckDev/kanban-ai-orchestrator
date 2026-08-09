@@ -10,7 +10,7 @@ import type { AgentProfile, AgentProfileKind } from "./types";
 type AgentProfileFormProps = Readonly<{
   busy: boolean;
   profiles: readonly AgentProfile[];
-  onSave: (profile: AgentProfile) => Promise<void>;
+  onSave: (profile: AgentProfile) => Promise<boolean>;
 }>;
 
 export function AgentProfileForm({
@@ -31,7 +31,7 @@ export function AgentProfileForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onSave({
+    const saved = await onSave({
       name,
       kind,
       program,
@@ -40,6 +40,7 @@ export function AgentProfileForm({
         .map((argument) => argument.trim())
         .filter(Boolean),
     });
+    if (!saved) return;
     setKind("structured_process");
     setName("");
     setProgram("agent-worker");

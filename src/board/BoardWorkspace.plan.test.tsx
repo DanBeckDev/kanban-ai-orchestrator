@@ -2,24 +2,18 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { gateway } from "./BoardWorkspace.test.fixtures";
-import { createBoard } from "./BoardWorkspace.test.helpers";
+import {
+  createBoard,
+  openPlan,
+  openSettings,
+} from "./BoardWorkspace.test.helpers";
 
 describe("board plan workflow", () => {
   it("generates a proposal from a goal and still requires explicit confirmation", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
-    const profileForm = screen.getByRole("form", {
-      name: "Save planner profile",
-    });
-    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
-      target: { value: "local planner" },
-    });
-    fireEvent.change(within(profileForm).getByLabelText("Program"), {
-      target: { value: "planner-bridge" },
-    });
-    fireEvent.click(
-      within(profileForm).getByRole("button", { name: "Save planner profile" }),
-    );
+    await configurePlanner();
+    openPlan();
 
     const generationForm = await screen.findByRole("form", {
       name: "Generate board plan",
@@ -57,9 +51,11 @@ describe("board plan workflow", () => {
       }),
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "Generated foundation" }),
-    ).toBeVisible();
+    await waitFor(() =>
+      expect(boardGateway.confirmPlan).toHaveBeenCalledOnce(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    expect(await screen.findByText("Generated foundation")).toBeVisible();
   });
 
   it("keeps an unsaved planner profile editable when the daemon rejects it", async () => {
@@ -68,6 +64,7 @@ describe("board plan workflow", () => {
       new Error("Planner profiles must use a declared program."),
     );
     await createBoard(boardGateway);
+    openSettings("Planning");
     const profileForm = screen.getByRole("form", {
       name: "Save planner profile",
     });
@@ -89,15 +86,8 @@ describe("board plan workflow", () => {
       new Error("Planner response exceeds the 65536-byte limit."),
     );
     await createBoard(boardGateway);
-    const profileForm = screen.getByRole("form", {
-      name: "Save planner profile",
-    });
-    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
-      target: { value: "local planner" },
-    });
-    fireEvent.click(
-      within(profileForm).getByRole("button", { name: "Save planner profile" }),
-    );
+    await configurePlanner();
+    openPlan();
     const generationForm = await screen.findByRole("form", {
       name: "Generate board plan",
     });
@@ -117,6 +107,7 @@ describe("board plan workflow", () => {
   it("previews a provider-neutral plan before an explicit confirmation materializes it", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
+    openPlan();
     const proposalForm = screen.getByRole("form", {
       name: "Propose board plan",
     });
@@ -168,16 +159,16 @@ describe("board plan workflow", () => {
     expect(boardGateway.confirmPlan).toHaveBeenCalledWith(
       expect.objectContaining({ boardId: "board-1", confirmedBy: "Daniel" }),
     );
-    expect(
-      await screen.findByRole("heading", { name: "Foundation" }),
-    ).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Interface" })).toBeVisible();
     expect(screen.getByText(/Confirmed by Daniel at/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    expect(await screen.findByText("Foundation")).toBeVisible();
+    expect(screen.getByText("Interface")).toBeVisible();
   });
 
   it("replaces an unconfirmed preview without creating its superseded tasks", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
+    openPlan();
     const proposalForm = screen.getByRole("form", {
       name: "Propose board plan",
     });
@@ -214,6 +205,7 @@ describe("board plan workflow", () => {
   it("keeps the saved preview visible when a user cancels revision", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
+    openPlan();
     const proposalForm = screen.getByRole("form", {
       name: "Propose board plan",
     });
@@ -244,6 +236,7 @@ describe("board plan workflow", () => {
   it("explains malformed plan JSON before it reaches the daemon", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
+    openPlan();
     const proposalForm = screen.getByRole("form", {
       name: "Propose board plan",
     });
@@ -266,6 +259,7 @@ describe("board plan workflow", () => {
       new Error("The plan has an unresolved hard-dependency cycle."),
     );
     await createBoard(boardGateway);
+    openPlan();
     const proposalForm = screen.getByRole("form", {
       name: "Propose board plan",
     });
@@ -287,6 +281,21 @@ describe("board plan workflow", () => {
     expect(screen.queryByRole("list", { name: "Plan tasks" })).toBeNull();
   });
 });
+
+async function configurePlanner() {
+  openSettings("Planning");
+  const profileForm = screen.getByRole("form", {
+    name: "Save planner profile",
+  });
+  fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+    target: { value: "local planner" },
+  });
+  fireEvent.click(
+    within(profileForm).getByRole("button", { name: "Save planner profile" }),
+  );
+  await waitFor(() => expect(screen.getByText("local planner")).toBeVisible());
+  fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+}
 
 function planDraft() {
   return {

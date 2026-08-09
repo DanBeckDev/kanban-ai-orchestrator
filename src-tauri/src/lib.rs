@@ -58,6 +58,7 @@ pub fn run() {
             desktop::transition_work_item,
             desktop::save_agent_profile,
             desktop::agent_profiles,
+            desktop::agent_provider_availability,
             desktop_planning::save_planner_profile,
             desktop_planning::planner_profiles,
             desktop_planning::generate_plan,

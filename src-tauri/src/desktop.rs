@@ -8,7 +8,7 @@ use std::{
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
-    agent::AgentProfile,
+    agent::{AgentProfile, AgentProviderAvailability, discover_native_agent_providers},
     application::{
         AddDependencyRequest, BoardLibraryEntry, BoardPlan, BoardService, BoardSnapshot,
         ConfirmPlanRequest, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
@@ -190,6 +190,11 @@ pub(crate) fn agent_profiles(
     lock_service(&state)?
         .agent_profiles()
         .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn agent_provider_availability() -> Vec<AgentProviderAvailability> {
+    discover_native_agent_providers()
 }
 
 #[tauri::command]

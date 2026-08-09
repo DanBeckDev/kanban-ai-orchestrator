@@ -14,11 +14,14 @@ import {
 import { BoardLibrary } from "./BoardLibrary";
 import { BoardSetup, type RepositoryPicker } from "./BoardSetup";
 import { BoardView } from "./BoardView";
+import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
+import { useDefaultAgentProfileName } from "./agentPreferences";
 import { tauriBoardGateway } from "./gateway";
 import { selectRepository } from "./repositoryPicker";
 import type {
   AddDependencyRequest,
   AgentProfile,
+  AgentProviderAvailability,
   BoardGateway,
   BoardLibraryEntry,
   BoardPlan,
@@ -64,6 +67,11 @@ export function BoardWorkspace({
   const [agentProfiles, setAgentProfiles] = useState<readonly AgentProfile[]>(
     [],
   );
+  const [providerAvailability, setProviderAvailability] = useState<
+    readonly AgentProviderAvailability[]
+  >([]);
+  const { defaultAgentProfileName, selectDefaultAgentProfile } =
+    useDefaultAgentProfileName();
   const [plannerProfiles, setPlannerProfiles] = useState<
     readonly PlannerProfile[]
   >([]);
@@ -172,8 +180,10 @@ export function BoardWorkspace({
     try {
       await gateway.saveAgentProfile(profile);
       setAgentProfiles(await gateway.agentProfiles());
+      return true;
     } catch (operationError) {
       setError(errorMessage(operationError));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -233,9 +243,16 @@ export function BoardWorkspace({
   }, [gateway]);
 
   async function loadBoardContext(boardId: string) {
-    setAgentProfiles(await gateway.agentProfiles());
-    setPlannerProfiles(await gateway.plannerProfiles());
-    setBoardPlan(await gateway.boardPlan(boardId));
+    const [profiles, planners, plan, providers] = await Promise.all([
+      gateway.agentProfiles(),
+      gateway.plannerProfiles(),
+      gateway.boardPlan(boardId),
+      gateway.agentProviderAvailability(),
+    ]);
+    setAgentProfiles(profiles);
+    setPlannerProfiles(planners);
+    setBoardPlan(plan);
+    setProviderAvailability(providers);
     setLinearIssues([]);
     await refreshLinearConnectionStatus();
   }
@@ -294,32 +311,19 @@ export function BoardWorkspace({
     [gateway],
   );
 
-  const boardId = snapshot?.board.id;
-  const boardLibraryLoadFailed =
-    snapshot === undefined && boardLibrary === undefined && error !== undefined;
+  const boardLibraryLoadFailed = !snapshot && !boardLibrary && Boolean(error);
   useEffect(() => {
     void loadBoardLibrary();
   }, [loadBoardLibrary]);
 
-  useEffect(() => {
-    if (boardId === undefined) return undefined;
-    const refresh = () => {
-      void gateway
-        .boardSnapshot(boardId)
-        .then(setSnapshot)
-        .catch(() => undefined);
-      if (linearConnectionStatus.kind === "awaiting_authorization") {
-        void refreshLinearConnectionStatus();
-      }
-    };
-    const intervalId = window.setInterval(refresh, 1_000);
-    return () => window.clearInterval(intervalId);
-  }, [
-    boardId,
+  useBoardSnapshotRefresh({
+    boardId: snapshot?.board.id,
     gateway,
-    linearConnectionStatus.kind,
-    refreshLinearConnectionStatus,
-  ]);
+    isAwaitingLinearAuthorization:
+      linearConnectionStatus.kind === "awaiting_authorization",
+    onLinearStatusRefresh: refreshLinearConnectionStatus,
+    onSnapshot: setSnapshot,
+  });
 
   return (
     <section className="board-shell">
@@ -385,6 +389,8 @@ export function BoardWorkspace({
         <BoardView
           busy={busy}
           agentProfiles={agentProfiles}
+          defaultAgentProfileName={defaultAgentProfileName}
+          providerAvailability={providerAvailability}
           onAddDependency={addDependency}
           boardPlan={boardPlan}
           onConfirmPlan={confirmPlan}
@@ -402,6 +408,7 @@ export function BoardWorkspace({
           onProposePlan={proposePlan}
           onGeneratePlan={generatePlan}
           onSaveAgentProfile={saveAgentProfile}
+          onSelectDefaultAgentProfile={selectDefaultAgentProfile}
           onSavePlannerProfile={savePlannerProfile}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}

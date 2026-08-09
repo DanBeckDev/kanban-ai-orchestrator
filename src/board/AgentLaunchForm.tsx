@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import {
   agentProfilePresentation,
@@ -19,6 +19,7 @@ type AgentLaunchFormProps = Readonly<{
   executionRole?: ExecutionRole;
   formLabel?: string;
   buttonLabel?: string;
+  defaultProfileName?: string;
   onStart: (request: StartExecutionRequest) => Promise<void>;
 }>;
 
@@ -29,11 +30,21 @@ export function AgentLaunchForm({
   executionRole = "implementation",
   formLabel = `Start agent for ${workItem.title}`,
   buttonLabel = "Start agent",
+  defaultProfileName,
   onStart,
 }: AgentLaunchFormProps) {
-  const [profileName, setProfileName] = useState("");
+  const [profileName, setProfileName] = useState(defaultProfileName ?? "");
   const [brief, setBrief] = useState(defaultBrief(workItem, executionRole));
   const selectedProfile = profiles.find(({ name }) => name === profileName);
+
+  useEffect(() => {
+    const fallbackProfileName = defaultProfileName ?? profiles[0]?.name ?? "";
+    setProfileName((currentProfileName) =>
+      profiles.some(({ name }) => name === currentProfileName)
+        ? currentProfileName
+        : fallbackProfileName,
+    );
+  }, [defaultProfileName, profiles]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

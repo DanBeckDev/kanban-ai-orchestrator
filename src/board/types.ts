@@ -345,6 +345,13 @@ export type AgentProfile = Readonly<{
   arguments: readonly string[];
 }>;
 
+export type AgentProviderAvailability = Readonly<{
+  kind: Exclude<AgentProfileKind, "structured_process">;
+  label: string;
+  program: string;
+  installed: boolean;
+}>;
+
 export type PlannerProfile = Readonly<{
   name: string;
   program: string;

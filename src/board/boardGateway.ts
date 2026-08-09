@@ -1,6 +1,7 @@
 import type {
   AddDependencyRequest,
   AgentProfile,
+  AgentProviderAvailability,
   BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
@@ -47,6 +48,7 @@ export interface BoardGateway {
   ): Promise<BoardSnapshot>;
   saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
   agentProfiles(): Promise<readonly AgentProfile[]>;
+  agentProviderAvailability(): Promise<readonly AgentProviderAvailability[]>;
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile>;
   plannerProfiles(): Promise<readonly PlannerProfile[]>;
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;

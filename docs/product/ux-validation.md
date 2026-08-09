@@ -1,13 +1,16 @@
 # UX-008 journey-validation record
 
-- Status: Study prepared; participant walkthroughs pending
+- Status: Product-owner wireframe handoff accepted; representative walkthroughs deferred to UX-007
 - Date: 2026-08-09
 - Scope: first use, returning use, and first plan; no production source changes
 
 This file separates what the implementation currently does from what people
 actually need. The current-state audit is an implementer baseline, **not user
-research**. Findings become evidence only after an opt-in representative
-walkthrough is completed and minimally recorded below.
+research**. On 2026-08-09, the product owner supplied and clarified the intended
+four-screen wireframes; their decisions are recorded in [Approved wireframe
+specification](approved-wireframes.md). They are an implementation handoff, not
+representative-user evidence. The study protocol below moves to UX-007, after a
+current build can support an honest end-to-end walkthrough.
 
 ## Current journey (“now map”)
 
@@ -172,9 +175,9 @@ weaken daemon policy.
 
 ## Findings log
 
-Complete one minimally anonymized entry per participant. Use a neutral study ID
-only. A repeated or critical finding must have a disposition before UX-008 can be
-marked done; create a linked backlog item for a product/engineering change.
+Complete one minimally anonymized entry per participant during UX-007. Use a
+neutral study ID only. A repeated or critical finding must have a disposition;
+create a linked backlog item for a product/engineering change.
 
 | Study ID | Scenario completion | Observed confusion, question, or barrier | Severity | Proposed disposition | Linked backlog item | Status |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -193,11 +196,12 @@ Severity definitions:
 
 ## Completion gate
 
-UX-008 is complete only when three walkthroughs are recorded, including a
-keyboard-first or assistive-technology participant where possible; every critical
-or recurring finding has an explicit disposition; and required follow-up work is
-represented in the backlog. Until then, UX-002 and later production UI work stay
-blocked by this task.
+UX-008 is complete because the product owner provided a clear visual direction,
+clarified the material interaction decisions, and the resulting implementation
+work is represented in the backlog. It does **not** claim usability validation.
+UX-007 owns the five-person current-build walkthrough, accessibility coverage,
+finding dispositions, and release gate. Until UX-007, no document may present
+this design handoff as evidence that representative users completed a scenario.
 
 ## Research basis
 

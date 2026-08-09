@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ListPlusIcon, Settings2Icon, SparklesIcon } from "lucide-react";
+import { ListPlusIcon, SparklesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +7,7 @@ import { BoardCanvas } from "./BoardCanvas";
 import { BoardAutomation } from "./BoardAutomation";
 import { BoardManagement, SurfaceHeader } from "./BoardManagement";
 import { BoardSettings } from "./BoardSettings";
+import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
@@ -35,13 +36,7 @@ import type {
   WorkItem,
 } from "./types";
 
-type BoardSurface =
-  | "board"
-  | "plan"
-  | "new-task"
-  | "dependencies"
-  | "settings"
-  | "task-detail";
+type BoardSurface = MainBoardView | "plan" | "new-task" | "task-detail";
 
 type BoardViewProps = Readonly<{
   busy: boolean;
@@ -124,13 +119,19 @@ export function BoardView({
   onRecordCleanCodeReview,
   onTransition,
 }: BoardViewProps) {
-  const [surface, setSurface] = useState<BoardSurface>("board");
+  const [surface, setSurface] = useState<BoardSurface>("workflow");
   const [selectedWorkItemId, setSelectedWorkItemId] = useState<string>();
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
   const selectedWorkItem = workItems.find(
     ({ id }) => id === selectedWorkItemId,
   );
-  const returnToBoard = () => setSurface("board");
+  const returnToWorkflow = () => setSurface("workflow");
+  const activeView: MainBoardView =
+    surface === "dependencies" || surface === "settings" ? surface : "workflow";
+  const generatePlanFromWorkflow = async (request: GeneratePlanRequest) => {
+    await onGeneratePlan(request);
+    setSurface("plan");
+  };
   const openTask = (workItemId: string) => {
     setSelectedWorkItemId(workItemId);
     setSurface("task-detail");
@@ -140,12 +141,14 @@ export function BoardView({
     <section aria-labelledby="board-title" className="board-workspace">
       <BoardHeader
         boardName={snapshot.board.name}
+        activeView={activeView}
         snapshot={snapshot}
+        showQuickActions={surface === "workflow"}
         onCreateTask={() => setSurface("new-task")}
-        onOpenSettings={() => setSurface("settings")}
         onPlanWork={() => setSurface("plan")}
+        onViewChange={(view) => setSurface(view)}
       />
-      {surface === "board" && (
+      {surface === "workflow" && (
         <>
           <BoardAutomation
             defaultAgentProfileName={defaultAgentProfileName}
@@ -156,10 +159,11 @@ export function BoardView({
             onCoordinate={onCoordinateBoard}
           />
           <BoardCanvas
+            busy={busy}
+            plannerProfiles={plannerProfiles}
             snapshot={snapshot}
-            onCreateTask={() => setSurface("new-task")}
+            onGeneratePlan={generatePlanFromWorkflow}
             onOpenTask={openTask}
-            onPlanWork={() => setSurface("plan")}
           />
         </>
       )}
@@ -167,7 +171,7 @@ export function BoardView({
         <section aria-label="Plan with AI" className="workspace-surface">
           <SurfaceHeader
             description="Describe the outcome, review the proposed tasks, then decide what to create."
-            onBack={returnToBoard}
+            onBack={returnToWorkflow}
             title="Plan with AI"
           />
           <PlanProposalPanel
@@ -186,9 +190,10 @@ export function BoardView({
           boardId={snapshot.board.id}
           busy={busy}
           defaultTab={surface === "new-task" ? "task" : "dependencies"}
+          key={surface}
           workItems={workItems}
           onAddDependency={onAddDependency}
-          onBack={returnToBoard}
+          onBack={returnToWorkflow}
           onCreateWorkItem={onCreateWorkItem}
         />
       )}
@@ -202,7 +207,7 @@ export function BoardView({
           plannerProfiles={plannerProfiles}
           providerAvailability={providerAvailability}
           snapshot={snapshot}
-          onBack={returnToBoard}
+          onBack={returnToWorkflow}
           onConnectLinear={onConnectLinear}
           onDeliverLinearComment={onDeliverLinearComment}
           onEnableLinearCommentAccess={onEnableLinearCommentAccess}
@@ -223,7 +228,7 @@ export function BoardView({
           defaultAgentProfileName={defaultAgentProfileName}
           snapshot={snapshot}
           workItem={selectedWorkItem}
-          onBack={returnToBoard}
+          onBack={returnToWorkflow}
           onLoadExecutionActivity={onLoadExecutionActivity}
           onRecordCleanCodeReview={onRecordCleanCodeReview}
           onRecordReviewCheck={onRecordReviewCheck}
@@ -238,40 +243,45 @@ export function BoardView({
 }
 
 function BoardHeader({
+  activeView,
   boardName,
+  showQuickActions,
   snapshot,
   onCreateTask,
-  onOpenSettings,
   onPlanWork,
+  onViewChange,
 }: Readonly<{
+  activeView: MainBoardView;
   boardName: string;
+  showQuickActions: boolean;
   snapshot: BoardSnapshot;
   onCreateTask: () => void;
-  onOpenSettings: () => void;
   onPlanWork: () => void;
+  onViewChange: (view: MainBoardView) => void;
 }>) {
   const summary = boardSummary(snapshot);
   return (
     <header className="board-header">
-      <div>
-        <p className="eyebrow">Your board</p>
-        <h2 id="board-title">{boardName}</h2>
-        <p>{summary}</p>
+      <div className="board-heading">
+        <BoardViewMenu activeView={activeView} onViewChange={onViewChange} />
+        <div>
+          <p className="eyebrow">Your board</p>
+          <h2 id="board-title">{boardName}</h2>
+          <p>{summary}</p>
+        </div>
       </div>
-      <div className="board-toolbar">
-        <Button onClick={onPlanWork} type="button">
-          <SparklesIcon data-icon="inline-start" />
-          Plan with AI
-        </Button>
-        <Button onClick={onCreateTask} type="button" variant="outline">
-          <ListPlusIcon data-icon="inline-start" />
-          New task
-        </Button>
-        <Button onClick={onOpenSettings} type="button" variant="ghost">
-          <Settings2Icon data-icon="inline-start" />
-          Settings
-        </Button>
-      </div>
+      {showQuickActions && (
+        <div className="board-toolbar">
+          <Button onClick={onPlanWork} type="button">
+            <SparklesIcon data-icon="inline-start" />
+            Plan with AI
+          </Button>
+          <Button onClick={onCreateTask} type="button" variant="outline">
+            <ListPlusIcon data-icon="inline-start" />
+            Create task
+          </Button>
+        </div>
+      )}
     </header>
   );
 }

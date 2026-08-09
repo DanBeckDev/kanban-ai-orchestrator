@@ -313,7 +313,9 @@ export function gateway(
               workItemsMissingDurationBudget: ["generated-foundation"],
               workItemsMissingCostBudget: ["generated-foundation"],
             },
-            unresolvedAssumptions: [],
+            unresolvedAssumptions: [
+              "The workspace policy is still being confirmed.",
+            ],
           },
         };
         return savedPlan;

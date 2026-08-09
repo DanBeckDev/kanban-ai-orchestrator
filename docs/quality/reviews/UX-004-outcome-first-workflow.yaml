@@ -1,0 +1,124 @@
+work_item: UX-004
+scope:
+  - docs/planning/backlog.yaml
+  - src/board/BoardCanvas.tsx
+  - src/board/BoardHome.tsx
+  - src/board/BoardView.tsx
+  - src/board/BoardViewMenu.tsx
+  - src/board/GoalPlanForm.tsx
+  - src/board/WorkflowComposer.tsx
+  - src/board/presentation.ts
+  - src/components/ui/accordion.tsx
+  - src/components/ui/dropdown-menu.tsx
+  - src/components/ui/select.tsx
+  - src/styles/board.css
+  - src/board/BoardHome.test.tsx
+  - src/board/BoardWorkspace.plan.test.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.test.helpers.tsx
+  - src/board/BoardWorkspace.workflow.test.tsx
+  - src/board/presentation.test.ts
+source_structure:
+  reviewed_files:
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 121
+      responsibilities: "Composes the outcome prompt, snapshot-derived focus, and workflow lanes."
+      decision: kept cohesive
+    - path: src/board/BoardHome.test.tsx
+      meaningful_lines: 110
+      responsibilities: "Verifies snapshot-derived attention, worker, and delivery information."
+      decision: kept cohesive
+    - path: src/board/BoardHome.tsx
+      meaningful_lines: 236
+      responsibilities: "Derives actionable board-home information from the daemon snapshot."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 360
+      responsibilities: "Routes board-level views while preserving typed gateway actions."
+      decision: kept cohesive
+    - path: src/board/BoardViewMenu.tsx
+      meaningful_lines: 68
+      responsibilities: "Presents and validates the board's top-level view choices."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 369
+      responsibilities: "Exercises reviewable plan generation and confirmation behavior."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 398
+      responsibilities: "Provides the cohesive in-memory board gateway used by board interaction tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 59
+      responsibilities: "Provides readable user-action helpers for board workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.workflow.test.tsx
+      meaningful_lines: 28
+      responsibilities: "Verifies top-level board view navigation."
+      decision: kept cohesive
+    - path: src/board/GoalPlanForm.tsx
+      meaningful_lines: 114
+      responsibilities: "Collects an organiser profile and outcome for a typed plan-preview request."
+      decision: kept cohesive
+    - path: src/board/WorkflowComposer.tsx
+      meaningful_lines: 47
+      responsibilities: "Frames the workflow's reviewable organiser prompt."
+      decision: kept cohesive
+    - path: src/board/presentation.test.ts
+      meaningful_lines: 160
+      responsibilities: "Verifies state-to-lane presentation mappings and board presentation helpers."
+      decision: kept cohesive
+    - path: src/board/presentation.ts
+      meaningful_lines: 160
+      responsibilities: "Defines board-state presentation mappings without owning scheduling decisions."
+      decision: kept cohesive
+    - path: src/components/ui/accordion.tsx
+      meaningful_lines: 80
+      responsibilities: "Provides the repository's shadcn accordion primitive."
+      decision: kept cohesive
+    - path: src/components/ui/dropdown-menu.tsx
+      meaningful_lines: 254
+      responsibilities: "Provides the repository's shadcn dropdown-menu primitive."
+      decision: kept cohesive
+    - path: src/components/ui/select.tsx
+      meaningful_lines: 181
+      responsibilities: "Provides the repository's shadcn select primitive."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T20:59:50Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The revised organiser form lost its explicit purpose label."
+    change: "Restored the revision-specific accessible label and covered it through the reviewable organiser workflow."
+  - finding: "Navigation could retain the manual-task tab when the user selected Dependencies."
+    change: "Keyed the management surface by its route so the selected board view mounts its intended tab."
+  - finding: "Workflow and manual task routes exposed competing Create task controls."
+    change: "Kept one secondary manual-task action on Workflow and removed duplicate lane and empty-state controls."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run structure:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend
+        lines: 87.66
+        statements: 87.07
+        functions: 84.26
+        branches: 84.78
+        threshold_met: true
+      - package_or_crate: src-tauri
+        lines: 84.59
+        statements: 81.04
+        functions: 84.53
+        branches: 80.52
+        threshold_met: true
+exceptions: []

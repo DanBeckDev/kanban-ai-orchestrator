@@ -25,7 +25,7 @@ describe("BoardHome", () => {
     );
 
     const attention = screen.getByRole("region", {
-      name: "Needs Attention",
+      name: "Needs your attention",
     });
     expect(within(attention).getAllByRole("listitem")).toHaveLength(5);
     expect(
@@ -40,7 +40,7 @@ describe("BoardHome", () => {
       expect.stringContaining("Task blocked"),
     ]);
     const deliveryPicture = screen.getByRole("region", {
-      name: "Delivery Picture",
+      name: "Delivery picture",
     });
     expect(deliveryCount(deliveryPicture, "Planned")).toBe(1);
     expect(deliveryCount(deliveryPicture, "Ready")).toBe(1);
@@ -80,7 +80,7 @@ describe("BoardHome", () => {
     );
 
     const workInMotion = screen.getByRole("region", {
-      name: "Work in Motion",
+      name: "Work in motion",
     });
     expect(
       within(workInMotion).getByText("Codex is working on this task."),

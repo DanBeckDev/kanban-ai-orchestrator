@@ -97,12 +97,13 @@ const snapshot: BoardSnapshot = {
 
 describe("board presentation", () => {
   it("places work in the right columns and shows hard dependency context", () => {
-    const plan = boardColumns.find(({ id }) => id === "planned");
+    const plan = boardColumns.find(({ id }) => id === "backlog");
 
     if (plan === undefined) {
-      throw new Error("The planned board column must be configured.");
+      throw new Error("The backlog board column must be configured.");
     }
     expect(workItemsForColumn(snapshot, plan).map(({ id }) => id)).toEqual([
+      "api",
       "ui",
     ]);
     expect(blockersFor(snapshot, "ui").map(({ id }) => id)).toEqual([
@@ -119,12 +120,10 @@ describe("board presentation", () => {
       "check-1",
     ]);
     expect(boardColumns.map(({ label }) => label)).toEqual([
-      "Plan",
-      "Ready",
-      "Active",
+      "Backlog",
+      "In progress",
       "Review",
       "Done",
-      "Recovery",
     ]);
     expect(
       budgetSummary({

@@ -29,25 +29,38 @@ export function openPlan() {
 }
 
 export function openNewTask() {
-  fireEvent.click(screen.getByRole("button", { name: "New task" }));
+  fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 }
 
 export function openDependencies() {
-  openNewTask();
-  selectTab("Dependencies");
+  selectBoardView("Dependencies");
 }
 
 export function openSettings(
   section?: "Agent" | "Organiser" | "Linear" | "Project",
 ) {
-  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  selectBoardView("Settings");
   if (section !== undefined) {
     selectTab(section);
   }
 }
 
 export function openTask(title: string) {
-  fireEvent.click(screen.getByRole("button", { name: `Open task ${title}` }));
+  const action = ["Open task", "Inspect", "Review", "Recover", "Unblock"]
+    .map((label) => screen.queryByRole("button", { name: `${label} ${title}` }))
+    .find((button) => button !== null);
+  if (action === undefined) {
+    throw new Error(`No task action is available for ${title}.`);
+  }
+  fireEvent.click(action);
+}
+
+function selectBoardView(name: "Dependencies" | "Settings") {
+  fireEvent.pointerDown(screen.getByRole("button", { name: "Workflow" }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  fireEvent.click(screen.getByRole("menuitemradio", { name }));
 }
 
 function selectTab(name: string) {

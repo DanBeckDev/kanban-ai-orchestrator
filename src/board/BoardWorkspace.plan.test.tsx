@@ -9,6 +9,47 @@ import {
 } from "./BoardWorkspace.test.helpers";
 
 describe("board plan workflow", () => {
+  it("keeps the primary organiser prompt reviewable before it creates work", async () => {
+    const boardGateway = gateway();
+    await createBoard(boardGateway);
+    await configurePlanner();
+
+    const composer = screen.getByRole("form", {
+      name: "Prompt AI to orchestrate",
+    });
+    fireEvent.change(
+      within(composer).getByLabelText("What do you want to achieve?"),
+      { target: { value: "Make planning easier for the whole team." } },
+    );
+    fireEvent.click(
+      within(composer).getByRole("button", { name: "Create plan preview" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.generatePlan).toHaveBeenCalledWith({
+        boardId: "board-1",
+        goal: "Make planning easier for the whole team.",
+        plannerProfileName: "local planner",
+      }),
+    );
+    expect(screen.getByRole("list", { name: "Plan tasks" })).toHaveTextContent(
+      "Generated foundation",
+    );
+    expect(
+      screen.getByText("The workspace policy is still being confirmed."),
+    ).toBeVisible();
+    expect(boardGateway.createWorkItem).not.toHaveBeenCalled();
+    expect(boardGateway.startExecution).not.toHaveBeenCalled();
+    expect(boardGateway.coordinateBoard).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("form", { name: "Confirm board plan" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
+    expect(
+      screen.getByRole("form", { name: "Revise plan with AI" }),
+    ).toBeVisible();
+  });
+
   it("generates a proposal from a goal and still requires explicit confirmation", async () => {
     const boardGateway = gateway();
     await createBoard(boardGateway);
@@ -258,7 +299,7 @@ describe("board plan workflow", () => {
       within(proposalForm).getByRole("button", { name: "Preview plan" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await within(proposalForm).findByRole("alert")).toHaveTextContent(
       "Plan JSON must contain a workItems array.",
     );
     expect(boardGateway.proposePlan).not.toHaveBeenCalled();

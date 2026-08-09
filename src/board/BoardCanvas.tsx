@@ -1,99 +1,128 @@
 import { ClipboardPlusIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
 
-import { CompactWorkItemCard } from "./CompactWorkItemCard";
 import { BoardHome } from "./BoardHome";
+import { CompactWorkItemCard } from "./CompactWorkItemCard";
+import { WorkflowComposer } from "./WorkflowComposer";
 import { boardColumns, workItemsForColumn } from "./presentation";
-import type { BoardSnapshot } from "./types";
+import type {
+  BoardSnapshot,
+  GeneratePlanRequest,
+  PlannerProfile,
+} from "./types";
 
 type BoardCanvasProps = Readonly<{
   snapshot: BoardSnapshot;
-  onCreateTask: () => void;
+  busy: boolean;
+  plannerProfiles: readonly PlannerProfile[];
+  onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
   onOpenTask: (workItemId: string) => void;
-  onPlanWork: () => void;
 }>;
 
 export function BoardCanvas({
   snapshot,
-  onCreateTask,
+  busy,
+  plannerProfiles,
+  onGeneratePlan,
   onOpenTask,
-  onPlanWork,
 }: BoardCanvasProps) {
+  const workItems = snapshot.workItems.map(({ workItem }) => workItem);
+
+  return (
+    <>
+      <WorkflowComposer
+        boardId={snapshot.board.id}
+        busy={busy}
+        onGeneratePlan={onGeneratePlan}
+        plannerProfiles={plannerProfiles}
+      />
+      <BoardHome snapshot={snapshot} onOpenTask={onOpenTask} />
+      {workItems.length === 0 ? (
+        <Empty className="board-empty-state">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ClipboardPlusIcon />
+            </EmptyMedia>
+            <EmptyTitle>No tasks yet</EmptyTitle>
+            <EmptyDescription>
+              Describe the outcome above, or create one task yourself in manual
+              mode.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <WorkflowLanes snapshot={snapshot} onOpenTask={onOpenTask} />
+      )}
+    </>
+  );
+}
+
+function WorkflowLanes({
+  snapshot,
+  onOpenTask,
+}: Readonly<{
+  snapshot: BoardSnapshot;
+  onOpenTask: (workItemId: string) => void;
+}>) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
   const workItemTitles = new Map(
     workItems.map((workItem) => [workItem.id, workItem.title]),
   );
 
-  if (workItems.length === 0) {
-    return (
-      <Empty className="board-empty-state">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <ClipboardPlusIcon />
-          </EmptyMedia>
-          <EmptyTitle>No work is on this board yet</EmptyTitle>
-          <EmptyDescription>
-            Start with the outcome and review the proposed work, or add one task
-            yourself.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button onClick={onPlanWork} type="button">
-            Describe an outcome
-          </Button>
-          <Button onClick={onCreateTask} type="button" variant="outline">
-            Create a task
-          </Button>
-        </EmptyContent>
-      </Empty>
-    );
-  }
-
   return (
-    <>
-      <BoardHome snapshot={snapshot} onOpenTask={onOpenTask} />
-      <section aria-label="Kanban board" className="kanban-board">
+    <section aria-label="Workflow lanes" className="workflow-lanes">
+      <Accordion
+        defaultValue={boardColumns.map(({ id }) => id)}
+        type="multiple"
+      >
         {boardColumns.map((column) => {
           const cards = workItemsForColumn(snapshot, column);
           return (
-            <section
-              aria-labelledby={`${column.id}-column`}
-              className="board-column"
+            <AccordionItem
+              className="workflow-lane"
               key={column.id}
+              value={column.id}
             >
-              <div className="board-column-heading">
-                <h3 id={`${column.id}-column`}>{column.label}</h3>
-                <span>
+              <AccordionTrigger className="workflow-lane-trigger">
+                <span>{column.label}</span>
+                <Badge variant="outline">
                   {cards.length} {cards.length === 1 ? "task" : "tasks"}
-                </span>
-              </div>
-              <div className="card-stack">
-                {cards.map((workItem) => (
-                  <CompactWorkItemCard
-                    key={workItem.id}
-                    snapshot={snapshot}
-                    workItemTitles={workItemTitles}
-                    workItem={workItem}
-                    onOpen={onOpenTask}
-                  />
-                ))}
-              </div>
-              {cards.length === 0 && (
-                <p className="empty-column-copy">No work here yet</p>
-              )}
-            </section>
+                </Badge>
+              </AccordionTrigger>
+              <AccordionContent className="workflow-lane-content">
+                <div className="card-stack">
+                  {cards.map((workItem) => (
+                    <CompactWorkItemCard
+                      key={workItem.id}
+                      snapshot={snapshot}
+                      workItem={workItem}
+                      workItemTitles={workItemTitles}
+                      onOpen={onOpenTask}
+                    />
+                  ))}
+                </div>
+                {cards.length === 0 && (
+                  <p className="empty-column-copy">No work here yet</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </section>
-    </>
+      </Accordion>
+    </section>
   );
 }

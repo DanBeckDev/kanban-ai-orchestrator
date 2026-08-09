@@ -1,4 +1,23 @@
 import { useState, type FormEvent } from "react";
+import { SparklesIcon } from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 import type { GeneratePlanRequest, PlannerProfile } from "./types";
 
@@ -6,6 +25,7 @@ type GoalPlanFormProps = Readonly<{
   boardId: string;
   busy: boolean;
   hasProposal: boolean;
+  label?: string;
   profiles: readonly PlannerProfile[];
   onGenerate: (request: GeneratePlanRequest) => Promise<void>;
 }>;
@@ -14,6 +34,7 @@ export function GoalPlanForm({
   boardId,
   busy,
   hasProposal,
+  label,
   profiles,
   onGenerate,
 }: GoalPlanFormProps) {
@@ -21,6 +42,8 @@ export function GoalPlanForm({
   const [plannerProfileName, setPlannerProfileName] = useState("");
   const [generationError, setGenerationError] = useState<string>();
   const selectedProfile = plannerProfileName || profiles[0]?.name || "";
+  const formLabel =
+    label ?? (hasProposal ? "Revise plan with AI" : "Plan with AI");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,54 +55,64 @@ export function GoalPlanForm({
     }
   }
 
+  if (profiles.length === 0) {
+    return (
+      <Alert>
+        <AlertTitle>Set up an organiser first</AlertTitle>
+        <AlertDescription>
+          Choose an organiser connection in Settings before you create a plan.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <form
-      aria-label={hasProposal ? "Revise plan with AI" : "Plan with AI"}
-      onSubmit={submit}
-    >
-      <h4>Ask the organiser</h4>
-      <p className="field-hint">
-        Describe the outcome in your own words. Kanban will suggest tasks and
-        their order; nothing is created until you review and confirm it.
-      </p>
-      {profiles.length === 0 ? (
-        <p className="field-hint">
-          Set up an organiser connection in Settings before you create a plan.
-        </p>
-      ) : (
-        <>
-          <label>
-            Use this organiser
-            <select
-              required
-              value={selectedProfile}
-              onChange={(event) => setPlannerProfileName(event.target.value)}
-            >
-              {profiles.map((profile) => (
-                <option key={profile.name} value={profile.name}>
-                  {profile.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
+    <form aria-label={formLabel} className="goal-plan-form" onSubmit={submit}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="planner-profile">Organiser</FieldLabel>
+          <Select onValueChange={setPlannerProfileName} value={selectedProfile}>
+            <SelectTrigger id="planner-profile">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.name} value={profile.name}>
+                    {profile.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="planning-goal">
             What do you want to achieve?
-            <textarea
-              required
-              value={goal}
-              onChange={(event) => setGoal(event.target.value)}
-            />
-          </label>
-          {generationError !== undefined && (
-            <p className="inline-error" role="alert">
-              {generationError}
-            </p>
-          )}
-          <button disabled={busy} type="submit">
-            {hasProposal ? "Create revised preview" : "Create plan preview"}
-          </button>
-        </>
-      )}
+          </FieldLabel>
+          <Textarea
+            id="planning-goal"
+            name="goal"
+            onChange={(event) => setGoal(event.target.value)}
+            required
+            value={goal}
+          />
+          <FieldDescription>
+            Kanban will propose tasks and their order. Nothing starts until you
+            review and confirm the proposal.
+          </FieldDescription>
+        </Field>
+        {generationError !== undefined && (
+          <Alert role="alert" variant="destructive">
+            <AlertTitle>Kanban could not create a plan preview</AlertTitle>
+            <AlertDescription>{generationError}</AlertDescription>
+          </Alert>
+        )}
+        <Button disabled={busy} type="submit">
+          <SparklesIcon data-icon="inline-start" />
+          {hasProposal ? "Create revised preview" : "Create plan preview"}
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

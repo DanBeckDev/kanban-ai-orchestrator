@@ -332,7 +332,7 @@ tasks:
   - id: UX-008
     epic: UX
     title: Map and test the first-use and returning-user journeys before production UI work
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [UX-001]
     acceptance_criteria:
@@ -340,7 +340,15 @@ tasks:
       - A later-map prototype covers the Find work, Set up safely, and Describe an outcome backbone activities and explicitly shows board-library, repository-picker, generated-ID, safe-default, and plan-confirmation behaviour.
       - At least three representative developers, including one keyboard-first or assistive-technology user where possible, complete a moderated scenario walkthrough of the prototype. Their feedback is anonymized and produces a disposition for every critical or recurring finding.
       - The documented prototype decisions identify which defaults are safe, which choices require explicit confirmation, and which advanced controls are intentionally deferred. No production source code is changed in this task.
-    notes: This is the first executable UX task despite its later identifier. It applies the BookCtx User Story Mapping now-map/later-map and release-slicing practice before implementation, and the Inclusive Design Needs Walkthrough before a graph or card design becomes expensive to change.
+    notes: >-
+      This is the first executable UX task despite its later identifier. It applies
+      the BookCtx User Story Mapping now-map/later-map and release-slicing practice
+      before implementation, and the Inclusive Design Needs Walkthrough before a
+      graph or card design becomes expensive to change. On 2026-08-09, the
+      evidence-based current-journey audit, low-fidelity prototype, and moderated
+      study kit were added in docs/product. Completion still requires three
+      representative walkthroughs and finding dispositions; no production source
+      code is changed in this task.
 
   - id: LIN-004
     epic: LIN

@@ -1,0 +1,50 @@
+work_item: UX-012
+scope:
+  - docs/planning/backlog.yaml
+  - src/board/BoardCanvas.tsx
+  - src/board/BoardHome.test.tsx
+  - src/board/BoardHome.tsx
+  - src/styles/board.css
+source_structure:
+  reviewed_files:
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 93
+      responsibilities: "Places the board-home orientation layer before the established Kanban columns and empty-board actions."
+      decision: kept cohesive
+    - path: src/board/BoardHome.test.tsx
+      meaningful_lines: 110
+      responsibilities: "Exercises the user-visible attention, active-work, delivery, and no-attention paths of the board-home layer."
+      decision: kept cohesive
+    - path: src/board/BoardHome.tsx
+      meaningful_lines: 236
+      responsibilities: "Derives and renders an accessible, read-only board-home view from the authoritative board snapshot."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T16:25:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The non-empty board opened directly on state columns, making attention, active work, and delivery state difficult to understand at a glance."
+    change: "Added a snapshot-derived board-home layer with plain-language next actions, accessible task-detail buttons, worker names without raw execution data, and labelled delivery counts."
+  - finding: "The delivery counts used a rigid layout at narrow viewport widths."
+    change: "Used an auto-fitting grid so the summary reflows by available space rather than forcing a fixed number of columns."
+verification:
+  commands:
+    - command: npm test -- --run src/board/BoardHome.test.tsx
+      result: passed (3 tests)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 84.37
+    statements: 80.71
+    functions: 84.29
+    branches: 80.36
+    threshold_met: true
+exceptions: []

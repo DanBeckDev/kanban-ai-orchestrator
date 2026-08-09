@@ -502,7 +502,17 @@ tasks:
       - Every card/task detail can answer why work is not ready without requiring the user to read an edge direction, infer a colour, or know an ID.
       - Cycles, contract, review-required, and soft edges retain the existing semantic distinctions; the UI never lets visual convenience weaken validation or eligibility.
       - Keyboard and screen-reader tests cover task selection, blocker explanation, graph-equivalent list navigation, and focus restoration.
-    notes: Keep graph rendering isolated from eligibility calculation. If a graph library cannot provide the accessible equivalent, ship the list-first view and defer the visual enhancement. BookCtx — _The Product-Minded Engineer_, Gergely Orosz, “Turn Unknown Unknowns into Known Unknowns” (chunk 4): use names and redundant visual/text explanations that describe the user outcome rather than graph internals. Project inference: pair a visual map with a plain-language list and inspector, and reserve daemon-owned scheduling decisions for the scheduler. Completed 2026-08-09 with a standalone visual map, equivalent task list, selected-task inspector, guarded current-plan context, and compact-card links to named blocker explanations.
+    notes: >-
+      Keep graph rendering isolated from eligibility calculation. If a graph library
+      cannot provide the accessible equivalent, ship the list-first view and defer
+      the visual enhancement. BookCtx — _The Product-Minded Engineer_, Gergely
+      Orosz, “Turn Unknown Unknowns into Known Unknowns” (chunk 4): use names and
+      redundant visual/text explanations that describe the user outcome rather than
+      graph internals. Project inference: pair a visual map with a plain-language
+      list and inspector, and reserve daemon-owned scheduling decisions for the
+      scheduler. Completed 2026-08-09 with a standalone visual map, equivalent task
+      list, selected-task inspector, guarded current-plan context, and compact-card
+      links to named blocker explanations.
 
   - id: UX-006
     epic: UX

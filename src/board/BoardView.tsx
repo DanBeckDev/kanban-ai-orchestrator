@@ -11,6 +11,7 @@ import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
 import { DependencyView } from "./DependencyView";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { WorkItemCard } from "./WorkItemCard";
+import { boardSummary } from "./presentation";
 import type {
   AddDependencyRequest,
   AgentProfile,
@@ -27,12 +28,14 @@ import type {
   LinearIssueSummary,
   LinearOAuthConfiguration,
   PlannerProfile,
+  ProjectAgentSettings,
   ProposePlanRequest,
   QueueLinearCommentRequest,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
+  SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
   WorkItem,
 } from "./types";
@@ -42,7 +45,7 @@ type BoardSurface = MainBoardView | "plan" | "new-task" | "task-detail";
 type BoardViewProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
-  defaultAgentProfileName?: string;
+  projectAgentSettings?: ProjectAgentSettings;
   providerAvailability: readonly AgentProviderAvailability[];
   plannerProfiles: readonly PlannerProfile[];
   boardPlan?: BoardPlan;
@@ -63,7 +66,9 @@ type BoardViewProps = Readonly<{
   onLoadLinearIssues: () => Promise<void>;
   onProposePlan: (request: ProposePlanRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
-  onSelectDefaultAgentProfile: (profileName: string) => void;
+  onSaveProjectAgentSettings: (
+    request: SaveProjectAgentSettingsRequest,
+  ) => Promise<void>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   onCoordinateBoard: (
     boardId: string,
@@ -88,7 +93,7 @@ type BoardViewProps = Readonly<{
 export function BoardView({
   busy,
   agentProfiles,
-  defaultAgentProfileName,
+  projectAgentSettings,
   providerAvailability,
   plannerProfiles,
   boardPlan,
@@ -109,7 +114,7 @@ export function BoardView({
   onLoadLinearIssues,
   onProposePlan,
   onSaveAgentProfile,
-  onSelectDefaultAgentProfile,
+  onSaveProjectAgentSettings,
   onSavePlannerProfile,
   onCoordinateBoard,
   onStartExecution,
@@ -166,15 +171,21 @@ export function BoardView({
       {surface === "workflow" && (
         <>
           <BoardAutomation
-            defaultAgentProfileName={defaultAgentProfileName}
+            defaultAgentProfileName={
+              projectAgentSettings?.ticketWorker?.agentProfileName
+            }
             hasDefaultAgent={agentProfiles.some(
-              ({ name }) => name === defaultAgentProfileName,
+              ({ name }) =>
+                name === projectAgentSettings?.ticketWorker?.agentProfileName,
             )}
             snapshot={snapshot}
             onCoordinate={onCoordinateBoard}
           />
           <BoardCanvas
             busy={busy}
+            defaultPlannerProfileName={
+              projectAgentSettings?.organiser?.plannerProfileName
+            }
             plannerProfiles={plannerProfiles}
             snapshot={snapshot}
             onGeneratePlan={generatePlanFromWorkflow}
@@ -198,6 +209,13 @@ export function BoardView({
             onGenerate={onGeneratePlan}
             onPropose={onProposePlan}
             plannerProfiles={plannerProfiles}
+            agentProfiles={agentProfiles}
+            defaultPlannerProfileName={
+              projectAgentSettings?.organiser?.plannerProfileName
+            }
+            defaultTicketWorkerProfileName={
+              projectAgentSettings?.ticketWorker?.agentProfileName
+            }
           />
         </section>
       )}
@@ -224,7 +242,7 @@ export function BoardView({
         <BoardSettings
           agentProfiles={agentProfiles}
           busy={busy}
-          defaultAgentProfileName={defaultAgentProfileName}
+          projectAgentSettings={projectAgentSettings}
           linearConnectionStatus={linearConnectionStatus}
           linearIssues={linearIssues}
           plannerProfiles={plannerProfiles}
@@ -241,14 +259,17 @@ export function BoardView({
           onRefreshLinearSharedFields={onRefreshLinearSharedFields}
           onSaveAgentProfile={onSaveAgentProfile}
           onSavePlannerProfile={onSavePlannerProfile}
-          onSelectDefaultAgentProfile={onSelectDefaultAgentProfile}
+          onSaveProjectAgentSettings={onSaveProjectAgentSettings}
         />
       )}
       {surface === "task-detail" && selectedWorkItem !== undefined && (
         <TaskDetail
           agentProfiles={agentProfiles}
           busy={busy}
-          defaultAgentProfileName={defaultAgentProfileName}
+          defaultAgentProfileName={
+            selectedWorkItem.assignedAgentProfileName ??
+            projectAgentSettings?.ticketWorker?.agentProfileName
+          }
           snapshot={snapshot}
           workItem={selectedWorkItem}
           onBack={returnToWorkflow}
@@ -371,22 +392,4 @@ function TaskDetail({
       />
     </section>
   );
-}
-
-function boardSummary(snapshot: BoardSnapshot): string {
-  const workItems = snapshot.workItems.map(({ workItem }) => workItem);
-  const activeCount = workItems.filter(
-    ({ state }) => state === "running",
-  ).length;
-  const attentionCount = workItems.filter(({ state }) =>
-    ["awaiting_input", "review", "blocked", "failed", "interrupted"].includes(
-      state,
-    ),
-  ).length;
-  if (attentionCount > 0) {
-    return `${activeCount} active · ${attentionCount} need your attention`;
-  }
-  return activeCount > 0
-    ? `${activeCount} active · everything else is moving normally`
-    : `${workItems.length} tasks · nothing needs your attention`;
 }

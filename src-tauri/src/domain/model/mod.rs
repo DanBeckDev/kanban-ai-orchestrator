@@ -3,6 +3,7 @@ mod execution;
 mod external_link;
 mod policy;
 mod project;
+mod project_agent_settings;
 mod schema;
 mod work_item;
 
@@ -13,6 +14,10 @@ pub use execution::{
 pub use external_link::{ExternalConnectionMode, ExternalLink, ExternalLinkProvenance};
 pub use policy::{PolicyAction, PolicyDecision, PolicyDecisionKind, ProtectedGitAction, ToolScope};
 pub use project::{Board, Project};
+pub use project_agent_settings::{
+    AgentEffort, AgentModelPreference, OrganiserDefaults, ProjectAgentSettings,
+    TicketWorkerDefaults,
+};
 pub use schema::{
     BoardId, CURRENT_SCHEMA_VERSION, ConnectorOutboxItemId, ConnectorReconciliationItemId,
     DependencyId, EvidenceId, ExecutionId, ExternalLinkId, PlanId, PolicyDecisionId, ProjectId,

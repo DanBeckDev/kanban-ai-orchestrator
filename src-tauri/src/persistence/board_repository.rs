@@ -1,7 +1,8 @@
 use crate::domain::{
     Board, BoardId, ConnectorOutboxItem, ConnectorOutboxItemId, ConnectorReconciliationItem,
     CreateWorkItemCommand, Dependency, Evidence, Execution, ExternalLink, ExternalLinkId,
-    MaterializedWorkItem, Project, RecordedWorkItemEvent, TransitionWorkItemCommand, WorkItemId,
+    MaterializedWorkItem, Project, ProjectAgentSettings, RecordedWorkItemEvent,
+    TransitionWorkItemCommand, WorkItemId,
 };
 use crate::{
     agent::AgentProfile,
@@ -244,6 +245,20 @@ impl BoardRepository for SqliteEventStore {
 
     fn planner_profiles(&self) -> Result<Vec<PlannerProfile>, Self::Error> {
         SqliteEventStore::planner_profiles(self).map_err(BoardStoreError::from)
+    }
+
+    fn save_project_agent_settings(
+        &mut self,
+        settings: ProjectAgentSettings,
+    ) -> Result<ProjectAgentSettings, Self::Error> {
+        SqliteEventStore::save_project_agent_settings(self, settings).map_err(BoardStoreError::from)
+    }
+
+    fn project_agent_settings(
+        &self,
+        project_id: &crate::domain::ProjectId,
+    ) -> Result<Option<ProjectAgentSettings>, Self::Error> {
+        SqliteEventStore::project_agent_settings(self, project_id).map_err(BoardStoreError::from)
     }
 
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error> {

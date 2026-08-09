@@ -26,6 +26,7 @@ type GoalPlanFormProps = Readonly<{
   busy: boolean;
   hasProposal: boolean;
   label?: string;
+  defaultPlannerProfileName?: string;
   profiles: readonly PlannerProfile[];
   onGenerate: (request: GeneratePlanRequest) => Promise<void>;
 }>;
@@ -35,13 +36,15 @@ export function GoalPlanForm({
   busy,
   hasProposal,
   label,
+  defaultPlannerProfileName,
   profiles,
   onGenerate,
 }: GoalPlanFormProps) {
   const [goal, setGoal] = useState("");
   const [plannerProfileName, setPlannerProfileName] = useState("");
   const [generationError, setGenerationError] = useState<string>();
-  const selectedProfile = plannerProfileName || profiles[0]?.name || "";
+  const selectedProfile =
+    plannerProfileName || defaultPlannerProfileName || profiles[0]?.name || "";
   const formLabel =
     label ?? (hasProposal ? "Revise plan with AI" : "Plan with AI");
 

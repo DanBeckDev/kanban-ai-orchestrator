@@ -62,6 +62,8 @@ pub fn run() {
             desktop::agent_provider_availability,
             desktop_planning::save_planner_profile,
             desktop_planning::planner_profiles,
+            desktop_planning::save_project_agent_settings,
+            desktop_planning::project_agent_settings,
             desktop_planning::generate_plan,
             desktop::start_execution,
             desktop::coordination::coordinate_board,

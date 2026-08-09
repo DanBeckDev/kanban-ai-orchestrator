@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::domain::{DependencyKind, WorkItemBudget};
+use crate::domain::{AgentEffort, AgentModelPreference, DependencyKind, WorkItemBudget};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,6 +41,12 @@ pub struct ProposedPlanWorkItemRequest {
     #[serde(default)]
     pub budget: WorkItemBudget,
     pub requires_human_review: bool,
+    #[serde(default)]
+    pub assigned_agent_profile_name: Option<String>,
+    #[serde(default)]
+    pub assigned_agent_model: Option<AgentModelPreference>,
+    #[serde(default)]
+    pub assigned_agent_effort: Option<AgentEffort>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

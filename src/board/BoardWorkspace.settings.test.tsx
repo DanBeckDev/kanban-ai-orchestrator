@@ -33,16 +33,15 @@ describe("focused board and agent settings", () => {
     ).toBeVisible();
   });
 
-  it("detects installed agents, creates a safe default profile, and keeps Cline install guidance separate", async () => {
-    window.localStorage.clear();
+  it("detects installed agents and saves a project ticket-worker default", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
-    openSettings("Agent");
+    openSettings("AI");
 
     expect(boardGateway.agentProviderAvailability).toHaveBeenCalledOnce();
     const providerList = screen.getByRole("list", {
-      name: "Available task agents",
+      name: "Available ticket workers",
     });
     const codexItem = listItemFor(providerList, "Codex");
     const clineItem = listItemFor(providerList, "Cline");
@@ -53,7 +52,7 @@ describe("focused board and agent settings", () => {
     ).toHaveAttribute("href", "https://docs.cline.bot/cli");
 
     fireEvent.click(
-      within(codexItem).getByRole("button", { name: "Use for tasks" }),
+      within(codexItem).getByRole("button", { name: "Use as worker" }),
     );
 
     await waitFor(() =>
@@ -64,11 +63,18 @@ describe("focused board and agent settings", () => {
         arguments: [],
       }),
     );
-    expect(
-      await screen.findByText(
-        "New task runs use Default Codex CLI by default.",
-      ),
-    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Save AI defaults" }));
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: undefined,
+        ticketWorker: {
+          agentProfileName: "Default Codex CLI",
+          model: { kind: "provider_default" },
+          effort: "provider_default",
+        },
+      }),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     openTask("Task ready-task");
@@ -81,29 +87,28 @@ describe("focused board and agent settings", () => {
   });
 
   it("does not select an agent when its safe profile could not be saved", async () => {
-    window.localStorage.clear();
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
     vi.mocked(boardGateway.saveAgentProfile).mockRejectedValueOnce(
       new Error("Profile store is unavailable"),
     );
 
     await createBoard(boardGateway);
-    openSettings("Agent");
+    openSettings("AI");
     const providerList = screen.getByRole("list", {
-      name: "Available task agents",
+      name: "Available ticket workers",
     });
     const codexItem = listItemFor(providerList, "Codex");
 
     fireEvent.click(
-      within(codexItem).getByRole("button", { name: "Use for tasks" }),
+      within(codexItem).getByRole("button", { name: "Use as worker" }),
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Profile store is unavailable",
     );
     expect(
-      within(codexItem).getByRole("button", { name: "Use for tasks" }),
-    ).toHaveAttribute("aria-pressed", "false");
+      within(codexItem).getByRole("button", { name: "Use as worker" }),
+    ).toBeEnabled();
   });
 });
 

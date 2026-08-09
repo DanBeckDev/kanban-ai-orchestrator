@@ -24,6 +24,9 @@ pub(super) fn work_item(id: &str, state: WorkItemState) -> WorkItem {
         budget: WorkItemBudget::default(),
         state,
         requires_human_review: false,
+        assigned_agent_profile_name: None,
+        assigned_agent_model: Default::default(),
+        assigned_agent_effort: Default::default(),
     }
 }
 
@@ -120,7 +123,7 @@ fn persists_an_append_only_event_history_and_materialized_snapshot_across_reopen
         store
             .database_schema_version()
             .expect("database schema version should load"),
-        11
+        12
     );
     assert_eq!(created.sequence, 1);
     assert_eq!(planned.sequence, 2);

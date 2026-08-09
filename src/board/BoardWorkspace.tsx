@@ -1,21 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircleIcon, RefreshCwIcon } from "lucide-react";
-
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { BoardLibrary } from "./BoardLibrary";
-import { BoardSetup, type RepositoryPicker } from "./BoardSetup";
-import { BoardView } from "./BoardView";
+import type { RepositoryPicker } from "./BoardSetup";
+import { BoardWorkspaceScreen } from "./BoardWorkspaceScreen";
 import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
-import { useDefaultAgentProfileName } from "./agentPreferences";
+import { useBoardOperation } from "./useBoardOperation";
 import { tauriBoardGateway } from "./gateway";
 import { selectCloneDestination, selectRepository } from "./repositoryPicker";
 import type {
@@ -38,10 +25,12 @@ import type {
   QueueLinearCommentRequest,
   ProposePlanRequest,
   PlannerProfile,
+  ProjectAgentSettings,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
+  SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
 } from "./types";
 
@@ -49,10 +38,6 @@ type BoardWorkspaceProps = Readonly<{
   gateway?: BoardGateway;
   repositoryPicker?: RepositoryPicker;
 }>;
-
-const disconnectedLinearStatus: LinearConnectionStatus = {
-  kind: "disconnected",
-};
 
 export function BoardWorkspace({
   gateway = tauriBoardGateway,
@@ -70,32 +55,24 @@ export function BoardWorkspace({
   const [providerAvailability, setProviderAvailability] = useState<
     readonly AgentProviderAvailability[]
   >([]);
-  const { defaultAgentProfileName, selectDefaultAgentProfile } =
-    useDefaultAgentProfileName();
+  const [projectAgentSettings, setProjectAgentSettings] = useState<
+    ProjectAgentSettings | undefined
+  >();
   const [plannerProfiles, setPlannerProfiles] = useState<
     readonly PlannerProfile[]
   >([]);
   const [boardPlan, setBoardPlan] = useState<BoardPlan>();
   const [linearConnectionStatus, setLinearConnectionStatus] =
-    useState<LinearConnectionStatus>(disconnectedLinearStatus);
+    useState<LinearConnectionStatus>({ kind: "disconnected" });
   const [linearIssues, setLinearIssues] = useState<
     readonly LinearIssueSummary[]
   >([]);
 
-  async function run(operation: () => Promise<BoardSnapshot | undefined>) {
-    setBusy(true);
-    setError(undefined);
-    try {
-      const updatedSnapshot = await operation();
-      if (updatedSnapshot !== undefined) {
-        setSnapshot(updatedSnapshot);
-      }
-    } catch (operationError) {
-      setError(errorMessage(operationError));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const run = useBoardOperation({
+    onError: setError,
+    onSnapshot: setSnapshot,
+    setBusy,
+  });
 
   async function createBoard(input: CreateLocalBoardRequest) {
     await run(async () => {
@@ -203,6 +180,21 @@ export function BoardWorkspace({
     }
   }
 
+  async function saveProjectAgentSettings(
+    request: SaveProjectAgentSettingsRequest,
+  ) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setProjectAgentSettings(await gateway.saveProjectAgentSettings(request));
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+      throw operationError;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function startExecution(request: StartExecutionRequest) {
     await run(() => gateway.startExecution(request));
   }
@@ -247,16 +239,18 @@ export function BoardWorkspace({
   }, [gateway]);
 
   async function loadBoardContext(boardId: string) {
-    const [profiles, planners, plan, providers] = await Promise.all([
+    const [profiles, planners, plan, providers, settings] = await Promise.all([
       gateway.agentProfiles(),
       gateway.plannerProfiles(),
       gateway.boardPlan(boardId),
       gateway.agentProviderAvailability(),
+      gateway.projectAgentSettings(boardId),
     ]);
     setAgentProfiles(profiles);
     setPlannerProfiles(planners);
     setBoardPlan(plan);
     setProviderAvailability(providers);
+    setProjectAgentSettings(settings);
     setLinearIssues([]);
     await refreshLinearConnectionStatus();
   }
@@ -329,106 +323,75 @@ export function BoardWorkspace({
     onSnapshot: setSnapshot,
   });
 
+  const activeBoardProps =
+    snapshot === undefined
+      ? { snapshot: undefined, boardViewProps: undefined }
+      : {
+          snapshot,
+          boardViewProps: {
+            busy,
+            agentProfiles,
+            projectAgentSettings,
+            providerAvailability,
+            onAddDependency: addDependency,
+            boardPlan,
+            onConfirmPlan: confirmPlan,
+            onCreateWorkItem: createWorkItem,
+            onImportLinearBlocker: importLinearBlocker,
+            onImportLinearIssue: importLinearIssue,
+            linearConnectionStatus,
+            linearIssues,
+            onConnectLinear: beginLinearOAuth,
+            onEnableLinearCommentAccess: beginLinearCommentAccess,
+            onLoadLinearIssues: loadLinearAssignedIssues,
+            onQueueLinearComment: queueLinearComment,
+            onDeliverLinearComment: deliverLinearComment,
+            onRefreshLinearSharedFields: refreshLinearSharedFields,
+            onProposePlan: proposePlan,
+            onGeneratePlan: generatePlan,
+            onSaveAgentProfile: saveAgentProfile,
+            onSaveProjectAgentSettings: saveProjectAgentSettings,
+            onSavePlannerProfile: savePlannerProfile,
+            onCoordinateBoard: coordinateBoard,
+            onStartExecution: startExecution,
+            onStopExecution: stopExecution,
+            onLoadExecutionActivity: loadExecutionActivity,
+            onRecordReviewCheck: recordReviewCheck,
+            onRecordReviewDecision: recordReviewDecision,
+            onRecordCleanCodeReview: recordCleanCodeReview,
+            onTransition: transitionWorkItem,
+            snapshot,
+            plannerProfiles,
+          },
+        };
+
   return (
-    <section className="board-shell">
-      {error !== undefined && !boardLibraryLoadFailed && (
-        <Alert
-          aria-live="polite"
-          className="error-notice"
-          variant="destructive"
-        >
-          <AlertCircleIcon aria-hidden="true" />
-          <AlertTitle>Kanban could not complete that request.</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      {snapshot === undefined && boardLibraryLoadFailed ? (
-        <Empty className="board-library-loading">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <AlertCircleIcon />
-            </EmptyMedia>
-            <EmptyTitle aria-level={2} role="heading">
-              Kanban could not load your boards
-            </EmptyTitle>
-            <EmptyDescription>
-              Try again. If it keeps happening, restart Kanban.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={() => void loadBoardLibrary()} type="button">
-              <RefreshCwIcon data-icon="inline-start" />
-              Try again
-            </Button>
-          </EmptyContent>
-        </Empty>
-      ) : snapshot === undefined && boardLibrary === undefined ? (
-        <Empty aria-live="polite" className="board-library-loading">
-          <EmptyHeader>
-            <EmptyTitle>Loading your local boards…</EmptyTitle>
-            <EmptyDescription>
-              Reading the boards stored on this device.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : snapshot === undefined && showBoardSetup ? (
-        <BoardSetup
-          busy={busy}
-          cloneDestinationPicker={selectCloneDestination}
-          repositoryPicker={repositoryPicker}
-          onCloneGitHubRepository={gateway.cloneGitHubRepository}
-          onInspectRepository={gateway.inspectRepository}
-          onBack={() => {
-            setShowBoardSetup(false);
-            void loadBoardLibrary();
-          }}
-          onCreate={createBoard}
-        />
-      ) : snapshot === undefined ? (
-        <BoardLibrary
-          boards={boardLibrary ?? []}
-          busy={busy}
-          onCreateBoard={() => setShowBoardSetup(true)}
-          onOpenBoard={(boardId) => void openBoard(boardId)}
-        />
-      ) : (
-        <BoardView
-          busy={busy}
-          agentProfiles={agentProfiles}
-          defaultAgentProfileName={defaultAgentProfileName}
-          providerAvailability={providerAvailability}
-          onAddDependency={addDependency}
-          boardPlan={boardPlan}
-          onConfirmPlan={confirmPlan}
-          onCreateWorkItem={createWorkItem}
-          onImportLinearBlocker={importLinearBlocker}
-          onImportLinearIssue={importLinearIssue}
-          linearConnectionStatus={linearConnectionStatus}
-          linearIssues={linearIssues}
-          onConnectLinear={beginLinearOAuth}
-          onEnableLinearCommentAccess={beginLinearCommentAccess}
-          onLoadLinearIssues={loadLinearAssignedIssues}
-          onQueueLinearComment={queueLinearComment}
-          onDeliverLinearComment={deliverLinearComment}
-          onRefreshLinearSharedFields={refreshLinearSharedFields}
-          onProposePlan={proposePlan}
-          onGeneratePlan={generatePlan}
-          onSaveAgentProfile={saveAgentProfile}
-          onSelectDefaultAgentProfile={selectDefaultAgentProfile}
-          onSavePlannerProfile={savePlannerProfile}
-          onCoordinateBoard={coordinateBoard}
-          onStartExecution={startExecution}
-          onStopExecution={stopExecution}
-          onLoadExecutionActivity={loadExecutionActivity}
-          onRecordReviewCheck={recordReviewCheck}
-          onRecordReviewDecision={recordReviewDecision}
-          onRecordCleanCodeReview={recordCleanCodeReview}
-          onTransition={transitionWorkItem}
-          snapshot={snapshot}
-          plannerProfiles={plannerProfiles}
-        />
-      )}
-    </section>
+    <BoardWorkspaceScreen
+      boardLibraryLoadFailed={boardLibraryLoadFailed}
+      boardLibraryLoaded={boardLibrary !== undefined}
+      boardLibraryProps={{
+        boards: boardLibrary ?? [],
+        busy,
+        onCreateBoard: () => setShowBoardSetup(true),
+        onOpenBoard: (boardId) => void openBoard(boardId),
+      }}
+      boardSetupProps={{
+        busy,
+        cloneDestinationPicker: selectCloneDestination,
+        repositoryPicker,
+        onCloneGitHubRepository: gateway.cloneGitHubRepository,
+        onInspectRepository: gateway.inspectRepository,
+        onBack: () => {
+          setShowBoardSetup(false);
+          void loadBoardLibrary();
+        },
+        onCreate: createBoard,
+      }}
+      error={error}
+      onRetryBoardLibrary={() => void loadBoardLibrary()}
+      showBoardSetup={showBoardSetup}
+      {...activeBoardProps}
+    />
   );
 }
 

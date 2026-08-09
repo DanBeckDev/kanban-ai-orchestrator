@@ -1,0 +1,289 @@
+work_item: ORCH-006
+scope:
+  - "Durable, project-scoped organiser and ticket-worker defaults with safe model and effort preferences."
+  - "Editable, reorderable, worker-assignable plan previews that retain explicit confirmation as the materialisation boundary."
+  - "One-click selection of detected ticket-worker providers without exposing credentials or raw command flags."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 340
+      responsibilities: "Owns core board commands and applies the saved ticket-worker default to manual work creation."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_error.rs
+      meaningful_lines: 282
+      responsibilities: "Names board-boundary errors, including selected worker validation failures."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests/plan.rs
+      meaningful_lines: 342
+      responsibilities: "Covers plan confirmation and materialisation behaviour."
+      decision: kept cohesive
+    - path: src-tauri/src/application/generated_plan_service.rs
+      meaningful_lines: 65
+      responsibilities: "Converts generated planning output into the typed draft request."
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 70
+      responsibilities: "Assembles the application module boundaries and public command types."
+      decision: kept cohesive
+    - path: src-tauri/src/application/plan_requests.rs
+      meaningful_lines: 42
+      responsibilities: "Defines typed, optional per-task worker model and effort inputs."
+      decision: kept cohesive
+    - path: src-tauri/src/application/plan_service.rs
+      meaningful_lines: 219
+      responsibilities: "Validates plans, applies ticket-worker defaults, and preserves the confirmation boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_catalog_service.rs
+      meaningful_lines: 55
+      responsibilities: "Keeps board-library and board-opening concerns outside the core board command service."
+      decision: extracted for single responsibility
+    - path: src-tauri/src/application/project_agent_settings_service.rs
+      meaningful_lines: 194
+      responsibilities: "Validates and persists project role defaults independently of plan and execution concerns."
+      decision: extracted for single responsibility
+    - path: src-tauri/src/application/project_agent_settings_service_tests.rs
+      meaningful_lines: 234
+      responsibilities: "Covers persistence, reopening, clearing, selected profile, and model validation paths."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_coordination.rs
+      meaningful_lines: 364
+      responsibilities: "Retains the runtime coordination boundary while consuming assigned worker data."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_planning.rs
+      meaningful_lines: 60
+      responsibilities: "Exposes typed desktop commands for project agent settings and planning."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/mod.rs
+      meaningful_lines: 27
+      responsibilities: "Exports domain role-setting types."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/mod.rs
+      meaningful_lines: 32
+      responsibilities: "Groups model modules and role-setting exports."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/project_agent_settings.rs
+      meaningful_lines: 27
+      responsibilities: "Defines provider-neutral model, effort, organiser, and worker default value objects."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/tests.rs
+      meaningful_lines: 212
+      responsibilities: "Guards domain serialization and compatibility contracts."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/work_item.rs
+      meaningful_lines: 103
+      responsibilities: "Carries typed worker assignment metadata on a work item."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 88
+      responsibilities: "Registers the desktop settings commands."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/plan.rs
+      meaningful_lines: 289
+      responsibilities: "Preserves proposed task order and exposes reviewable assignment data in plan previews."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/tests/mod.rs
+      meaningful_lines: 142
+      responsibilities: "Shares typed orchestration fixtures."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/tests/plan_tests.rs
+      meaningful_lines: 202
+      responsibilities: "Verifies ordered preview and dependency semantics."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 238
+      responsibilities: "Implements the typed repository boundary for role defaults."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store_test_fixtures.rs
+      meaningful_lines: 97
+      responsibilities: "Holds reusable persistence fixtures outside the board-store assertions."
+      decision: extracted for single responsibility
+    - path: src-tauri/src/persistence/board_store_tests.rs
+      meaningful_lines: 311
+      responsibilities: "Covers board-store persistence without fixture-construction noise."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_queries.rs
+      meaningful_lines: 166
+      responsibilities: "Reads newly persisted work-item assignment data."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_schema.rs
+      meaningful_lines: 125
+      responsibilities: "Declares SQLite schema creation for role defaults."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 32
+      responsibilities: "Registers persistence modules and focused test fixtures."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/project_agent_settings_store.rs
+      meaningful_lines: 32
+      responsibilities: "Owns the narrow SQLite read/write queries for project role defaults."
+      decision: extracted for single responsibility
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 387
+      responsibilities: "Applies the version-12 role-settings migration and transaction boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: "Guards migration and future-version rejection semantics."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 380
+      responsibilities: "Guards current schema-version persistence."
+      decision: kept cohesive
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 133
+      responsibilities: "Passes project organiser defaults into the workflow planning entry point."
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 167
+      responsibilities: "Composes the focused AI, Linear, and project settings surfaces."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 386
+      responsibilities: "Routes project role defaults to workflow, settings, and task surfaces."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspaceScreen.tsx
+      meaningful_lines: 101
+      responsibilities: "Renders library, setup, failure, and loaded-board states from a discriminated screen contract."
+      decision: extracted for single responsibility
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 363
+      responsibilities: "Owns board state, durable context loading, and typed gateway actions without rendering details."
+      decision: kept cohesive
+    - path: src/board/useBoardOperation.ts
+      meaningful_lines: 32
+      responsibilities: "Centralizes busy, error, and snapshot handling for snapshot-returning operations."
+      decision: extracted for single responsibility
+    - path: src/board/BoardWorkspace.plan.fixtures.ts
+      meaningful_lines: 31
+      responsibilities: "Provides reusable editable-plan test input."
+      decision: extracted for single responsibility
+    - path: src/board/BoardWorkspace.plan.validation.test.tsx
+      meaningful_lines: 26
+      responsibilities: "Covers malformed pasted-plan validation separately from review workflow tests."
+      decision: extracted for single responsibility
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 363
+      responsibilities: "Covers generated, edited, reordered, reassigned, rejected, and confirmed plan journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 102
+      responsibilities: "Covers durable role selection and one-click installed-worker setup."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.agent.test.tsx
+      meaningful_lines: 91
+      responsibilities: "Covers direct ticket worker configuration and task launch."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.coordination.test.tsx
+      meaningful_lines: 34
+      responsibilities: "Proves coordination uses a durable ticket-worker default rather than browser storage."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.execution.fixtures.ts
+      meaningful_lines: 88
+      responsibilities: "Provides execution mock methods outside board-workspace fixture state."
+      decision: extracted for single responsibility
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 371
+      responsibilities: "Provides configurable board gateway state, plans, profiles, and settings for workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 91
+      responsibilities: "Provides accessible board navigation and organiser setup helpers."
+      decision: kept cohesive
+    - path: src/board/GoalPlanForm.tsx
+      meaningful_lines: 117
+      responsibilities: "Collects an outcome and selected organiser for a reviewable generated plan."
+      decision: kept cohesive
+    - path: src/board/PlanDraftEditor.tsx
+      meaningful_lines: 361
+      responsibilities: "Edits task scope, review criteria, worker, ordering, and removal before a plan is saved."
+      decision: kept cohesive
+    - path: src/board/PlanPreview.tsx
+      meaningful_lines: 214
+      responsibilities: "Presents named task scope, dependencies, assumptions, and confirmation without opaque identifiers."
+      decision: kept cohesive
+    - path: src/board/PlanProposalPanel.tsx
+      meaningful_lines: 225
+      responsibilities: "Coordinates pasted/generated plan preview, editing, and explicit confirmation."
+      decision: kept cohesive
+    - path: src/board/ProjectAgentDefaultsForm.tsx
+      meaningful_lines: 302
+      responsibilities: "Selects distinct organiser and worker defaults with safe effort preferences and detected-provider setup."
+      decision: kept cohesive
+    - path: src/board/WorkflowComposer.tsx
+      meaningful_lines: 50
+      responsibilities: "Routes workflow planning actions to the typed organiser entry point."
+      decision: kept cohesive
+    - path: src/board/agentSettingsTypes.ts
+      meaningful_lines: 28
+      responsibilities: "Defines UI role-setting contracts separately from general board types."
+      decision: extracted for single responsibility
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 102
+      responsibilities: "Declares gateway methods for durable project role settings."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 185
+      responsibilities: "Maps desktop commands to typed frontend role-setting contracts."
+      decision: kept cohesive
+    - path: src/board/planTypes.ts
+      meaningful_lines: 75
+      responsibilities: "Keeps plan and editable-plan request contracts separate from general board types."
+      decision: extracted for single responsibility
+    - path: src/board/presentation.ts
+      meaningful_lines: 177
+      responsibilities: "Derives concise board presentation facts, including role assignment labels."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 326
+      responsibilities: "Defines general board contracts and re-exports focused plan and role-setting types."
+      decision: kept cohesive
+    - path: src/styles/forms.css
+      meaningful_lines: 258
+      responsibilities: "Styles editable plan review controls within the existing responsive form system."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T00:30:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+    worth_calling_out:
+      - principle: "SRP — SOLID Principles"
+        observation: "Project role validation, SQL persistence, screen rendering, and plan editing each have explicit, tested boundaries instead of accumulating in the board workspace."
+      - principle: "Concurrency — Limit the Scope of Data"
+        observation: "The durable settings are loaded as immutable snapshots and written through one repository boundary; no new shared mutable UI or worker state is introduced."
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The initial combined workspace component exceeded the project file-size rule and mixed rendering with board action state."
+    change: "Extracted BoardWorkspaceScreen and useBoardOperation, retaining a typed, discriminated loaded-board contract."
+  - finding: "Board-library actions had accumulated alongside core board commands."
+    change: "Extracted BoardCatalogService so catalogue/opening behaviour has a separate responsibility."
+  - finding: "A permissive loaded-board screen prop could have allowed an absent board view to render blank."
+    change: "Made loaded versus unloaded screen props a discriminated union so a loaded snapshot requires BoardView props at compile time."
+  - finding: "The role-settings validation introduced untested branches and reduced Rust branch coverage below the required gate."
+    change: "Added tests for clearing defaults, missing workers, named models, blank/null model names, and overlong model names."
+verification:
+  commands:
+    - command: npm test -- --run
+      result: passed (128 tests)
+    - command: npm run rust:test
+      result: passed (297 tests)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 87.67
+        statements: 86.73
+        functions: 85.00
+        branches: 82.83
+      - package_or_crate: src-tauri-rust
+        lines: 84.62
+        statements: 81.04
+        functions: 84.56
+        branches: 80.54
+    threshold_met: true
+exceptions: []

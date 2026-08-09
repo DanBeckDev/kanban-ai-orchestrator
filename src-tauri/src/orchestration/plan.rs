@@ -7,8 +7,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::domain::{
-    Dependency, DependencyGraph, DependencyGraphError, PlanId, ProjectId, WorkItem, WorkItemBudget,
-    WorkItemId,
+    AgentEffort, AgentModelPreference, Dependency, DependencyGraph, DependencyGraphError, PlanId,
+    ProjectId, WorkItem, WorkItemBudget, WorkItemId,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -26,8 +26,13 @@ pub struct PlanProposal {
 pub struct PlanWorkItemPreview {
     pub id: WorkItemId,
     pub title: String,
+    pub description: String,
     pub acceptance_criteria: Vec<String>,
     pub budget: WorkItemBudget,
+    pub requires_human_review: bool,
+    pub assigned_agent_profile_name: Option<String>,
+    pub assigned_agent_model: AgentModelPreference,
+    pub assigned_agent_effort: AgentEffort,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -76,13 +81,19 @@ pub(crate) fn validate_plan(proposal: PlanProposal) -> Result<ValidatedPlan, Pla
     let parallel_stages = parallel_stages(&work_items, &proposal.dependencies);
     let mut dependencies = proposal.dependencies;
     dependencies.sort_by(|left, right| left.id.cmp(&right.id));
-    let work_item_previews = work_items
-        .values()
+    let work_item_previews = proposal
+        .work_items
+        .iter()
         .map(|work_item| PlanWorkItemPreview {
             id: work_item.id.clone(),
             title: work_item.title.clone(),
+            description: work_item.description.clone(),
             acceptance_criteria: work_item.acceptance_criteria.clone(),
             budget: work_item.budget.clone(),
+            requires_human_review: work_item.requires_human_review,
+            assigned_agent_profile_name: work_item.assigned_agent_profile_name.clone(),
+            assigned_agent_model: work_item.assigned_agent_model.clone(),
+            assigned_agent_effort: work_item.assigned_agent_effort,
         })
         .collect::<Vec<_>>();
 

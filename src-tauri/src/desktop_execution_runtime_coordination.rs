@@ -333,6 +333,9 @@ mod tests {
                 budget: WorkItemBudget::default(),
                 state,
                 requires_human_review: false,
+                assigned_agent_profile_name: None,
+                assigned_agent_model: Default::default(),
+                assigned_agent_effort: Default::default(),
             },
             last_event_sequence: 1,
         }

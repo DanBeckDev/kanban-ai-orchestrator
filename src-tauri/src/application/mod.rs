@@ -1,4 +1,5 @@
 mod agent_profile_service;
+mod board_catalog_service;
 mod board_library;
 mod board_plan;
 mod board_requests;
@@ -21,6 +22,7 @@ mod local_board_service;
 mod plan_requests;
 mod plan_service;
 mod planner_profile_service;
+mod project_agent_settings_service;
 mod review_check_request;
 mod review_decision_request;
 mod review_service;
@@ -54,6 +56,9 @@ pub use plan_requests::{
     ProposedPlanWorkItemRequest,
 };
 pub use planner_profile_service::{PlannerContext, PlannerProfileServiceError};
+pub use project_agent_settings_service::{
+    ProjectAgentSettingsError, SaveProjectAgentSettingsRequest,
+};
 pub use review_check_request::RecordReviewCheckRequest;
 pub use review_decision_request::RecordReviewDecisionRequest;
 
@@ -77,3 +82,6 @@ mod execution_launch_tests;
 
 #[cfg(test)]
 mod generated_plan_service_tests;
+
+#[cfg(test)]
+mod project_agent_settings_service_tests;

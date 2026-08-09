@@ -48,10 +48,10 @@ fn proposal_exposes_the_full_confirmable_execution_plan() {
             .map(|work_item| work_item.id.clone())
             .collect::<Vec<_>>(),
         vec![
-            "api".into(),
             "foundation".into(),
+            "api".into(),
+            "ui".into(),
             "release".into(),
-            "ui".into()
         ]
     );
     assert_eq!(
@@ -77,7 +77,7 @@ fn proposal_exposes_the_full_confirmable_execution_plan() {
     );
     assert_eq!(
         scheduler.preview().work_items[0].acceptance_criteria,
-        vec!["api behavior is verified"]
+        vec!["foundation behavior is verified"]
     );
     assert_eq!(
         scheduler.preview().parallel_stages,

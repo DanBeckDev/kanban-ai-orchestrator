@@ -12,6 +12,7 @@ import type { GeneratePlanRequest, PlannerProfile } from "./types";
 type WorkflowComposerProps = Readonly<{
   boardId: string;
   busy: boolean;
+  defaultPlannerProfileName?: string;
   plannerProfiles: readonly PlannerProfile[];
   onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
 }>;
@@ -19,6 +20,7 @@ type WorkflowComposerProps = Readonly<{
 export function WorkflowComposer({
   boardId,
   busy,
+  defaultPlannerProfileName,
   plannerProfiles,
   onGeneratePlan,
 }: WorkflowComposerProps) {
@@ -38,6 +40,7 @@ export function WorkflowComposer({
           <GoalPlanForm
             boardId={boardId}
             busy={busy}
+            defaultPlannerProfileName={defaultPlannerProfileName}
             hasProposal={false}
             label="Prompt AI to orchestrate"
             onGenerate={onGeneratePlan}

@@ -73,6 +73,17 @@ pub(super) fn create_planner_profile_schema(
     )
 }
 
+pub(super) fn create_project_agent_settings_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS project_agent_settings (
+            project_id TEXT PRIMARY KEY,
+            settings_json TEXT NOT NULL
+        );",
+    )
+}
+
 pub(super) fn create_external_link_schema(
     transaction: &Transaction<'_>,
 ) -> Result<(), rusqlite::Error> {

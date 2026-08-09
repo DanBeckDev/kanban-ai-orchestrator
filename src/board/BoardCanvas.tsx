@@ -28,6 +28,7 @@ import type {
 type BoardCanvasProps = Readonly<{
   snapshot: BoardSnapshot;
   busy: boolean;
+  defaultPlannerProfileName?: string;
   plannerProfiles: readonly PlannerProfile[];
   onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
   onExplainDependencies: (workItemId: string) => void;
@@ -37,6 +38,7 @@ type BoardCanvasProps = Readonly<{
 export function BoardCanvas({
   snapshot,
   busy,
+  defaultPlannerProfileName,
   plannerProfiles,
   onGeneratePlan,
   onExplainDependencies,
@@ -49,6 +51,7 @@ export function BoardCanvas({
       <WorkflowComposer
         boardId={snapshot.board.id}
         busy={busy}
+        defaultPlannerProfileName={defaultPlannerProfileName}
         onGeneratePlan={onGeneratePlan}
         plannerProfiles={plannerProfiles}
       />

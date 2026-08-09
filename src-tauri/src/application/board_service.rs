@@ -5,17 +5,16 @@ use chrono::Utc;
 use crate::domain::{
     Board, BoardId, ConnectorOutboxItem, ConnectorReconciliationItem, CreateWorkItemCommand,
     Dependency, DependencyId, DependencySource, Evidence, Execution, ExecutionId, ExternalLink,
-    ExternalLinkId, MaterializedWorkItem, Project, ProjectId, RecordedWorkItemEvent,
-    SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem, WorkItemEventId,
-    WorkItemId, WorkItemState,
+    ExternalLinkId, MaterializedWorkItem, Project, ProjectAgentSettings, ProjectId,
+    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
+    WorkItemEventId, WorkItemId, WorkItemState,
 };
 use crate::orchestration::{PlanConfirmation, PlanProposal};
 use crate::{agent::AgentProfile, orchestration::PlannerProfile};
 
 use super::{
-    AddDependencyRequest, BoardLibraryEntry, BoardLibraryRecord, BoardServiceError, BoardSnapshot,
-    CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest, StoredPlan,
-    TransitionWorkItemRequest, repository_available, sort_board_library,
+    AddDependencyRequest, BoardLibraryRecord, BoardServiceError, BoardSnapshot, CreateBoardRequest,
+    CreateProjectRequest, CreateWorkItemRequest, StoredPlan, TransitionWorkItemRequest,
 };
 
 pub trait BoardRepository {
@@ -125,6 +124,14 @@ pub trait BoardRepository {
     ) -> Result<PlannerProfile, Self::Error>;
     fn planner_profile(&self, name: &str) -> Result<Option<PlannerProfile>, Self::Error>;
     fn planner_profiles(&self) -> Result<Vec<PlannerProfile>, Self::Error>;
+    fn save_project_agent_settings(
+        &mut self,
+        settings: ProjectAgentSettings,
+    ) -> Result<ProjectAgentSettings, Self::Error>;
+    fn project_agent_settings(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<Option<ProjectAgentSettings>, Self::Error>;
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error>;
     fn stored_plan_for_board(&self, board_id: &BoardId) -> Result<Option<StoredPlan>, Self::Error>;
     fn confirm_and_materialize_plan(
@@ -192,52 +199,6 @@ where
         self.snapshot(&board.id)
     }
 
-    pub fn board_library(
-        &self,
-    ) -> Result<Vec<BoardLibraryEntry>, BoardServiceError<Repository::Error>> {
-        let mut entries = self
-            .repository
-            .board_library_records()
-            .map_err(BoardServiceError::Repository)?
-            .into_iter()
-            .map(BoardLibraryEntry::from_record)
-            .collect::<Vec<_>>();
-        sort_board_library(&mut entries);
-        Ok(entries)
-    }
-
-    pub fn open_board(
-        &mut self,
-        board_id: &str,
-    ) -> Result<BoardSnapshot, BoardServiceError<Repository::Error>> {
-        validate_required(board_id, "board id")?;
-        let board_id = BoardId::from(board_id);
-        let board = self
-            .repository
-            .board(&board_id)
-            .map_err(BoardServiceError::Repository)?
-            .ok_or_else(|| BoardServiceError::BoardNotFound {
-                board_id: board_id.clone(),
-            })?;
-        let project = self
-            .repository
-            .project(&board.project_id)
-            .map_err(BoardServiceError::Repository)?
-            .ok_or_else(|| BoardServiceError::ProjectNotFound {
-                project_id: board.project_id.clone(),
-            })?;
-        if !repository_available(&project.repository_path) {
-            return Err(BoardServiceError::RepositoryUnavailable {
-                project_id: project.id,
-                repository_path: project.repository_path,
-            });
-        }
-        self.repository
-            .record_board_opened(&board_id, Utc::now().to_rfc3339())
-            .map_err(BoardServiceError::Repository)?;
-        self.snapshot(&board_id)
-    }
-
     pub fn create_work_item(
         &mut self,
         request: CreateWorkItemRequest,
@@ -251,6 +212,7 @@ where
         validate_criteria(&request.acceptance_criteria)?;
 
         let board_id = BoardId::from(request.board_id.as_str());
+        let ticket_worker = self.default_ticket_worker(&board_id)?;
         self.repository
             .create_board_work_item(CreateWorkItemCommand {
                 event_id: WorkItemEventId::from(request.event_id.as_str()),
@@ -264,6 +226,17 @@ where
                     budget: request.budget,
                     state: WorkItemState::Inbox,
                     requires_human_review: request.requires_human_review,
+                    assigned_agent_profile_name: ticket_worker
+                        .as_ref()
+                        .map(|defaults| defaults.agent_profile_name.clone()),
+                    assigned_agent_model: ticket_worker
+                        .as_ref()
+                        .map(|defaults| defaults.model.clone())
+                        .unwrap_or_default(),
+                    assigned_agent_effort: ticket_worker
+                        .as_ref()
+                        .map(|defaults| defaults.effort)
+                        .unwrap_or_default(),
                 },
                 recorded_at: request.recorded_at,
             })

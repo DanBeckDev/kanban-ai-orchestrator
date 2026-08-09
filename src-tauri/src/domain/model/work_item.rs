@@ -2,7 +2,10 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use super::{BoardId, DependencyId, SchemaMetadata, VersionedSchema, WorkItemId};
+use super::{
+    AgentEffort, AgentModelPreference, BoardId, DependencyId, SchemaMetadata, VersionedSchema,
+    WorkItemId,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -69,6 +72,12 @@ pub struct WorkItem {
     pub budget: WorkItemBudget,
     pub state: WorkItemState,
     pub requires_human_review: bool,
+    #[serde(default)]
+    pub assigned_agent_profile_name: Option<String>,
+    #[serde(default)]
+    pub assigned_agent_model: AgentModelPreference,
+    #[serde(default)]
+    pub assigned_agent_effort: AgentEffort,
 }
 
 impl VersionedSchema for WorkItem {

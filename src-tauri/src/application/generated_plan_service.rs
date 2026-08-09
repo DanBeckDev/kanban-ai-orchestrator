@@ -38,6 +38,9 @@ pub fn generated_plan_request(
             acceptance_criteria: work_item.acceptance_criteria,
             budget: work_item.budget.into(),
             requires_human_review: work_item.requires_human_review,
+            assigned_agent_profile_name: None,
+            assigned_agent_model: None,
+            assigned_agent_effort: None,
         })
         .collect();
     let dependencies = draft

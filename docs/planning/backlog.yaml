@@ -251,7 +251,7 @@ tasks:
   - id: UX-002
     epic: UX
     title: Build a durable board library and recognition-based re-entry
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [UX-001, UX-008, APP-001]
     acceptance_criteria:
@@ -259,7 +259,14 @@ tasks:
       - The initial desktop screen lists saved boards in deterministic recent-first order and offers a clear Continue action; opening a board never requires a board or project ID.
       - An empty library provides a single clear Create a board action. An unavailable repository is diagnosed with a locate/retry path before a board snapshot is loaded.
       - Last-opened state survives restart, stays local, and does not leak repository metadata to providers or Linear. Rust and frontend tests cover empty, recent, unavailable, and reopened-board paths.
-    notes: Keep this as the first implementation PR. Do not combine it with the new-board form, graph, or visual refresh; it establishes the small authoritative directory contract needed by every later UX slice.
+    notes: >-
+      Keep this as the first implementation PR. Do not combine it with the
+      new-board form, graph, or visual refresh; it establishes the small
+      authoritative directory contract needed by every later UX slice. On
+      2026-08-09, the product owner explicitly accepted a delivery exception:
+      UX-002 may proceed while UX-008's representative walkthroughs are still
+      being collected. UX-008 remains in progress and its study evidence is
+      still required for phase completion.
 
   - id: UX-003
     epic: UX

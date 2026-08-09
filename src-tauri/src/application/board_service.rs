@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use chrono::Utc;
+
 use crate::domain::{
     Board, BoardId, ConnectorOutboxItem, ConnectorReconciliationItem, CreateWorkItemCommand,
     Dependency, DependencyId, DependencySource, Evidence, Execution, ExecutionId, ExternalLink,
@@ -11,8 +13,9 @@ use crate::orchestration::{PlanConfirmation, PlanProposal};
 use crate::{agent::AgentProfile, orchestration::PlannerProfile};
 
 use super::{
-    AddDependencyRequest, BoardServiceError, BoardSnapshot, CreateBoardRequest,
-    CreateProjectRequest, CreateWorkItemRequest, StoredPlan, TransitionWorkItemRequest,
+    AddDependencyRequest, BoardLibraryEntry, BoardLibraryRecord, BoardServiceError, BoardSnapshot,
+    CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest, StoredPlan,
+    TransitionWorkItemRequest, repository_available, sort_board_library,
 };
 
 pub trait BoardRepository {
@@ -22,6 +25,12 @@ pub trait BoardRepository {
     fn project(&self, project_id: &ProjectId) -> Result<Option<Project>, Self::Error>;
     fn create_board(&mut self, board: Board) -> Result<Board, Self::Error>;
     fn board(&self, board_id: &BoardId) -> Result<Option<Board>, Self::Error>;
+    fn board_library_records(&self) -> Result<Vec<BoardLibraryRecord>, Self::Error>;
+    fn record_board_opened(
+        &mut self,
+        board_id: &BoardId,
+        opened_at: String,
+    ) -> Result<(), Self::Error>;
     fn create_board_work_item(
         &mut self,
         command: CreateWorkItemCommand,
@@ -171,7 +180,56 @@ where
                 name: request.name,
             })
             .map_err(BoardServiceError::Repository)?;
+        self.repository
+            .record_board_opened(&board.id, Utc::now().to_rfc3339())
+            .map_err(BoardServiceError::Repository)?;
         self.snapshot(&board.id)
+    }
+
+    pub fn board_library(
+        &self,
+    ) -> Result<Vec<BoardLibraryEntry>, BoardServiceError<Repository::Error>> {
+        let mut entries = self
+            .repository
+            .board_library_records()
+            .map_err(BoardServiceError::Repository)?
+            .into_iter()
+            .map(BoardLibraryEntry::from_record)
+            .collect::<Vec<_>>();
+        sort_board_library(&mut entries);
+        Ok(entries)
+    }
+
+    pub fn open_board(
+        &mut self,
+        board_id: &str,
+    ) -> Result<BoardSnapshot, BoardServiceError<Repository::Error>> {
+        validate_required(board_id, "board id")?;
+        let board_id = BoardId::from(board_id);
+        let board = self
+            .repository
+            .board(&board_id)
+            .map_err(BoardServiceError::Repository)?
+            .ok_or_else(|| BoardServiceError::BoardNotFound {
+                board_id: board_id.clone(),
+            })?;
+        let project = self
+            .repository
+            .project(&board.project_id)
+            .map_err(BoardServiceError::Repository)?
+            .ok_or_else(|| BoardServiceError::ProjectNotFound {
+                project_id: board.project_id.clone(),
+            })?;
+        if !repository_available(&project.repository_path) {
+            return Err(BoardServiceError::RepositoryUnavailable {
+                project_id: project.id,
+                repository_path: project.repository_path,
+            });
+        }
+        self.repository
+            .record_board_opened(&board_id, Utc::now().to_rfc3339())
+            .map_err(BoardServiceError::Repository)?;
+        self.snapshot(&board_id)
     }
 
     pub fn create_work_item(

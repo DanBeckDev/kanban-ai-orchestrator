@@ -1,4 +1,5 @@
 mod agent_profile_service;
+mod board_library;
 mod board_plan;
 mod board_requests;
 mod board_service;
@@ -24,6 +25,10 @@ mod review_decision_request;
 mod review_service;
 
 pub use agent_profile_service::AgentProfileServiceError;
+pub use board_library::{
+    BoardAttentionSummary, BoardLibraryEntry, BoardLibraryRecord, repository_available,
+    sort_board_library,
+};
 pub use board_plan::{BoardPlan, StoredPlan};
 pub use board_requests::{
     AddDependencyRequest, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
@@ -50,6 +55,9 @@ pub use plan_requests::{
 pub use planner_profile_service::{PlannerContext, PlannerProfileServiceError};
 pub use review_check_request::RecordReviewCheckRequest;
 pub use review_decision_request::RecordReviewDecisionRequest;
+
+#[cfg(test)]
+mod board_library_tests;
 
 #[cfg(test)]
 mod board_service_tests;

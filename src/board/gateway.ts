@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   AddDependencyRequest,
   AgentProfile,
+  BoardLibraryEntry,
   BoardGateway,
   BoardPlan,
   BoardSnapshot,
@@ -33,6 +34,12 @@ export const tauriBoardGateway: BoardGateway = {
   },
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot> {
     return invoke("create_board", { request });
+  },
+  boardLibrary(): Promise<readonly BoardLibraryEntry[]> {
+    return invoke("board_library");
+  },
+  openBoard(boardId: string): Promise<BoardSnapshot> {
+    return invoke("open_board", { boardId });
   },
   createWorkItem(request: CreateWorkItemRequest): Promise<BoardSnapshot> {
     return invoke("create_work_item", { request });

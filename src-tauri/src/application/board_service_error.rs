@@ -19,6 +19,10 @@ pub enum BoardServiceError<RepositoryError> {
     ProjectNotFound {
         project_id: ProjectId,
     },
+    RepositoryUnavailable {
+        project_id: ProjectId,
+        repository_path: String,
+    },
     BoardNotFound {
         board_id: BoardId,
     },
@@ -110,6 +114,14 @@ where
             Self::ProjectNotFound { project_id } => {
                 write!(formatter, "project {} was not found", project_id.0)
             }
+            Self::RepositoryUnavailable {
+                project_id,
+                repository_path,
+            } => write!(
+                formatter,
+                "repository for project {} is unavailable at {repository_path}",
+                project_id.0
+            ),
             Self::BoardNotFound { board_id } => {
                 write!(formatter, "board {} was not found", board_id.0)
             }
@@ -243,6 +255,7 @@ where
             | Self::InvalidExternalIdentifier { .. }
             | Self::InvalidExternalUrl
             | Self::ProjectNotFound { .. }
+            | Self::RepositoryUnavailable { .. }
             | Self::BoardNotFound { .. }
             | Self::WorkItemNotFound { .. }
             | Self::ExecutionNotFound { .. }

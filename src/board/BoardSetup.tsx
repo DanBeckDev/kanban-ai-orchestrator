@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 type BoardSetupProps = Readonly<{
   busy: boolean;
   onCreate: (input: CreateBoardInput) => Promise<void>;
-  onOpen: (boardId: string) => Promise<void>;
+  onBack: () => void;
 }>;
 
 export type CreateBoardInput = Readonly<{
@@ -26,9 +26,8 @@ const initialCreateBoardInput: CreateBoardInput = {
   boardName: "",
 };
 
-export function BoardSetup({ busy, onCreate, onOpen }: BoardSetupProps) {
+export function BoardSetup({ busy, onCreate, onBack }: BoardSetupProps) {
   const [createInput, setCreateInput] = useState(initialCreateBoardInput);
-  const [boardId, setBoardId] = useState("");
 
   function updateCreateInput(field: keyof CreateBoardInput, value: string) {
     setCreateInput((current) => ({ ...current, [field]: value }));
@@ -39,19 +38,15 @@ export function BoardSetup({ busy, onCreate, onOpen }: BoardSetupProps) {
     await onCreate(createInput);
   }
 
-  async function openBoard(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await onOpen(boardId);
-  }
-
   return (
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
         <p className="eyebrow">Local-first board</p>
-        <h2 id="board-setup-title">Create or open a project board</h2>
+        <h2 id="board-setup-title">Create a local board</h2>
         <p>
-          The board is stored on this device. Its state and dependency rules are
-          enforced by the local daemon, not the browser.
+          Board creation currently uses the existing advanced project details.
+          The board is stored on this device, and its state and dependency rules
+          are enforced by the local daemon, not the browser.
         </p>
       </div>
       <div className="setup-grid">
@@ -132,19 +127,8 @@ export function BoardSetup({ busy, onCreate, onOpen }: BoardSetupProps) {
           <button disabled={busy} type="submit">
             Create local board
           </button>
-        </form>
-        <form className="panel form-panel" onSubmit={openBoard}>
-          <h3>Open an existing board</h3>
-          <label>
-            Existing board ID
-            <input
-              required
-              value={boardId}
-              onChange={(event) => setBoardId(event.target.value)}
-            />
-          </label>
-          <button disabled={busy} type="submit">
-            Open board
+          <button disabled={busy} onClick={onBack} type="button">
+            Back to your boards
           </button>
         </form>
       </div>

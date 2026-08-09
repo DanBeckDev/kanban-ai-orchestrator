@@ -1,6 +1,7 @@
 import type {
   AddDependencyRequest,
   AgentProfile,
+  BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
@@ -30,6 +31,8 @@ import type {
 export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
+  boardLibrary(): Promise<readonly BoardLibraryEntry[]>;
+  openBoard(boardId: string): Promise<BoardSnapshot>;
   createWorkItem(request: CreateWorkItemRequest): Promise<BoardSnapshot>;
   addDependency(request: AddDependencyRequest): Promise<BoardSnapshot>;
   proposePlan(request: ProposePlanRequest): Promise<BoardPlan>;

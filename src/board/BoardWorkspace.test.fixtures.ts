@@ -5,6 +5,7 @@ import { linearGatewayMethods } from "./BoardWorkspace.test.linear.fixtures";
 import type {
   AgentProfile,
   BoardGateway,
+  BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
@@ -54,7 +55,27 @@ export function workItem(
   };
 }
 
-export function gateway(initialSnapshot = snapshot()): BoardGateway {
+export function boardLibraryEntry(
+  overrides: Partial<BoardLibraryEntry> = {},
+): BoardLibraryEntry {
+  return {
+    boardId: "board-1",
+    name: "MVP",
+    repositoryName: "project",
+    repositoryAvailable: true,
+    lastOpenedAt: "2026-08-09T08:00:00Z",
+    attention: {
+      activeWorkItemCount: 0,
+      needsAttentionCount: 0,
+    },
+    ...overrides,
+  };
+}
+
+export function gateway(
+  initialSnapshot = snapshot(),
+  initialLibrary: readonly BoardLibraryEntry[] = [],
+): BoardGateway {
   let current = initialSnapshot;
   let profiles: readonly AgentProfile[] = [];
   let plannerProfiles: readonly PlannerProfile[] = [];
@@ -63,6 +84,8 @@ export function gateway(initialSnapshot = snapshot()): BoardGateway {
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
     createBoard: vi.fn().mockImplementation(async () => current),
+    boardLibrary: vi.fn().mockResolvedValue(initialLibrary),
+    openBoard: vi.fn().mockImplementation(async () => current),
     createWorkItem: vi
       .fn()
       .mockImplementation(async (request: CreateWorkItemRequest) => {

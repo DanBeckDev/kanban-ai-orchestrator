@@ -197,7 +197,7 @@ impl SqliteEventStore {
             })
     }
 
-    fn work_items_for_board(
+    pub(crate) fn work_items_for_board(
         &self,
         board_id: &BoardId,
     ) -> Result<Vec<MaterializedWorkItem>, BoardStoreError> {

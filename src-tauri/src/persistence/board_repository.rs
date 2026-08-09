@@ -5,7 +5,7 @@ use crate::domain::{
 };
 use crate::{
     agent::AgentProfile,
-    application::{BoardRepository, BoardSnapshot, StoredPlan},
+    application::{BoardLibraryRecord, BoardRepository, BoardSnapshot, StoredPlan},
     orchestration::{PlanConfirmation, PlanProposal, PlannerProfile},
 };
 
@@ -31,6 +31,18 @@ impl BoardRepository for SqliteEventStore {
 
     fn board(&self, board_id: &BoardId) -> Result<Option<Board>, Self::Error> {
         SqliteEventStore::board(self, board_id)
+    }
+
+    fn board_library_records(&self) -> Result<Vec<BoardLibraryRecord>, Self::Error> {
+        SqliteEventStore::board_library_records(self)
+    }
+
+    fn record_board_opened(
+        &mut self,
+        board_id: &BoardId,
+        opened_at: String,
+    ) -> Result<(), Self::Error> {
+        SqliteEventStore::record_board_opened(self, board_id, opened_at)
     }
 
     fn create_board_work_item(

@@ -44,6 +44,8 @@ pub fn run() {
             foundation_summary,
             desktop::create_project,
             desktop::create_board,
+            desktop::board_library,
+            desktop::open_board,
             desktop::create_work_item,
             desktop::add_dependency,
             desktop::propose_plan,

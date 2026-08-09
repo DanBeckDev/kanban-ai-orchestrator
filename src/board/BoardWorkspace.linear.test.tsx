@@ -2,21 +2,22 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
-import { gateway, snapshot } from "./BoardWorkspace.test.fixtures";
+import {
+  boardLibraryEntry,
+  gateway,
+  snapshot,
+} from "./BoardWorkspace.test.fixtures";
 import type { BoardGateway } from "./types";
 
 async function openBoard(boardGateway: BoardGateway) {
   render(<App gateway={boardGateway} />);
-  fireEvent.change(screen.getByLabelText("Existing board ID"), {
-    target: { value: "board-1" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Open board" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
   await screen.findByRole("heading", { name: "MVP" });
 }
 
 describe("Linear connection in the board workspace", () => {
   it("starts OAuth after opening a board and shows its awaiting status", async () => {
-    const boardGateway = gateway(snapshot());
+    const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
 
     await openBoard(boardGateway);
     fireEvent.change(screen.getByLabelText("OAuth client ID"), {
@@ -36,7 +37,7 @@ describe("Linear connection in the board workspace", () => {
   });
 
   it("keeps board access available when reading a saved connection fails", async () => {
-    const boardGateway = gateway(snapshot());
+    const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
     boardGateway.linearConnectionStatus = vi
       .fn()
       .mockRejectedValue(new Error("Keychain is unavailable"));
@@ -50,7 +51,7 @@ describe("Linear connection in the board workspace", () => {
   });
 
   it("loads assigned Linear issues only after a connected account is confirmed", async () => {
-    const boardGateway = gateway(snapshot());
+    const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
     boardGateway.linearConnectionStatus = vi.fn().mockResolvedValue({
       kind: "connected",
       expiresAt: "2026-08-09T12:00:00Z",

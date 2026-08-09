@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { BoardLibrary } from "./BoardLibrary";
 import { BoardSetup, type CreateBoardInput } from "./BoardSetup";
 import { BoardView } from "./BoardView";
 import { tauriBoardGateway } from "./gateway";
@@ -6,6 +7,7 @@ import type {
   AddDependencyRequest,
   AgentProfile,
   BoardGateway,
+  BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
@@ -38,6 +40,9 @@ export function BoardWorkspace({
   gateway = tauriBoardGateway,
 }: BoardWorkspaceProps) {
   const [snapshot, setSnapshot] = useState<BoardSnapshot>();
+  const [boardLibrary, setBoardLibrary] =
+    useState<readonly BoardLibraryEntry[]>();
+  const [showBoardSetup, setShowBoardSetup] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [agentProfiles, setAgentProfiles] = useState<readonly AgentProfile[]>(
@@ -89,11 +94,20 @@ export function BoardWorkspace({
 
   async function openBoard(boardId: string) {
     await run(async () => {
-      const boardSnapshot = await gateway.boardSnapshot(boardId);
+      const boardSnapshot = await gateway.openBoard(boardId);
       await loadBoardContext(boardId);
       return boardSnapshot;
     });
   }
+
+  const loadBoardLibrary = useCallback(async () => {
+    setError(undefined);
+    try {
+      setBoardLibrary(await gateway.boardLibrary());
+    } catch (libraryError) {
+      setError(errorMessage(libraryError));
+    }
+  }, [gateway]);
 
   async function createWorkItem(request: CreateWorkItemRequest) {
     await run(() => gateway.createWorkItem(request));
@@ -277,6 +291,10 @@ export function BoardWorkspace({
 
   const boardId = snapshot?.board.id;
   useEffect(() => {
+    void loadBoardLibrary();
+  }, [loadBoardLibrary]);
+
+  useEffect(() => {
     if (boardId === undefined) return undefined;
     const refresh = () => {
       void gateway
@@ -303,8 +321,41 @@ export function BoardWorkspace({
           <strong>The local daemon rejected that request.</strong> {error}
         </div>
       )}
-      {snapshot === undefined ? (
-        <BoardSetup busy={busy} onCreate={createBoard} onOpen={openBoard} />
+      {snapshot === undefined &&
+      boardLibrary === undefined &&
+      error !== undefined ? (
+        <section
+          aria-labelledby="board-library-error-title"
+          className="board-library-loading"
+        >
+          <h2 id="board-library-error-title">
+            Your boards could not be loaded
+          </h2>
+          <p>Check that the local daemon is available, then try again.</p>
+          <button onClick={() => void loadBoardLibrary()} type="button">
+            Try again
+          </button>
+        </section>
+      ) : snapshot === undefined && boardLibrary === undefined ? (
+        <section aria-live="polite" className="board-library-loading">
+          Loading your local boards…
+        </section>
+      ) : snapshot === undefined && showBoardSetup ? (
+        <BoardSetup
+          busy={busy}
+          onBack={() => {
+            setShowBoardSetup(false);
+            void loadBoardLibrary();
+          }}
+          onCreate={createBoard}
+        />
+      ) : snapshot === undefined ? (
+        <BoardLibrary
+          boards={boardLibrary ?? []}
+          busy={busy}
+          onCreateBoard={() => setShowBoardSetup(true)}
+          onOpenBoard={(boardId) => void openBoard(boardId)}
+        />
       ) : (
         <BoardView
           busy={busy}

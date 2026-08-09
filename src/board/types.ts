@@ -31,6 +31,20 @@ export type Board = Readonly<{
   name: string;
 }>;
 
+export type BoardAttentionSummary = Readonly<{
+  activeWorkItemCount: number;
+  needsAttentionCount: number;
+}>;
+
+export type BoardLibraryEntry = Readonly<{
+  boardId: string;
+  name: string;
+  repositoryName: string;
+  repositoryAvailable: boolean;
+  lastOpenedAt: string | null;
+  attention: BoardAttentionSummary;
+}>;
+
 export type WorkItem = Readonly<{
   id: string;
   boardId: string;

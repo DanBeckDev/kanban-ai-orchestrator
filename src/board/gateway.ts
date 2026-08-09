@@ -92,6 +92,12 @@ export const tauriBoardGateway: BoardGateway = {
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
     return invoke("start_execution", { request });
   },
+  coordinateBoard(
+    boardId: string,
+    agentProfileName: string,
+  ): Promise<BoardSnapshot> {
+    return invoke("coordinate_board", { boardId, agentProfileName });
+  },
   stopExecution(executionId: string): Promise<BoardSnapshot> {
     return invoke("stop_execution", { executionId });
   },

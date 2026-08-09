@@ -105,18 +105,18 @@ export function PlanProposalPanel({
   return (
     <section aria-labelledby="plan-proposal-title" className="panel form-panel">
       <div>
-        <h3 id="plan-proposal-title">Orchestrator plan</h3>
+        <h3 id="plan-proposal-title">Plan with AI</h3>
         <p className="field-hint">
-          Generate a provider-neutral proposal from a goal, then inspect its
-          exact dependency graph before any task exists.
+          Ask an organiser to break down the outcome. You can review every task
+          and its dependencies before anything is added to your board.
         </p>
       </div>
       {plan === undefined || editing ? (
         <>
           {plan !== undefined && (
             <p className="field-hint">
-              Replace the unconfirmed proposal with a revised complete plan. Its
-              earlier tasks will not be created.
+              Replace this unconfirmed proposal with a revised plan. The earlier
+              proposal will not create any tasks.
             </p>
           )}
           <GoalPlanForm
@@ -128,14 +128,16 @@ export function PlanProposalPanel({
           />
           <form
             aria-label={
-              plan === undefined ? "Propose board plan" : "Revise board plan"
+              plan === undefined
+                ? "Add an existing plan"
+                : "Revise an existing plan"
             }
             onSubmit={propose}
           >
             <details>
-              <summary>Advanced: paste a structured plan draft</summary>
+              <summary>Advanced: paste an existing plan</summary>
               <label>
-                Planner identity
+                Who made this plan
                 <input
                   required
                   value={proposedBy}
@@ -143,7 +145,7 @@ export function PlanProposalPanel({
                 />
               </label>
               <label>
-                Plan draft JSON
+                Plan JSON
                 <textarea
                   required
                   value={draftText}
@@ -200,16 +202,20 @@ function PlanPreview({
   plan: BoardPlan;
 }>) {
   const { preview } = plan;
+  const taskNames = new Map(
+    preview.workItems.map((workItem) => [workItem.id, workItem.title]),
+  );
   return (
     <div className="plan-preview">
+      <p>Proposed plan · {preview.workItems.length} tasks</p>
       <p>
-        Plan <strong>{preview.id}</strong> · {preview.workItems.length} tasks
+        Work that must happen in order:{" "}
+        {formatTaskSequence(preview.criticalPath, taskNames) || "None"}
       </p>
-      <p>Critical path: {preview.criticalPath.join(" → ") || "No hard path"}</p>
       <ol aria-label="Plan tasks" className="criteria-list">
         {preview.workItems.map((workItem) => (
           <li key={workItem.id}>
-            <strong>{workItem.id}</strong> — {workItem.title}
+            <strong>{workItem.title}</strong>
             <span className="budget-summary">
               {formatBudget(workItem.budget)}
             </span>
@@ -221,14 +227,19 @@ function PlanPreview({
           </li>
         ))}
       </ol>
-      <p>Parallel stages: {formatStages(preview.parallelStages)}</p>
-      <p className="budget-summary">{formatPlanBudget(preview.budget)}</p>
+      <p>
+        Work that can happen together:{" "}
+        {formatStages(preview.parallelStages, taskNames)}
+      </p>
+      <p className="budget-summary">
+        {formatPlanBudget(preview.budget, taskNames)}
+      </p>
       {preview.dependencies.length > 0 && (
         <ul aria-label="Plan dependencies" className="criteria-list">
           {preview.dependencies.map((dependency) => (
             <li key={dependency.id}>
-              {dependency.upstreamWorkItemId} {dependency.kind} →{" "}
-              {dependency.downstreamWorkItemId}
+              {taskName(dependency.upstreamWorkItemId, taskNames)} must happen
+              before {taskName(dependency.downstreamWorkItemId, taskNames)}
             </li>
           ))}
         </ul>
@@ -243,11 +254,11 @@ function PlanPreview({
       {plan.confirmation === undefined ? (
         <>
           <button disabled={busy} onClick={onEdit} type="button">
-            Revise proposal
+            Revise plan
           </button>
           <form aria-label="Confirm board plan" onSubmit={onConfirm}>
             <label>
-              Confirm as
+              Your name
               <input
                 required
                 value={confirmedBy}
@@ -315,15 +326,34 @@ function parseDraft(draftText: string): PlanDraft {
     !("workItems" in parsed) ||
     !Array.isArray(parsed.workItems)
   ) {
-    throw new Error("Plan draft JSON must contain a workItems array.");
+    throw new Error("Plan JSON must contain a workItems array.");
   }
   return parsed as PlanDraft;
 }
 
-function formatStages(stages: readonly (readonly string[])[]): string {
+function formatTaskSequence(
+  taskIds: readonly string[],
+  taskNames: ReadonlyMap<string, string>,
+): string {
+  return taskIds.map((taskId) => taskName(taskId, taskNames)).join(" → ");
+}
+
+function formatStages(
+  stages: readonly (readonly string[])[],
+  taskNames: ReadonlyMap<string, string>,
+): string {
   return stages
-    .map((stage, index) => `${index + 1}: ${stage.join(", ")}`)
+    .map(
+      (stage, index) => `${index + 1}: ${formatTaskSequence(stage, taskNames)}`,
+    )
     .join(" · ");
+}
+
+function taskName(
+  taskId: string,
+  taskNames: ReadonlyMap<string, string>,
+): string {
+  return taskNames.get(taskId) ?? taskId;
 }
 
 function formatBudget(budget: WorkItemBudget): string {
@@ -343,16 +373,21 @@ function formatBudget(budget: WorkItemBudget): string {
     : "Budget: not set";
 }
 
-function formatPlanBudget(budget: BoardPlan["preview"]["budget"]): string {
+function formatPlanBudget(
+  budget: BoardPlan["preview"]["budget"],
+  taskNames: ReadonlyMap<string, string>,
+): string {
   const totals = formatBudget(budget);
   const missing = [
     ...budget.workItemsMissingAgentTurnBudget.map(
-      (id) => `${id} has no turn limit`,
+      (id) => `${taskName(id, taskNames)} has no turn limit`,
     ),
     ...budget.workItemsMissingDurationBudget.map(
-      (id) => `${id} has no duration limit`,
+      (id) => `${taskName(id, taskNames)} has no duration limit`,
     ),
-    ...budget.workItemsMissingCostBudget.map((id) => `${id} has no cost limit`),
+    ...budget.workItemsMissingCostBudget.map(
+      (id) => `${taskName(id, taskNames)} has no cost limit`,
+    ),
   ];
   return missing.length > 0 ? `${totals}. ${missing.join("; ")}.` : totals;
 }

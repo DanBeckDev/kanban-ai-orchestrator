@@ -5,7 +5,7 @@
 | Actor | Responsibility | Cannot do without approval |
 | --- | --- | --- |
 | User | Defines goals, policies, review decisions, and external authority | N/A |
-| Orchestrator agent | Proposes plans, dependencies, schedules, summaries, and escalation questions | Create or start work beyond the active policy |
+| Orchestrator agent | Turns outcomes into reviewable plans and, within its declared mode and policy, coordinates workers, summaries, and escalation questions | Bypass plan confirmation, declared authority, policy, evidence, quality, or required human review |
 | Worker agent | Executes one bounded task in its assigned workspace | Access outside scope, perform protected Git actions, or exceed budgets |
 | Local daemon | Authoritative state, policy enforcement, scheduling, recovery, external sync | Invent user intent or bypass policy |
 | Connector | Synchronizes a bounded external system such as Linear | Overwrite a conflicting external change silently |
@@ -38,11 +38,23 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
 
 ## Orchestration requirements
 
-- Natural-language planning produces a preview of tasks, acceptance criteria, dependency types, critical path, parallel work, estimated budgets, and unresolved assumptions.
-- The user approves or edits that preview before workers launch.
+- A person can give an outcome to a configured organiser in a focused prompt-first surface. It produces a preview of tasks, acceptance criteria, dependency types and reasons, critical path, parallel work, estimated budgets, proposed worker assignment, and unresolved assumptions.
+- The person can request a revision, edit, remove, reject, or approve that preview. No initial plan may materialize tasks or launch workers before explicit approval.
 - The scheduler observes hard dependencies, policy limits, repository concurrency, and agent/provider budgets.
+- A plan may propose a compatible worker for each task; before a task starts, the
+  person can select another installed compatible worker without changing the
+  organiser, dependency graph, policy, or task evidence history.
 - A blocker must include a concrete reason, owner, and proposed next action.
 - The orchestrator asks the user when requirements conflict, the plan contains a cycle, an agent exceeds policy, a contract changes, or recovery needs a choice.
+
+### Modes, authority, and worker supervision
+
+- **Manual** is the default board mode. The organiser may suggest a launch, retry, cancellation, or return-for-correction, but every such action requires an explicit named human decision.
+- **Autonomous** is a board-level opt-in, not a provider default. Before it is enabled, the person sees and confirms the approved organiser and worker choices, concurrency, time/cost limits, permitted action scope, and a one-action **Pause automation** control. The daemon remains the only authority that can authorize an action.
+- In Autonomous mode, the organiser may start dependency-ready, policy-authorized work and make bounded retry or return-for-correction decisions. It may not create a plan without review, relax a policy, install or authenticate a provider, perform protected Git or external actions, or move work to `Done`.
+- The organiser receives normalized task state, dependency facts, bounded activity summaries, and evidence results. It does not receive or persist raw provider transcripts, credentials, or secrets as orchestration context.
+- Returning work for correction is an explainable daemon transition to `Ready` or `Blocked`, with the trigger, concise rationale, retained evidence, and next action. It never deletes a task, conceals a worker outcome, or substitutes for independent review or a required human decision.
+- Settings configures the organiser separately from default task workers through provider-neutral profiles. A native adapter may expose an installed Codex, Claude Code, Cline, or future compatible option, but provider-specific commands, credentials, and permission flags remain adapter-owned.
 
 ## Board entry and setup requirements
 

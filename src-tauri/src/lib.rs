@@ -63,6 +63,7 @@ pub fn run() {
             desktop_planning::planner_profiles,
             desktop_planning::generate_plan,
             desktop::start_execution,
+            desktop::coordination::coordinate_board,
             desktop::stop_execution,
             desktop::execution_activity,
             desktop::record_review_check,

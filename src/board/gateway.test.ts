@@ -72,6 +72,7 @@ describe("tauri board gateway", () => {
     await tauriBoardGateway.createWorkItem(workItem);
     await tauriBoardGateway.addDependency(dependency);
     await tauriBoardGateway.transitionWorkItem(transition);
+    await tauriBoardGateway.coordinateBoard("board-1", "Codex");
     await tauriBoardGateway.executionActivity("execution-1", 2);
     await tauriBoardGateway.boardSnapshot("board-1");
 
@@ -85,6 +86,7 @@ describe("tauri board gateway", () => {
       ["create_work_item", { request: workItem }],
       ["add_dependency", { request: dependency }],
       ["transition_work_item", { request: transition }],
+      ["coordinate_board", { boardId: "board-1", agentProfileName: "Codex" }],
       ["execution_activity", { executionId: "execution-1", afterSequence: 2 }],
       ["board_snapshot", { boardId: "board-1" }],
     ]);

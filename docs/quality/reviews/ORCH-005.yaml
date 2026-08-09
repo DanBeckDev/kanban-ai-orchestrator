@@ -1,0 +1,167 @@
+work_item: ORCH-005
+scope:
+  - "Bounded, opt-in dependency coordination from the board through the desktop daemon."
+  - "Plain-language planning and review-correction wording plus the staged multi-agent product backlog."
+  - "The durable AI-led organiser loop, separate organiser selection, editable plan drafts, and autonomous retries remain ORCH-006 and ORCH-007."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 399
+      responsibilities: Declares the desktop command boundary and shared local-board service.
+      decision: kept cohesive at the hard limit after extracting coordination command handling
+    - path: src-tauri/src/desktop_execution_runtime.rs
+      meaningful_lines: 180
+      responsibilities: Owns runtime process state, activity streams, and monitor lifecycle composition.
+      decision: kept cohesive by declaring focused launch and coordination modules
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 85
+      responsibilities: Composes desktop modules and registers Tauri commands.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_coordination.rs
+      meaningful_lines: 15
+      responsibilities: Adapts the typed board-coordination request to the execution runtime.
+      decision: extracted from the broad desktop command module
+    - path: src-tauri/src/desktop_execution_runtime_coordination.rs
+      meaningful_lines: 361
+      responsibilities: Prepares dependency-safe board work and delegates one launch to the existing runtime lifecycle.
+      decision: isolated coordination policy from process launch and monitor mechanics
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 89
+      responsibilities: Presents the board canvas and its empty-board actions.
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 273
+      responsibilities: Composes focused settings sections and provider choices.
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 350
+      responsibilities: Routes board surfaces and connects focused presentation components to typed callbacks.
+      decision: kept cohesive with automation and task detail delegated to focused components
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 331
+      responsibilities: Exercises plan proposal, confirmation, and planning error workflows.
+      decision: kept cohesive as focused planning scenarios
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 391
+      responsibilities: Provides stateful board gateway fixtures for UI scenario tests.
+      decision: kept cohesive at the hard limit after moving coordination and agent scenarios to companion files
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 47
+      responsibilities: Provides shared board-workspace rendering and setup helpers.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 324
+      responsibilities: Exercises core board, lifecycle, review, and recovery interactions.
+      decision: split from unrelated planning, agent, and coordination scenarios
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 398
+      responsibilities: Owns board-session state and invokes typed desktop gateway operations.
+      decision: kept cohesive at the hard limit with individual surfaces and refresh behavior delegated
+    - path: src/board/GoalPlanForm.tsx
+      meaningful_lines: 83
+      responsibilities: Collects one outcome and organiser choice for a reviewable plan proposal.
+      decision: kept cohesive
+    - path: src/board/PlanProposalPanel.tsx
+      meaningful_lines: 378
+      responsibilities: Presents plan proposals, dependency facts, and explicit confirmation controls.
+      decision: kept cohesive after retaining goal entry in its focused form
+    - path: src/board/PlannerProfileForm.tsx
+      meaningful_lines: 96
+      responsibilities: Collects and displays local organiser-profile configuration.
+      decision: kept cohesive
+    - path: src/board/ReviewDecisionForm.tsx
+      meaningful_lines: 78
+      responsibilities: Records a review decision and exposes the explicit correction outcome.
+      decision: kept cohesive
+    - path: src/board/WorkItemCard.tsx
+      meaningful_lines: 399
+      responsibilities: Composes task details, lifecycle actions, evidence, and review controls.
+      decision: kept cohesive at the hard limit after extracting correction-transition construction
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 90
+      responsibilities: Defines the typed UI gateway interface for board commands.
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 93
+      responsibilities: Exercises Tauri command-name and payload mappings.
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 163
+      responsibilities: Adapts typed board requests to Tauri invoke calls.
+      decision: kept cohesive
+    - path: src/board/presentation.test.ts
+      meaningful_lines: 161
+      responsibilities: Exercises concise presentation labels, paths, and state choices.
+      decision: kept cohesive
+    - path: src/board/presentation.ts
+      meaningful_lines: 158
+      responsibilities: Maps durable board state to concise user-facing presentation data.
+      decision: kept cohesive
+    - path: src/board/BoardAutomation.test.tsx
+      meaningful_lines: 66
+      responsibilities: Exercises manual default, explicit opt-in, pause, and stale-worker safety.
+      decision: focused automation component scenarios
+    - path: src/board/BoardAutomation.tsx
+      meaningful_lines: 149
+      responsibilities: Presents board coordination choice and makes a deduplicated, bounded coordination request.
+      decision: extracted from the broad board surface
+    - path: src/board/BoardWorkspace.agent.test.tsx
+      meaningful_lines: 94
+      responsibilities: Exercises agent profile configuration scenarios.
+      decision: split from unrelated workspace behavior
+    - path: src/board/BoardWorkspace.coordination.test.tsx
+      meaningful_lines: 30
+      responsibilities: Exercises workspace-to-gateway coordination wiring.
+      decision: focused command-bridge scenario
+    - path: src/board/correctionTransition.ts
+      meaningful_lines: 14
+      responsibilities: Builds the typed return-for-correction transition request.
+      decision: extracted to keep card orchestration focused
+    - path: src/board/orchestrationPreferences.ts
+      meaningful_lines: 36
+      responsibilities: Safely persists a per-board coordination preference with a manual fallback.
+      decision: isolated browser preference handling from board presentation
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T15:30:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The first slice persists the board coordination preference locally rather than as a durable daemon-owned autonomous-authority record."
+        resolution: accepted
+        rationale: "The current path is deliberately one deterministic, policy-authorized start with no model assessment, retry, or unrecorded external action. It defaults to manual, validates the selected worker at the daemon boundary, and exposes pause immediately. Durable authority, decisions, and supervision are expressly scoped to ORCH-007 rather than implied by this UI preference."
+        decision_reference: ADR-0025 and ORCH-007
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "A stale saved worker preference could request coordination before the runtime discovered that the profile no longer existed."
+    change: "Validate the worker profile before any coordination transitions; the UI also resets a stale autonomous preference to manual and does not issue the request."
+  - finding: "Three changed source files exceeded the 400 meaningful-line structure limit."
+    change: "Extracted the Tauri coordination command, the runtime coordination policy, correction-transition construction, and focused planning, agent, and coordination test scenarios."
+  - finding: "A negative review could be returned to Ready through an indistinguishable generic state selector."
+    change: "Record the negative decision first, then offer one named Return for correction action with the decision summary while retaining existing evidence and activity."
+verification:
+  commands:
+    - command: npm test -- --run src/board/BoardAutomation.test.tsx src/board/BoardWorkspace.coordination.test.tsx
+      result: passed (4 tests)
+    - command: cargo test --manifest-path src-tauri/Cargo.toml coordination::tests
+      result: passed (5 tests)
+    - command: npm run structure:verify
+      result: passed (253 repository paths; no exceptions)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 87.84
+      statements: 87.19
+      functions: 83.81
+      branches: 85.26
+    rust_core:
+      lines: 84.37
+      statements: 80.71
+      functions: 84.29
+      branches: 80.36
+    threshold_met: true
+exceptions: []

@@ -50,6 +50,9 @@ The next phase makes the desktop app feel like a trustworthy work space:
 6. **One interaction model on every desktop.** Use native folder selection and
    system conventions where they improve trust, while keeping the information
    architecture and keyboard model consistent across macOS, Windows, and Linux.
+7. **Automation earns authority.** Start with a person approving the organiser's
+   recommendations. Make autonomous coordination a deliberate, bounded choice
+   with a visible explanation, activity trail, and immediate pause control.
 
 ## Information architecture
 
@@ -78,7 +81,7 @@ isolated screen or configuration field.
 | --- | --- | --- | --- |
 | **Find work** | Remember an opaque board ID | Recognise a recent local board or choose Create a board | Returning user opens a saved board by name and repository context |
 | **Set up safely** | Enter internal IDs, paths, and policy codes | Name a board, choose a repository natively, accept clear safe defaults | New user creates a valid board without an ID or typed path |
-| **Describe an outcome** | Translate an outcome into implementation fields | State the outcome in natural language and choose a planner profile | User can review an unconfirmed proposal and its assumptions |
+| **Describe an outcome** | Translate an outcome into implementation fields | State the outcome in natural language; the configured organiser drafts the work | User can review an unconfirmed proposal and its assumptions |
 | **Decide the order** | Infer dependency consequences from cards and lines | See why work is blocked, what is safe in parallel, and the next decision | User explains one blocked task and traces its impact |
 | **Supervise work** | Reconstruct agent state from dense detail | See activity, limits, and attention items without mistaking status for proof | User can find one agent that needs input or policy attention |
 | **Review or recover** | Decode evidence/recovery mechanics | See the current decision first and evidence/history on demand | User makes a safe review or recovery choice without confusing it with Done |
@@ -142,11 +145,13 @@ It contains:
   next action, failed/interrupted executions, conflicts, and policy questions.
   Items are sorted by execution impact, then urgency, and link to the specific
   decision.
-- **Continue planning**: an outcome prompt with the selected planner profile and
-  a concise explanation that no worker starts until the displayed plan is
-  confirmed.
+- **Plan with AI**: an outcome prompt and a concise explanation that Kanban will
+  draft the work for review; no worker starts until the displayed tickets are
+  approved.
 - **Work in motion**: currently running workers, latest safe activity summary,
-  budget/limit signal, and stop/recovery controls appropriate to policy.
+  budget/limit signal, and stop/recovery controls appropriate to policy. When
+  automation is enabled, this includes a plain-language explanation of what the
+  organiser may do and an always-visible **Pause automation** action.
 - **Delivery picture**: ready work, hard-blocked work, review work, completed
   work, critical path, and safe parallel capacity. Counts always link to a view.
 
@@ -162,15 +167,45 @@ copyable details. Dense evidence, raw configuration, and long history are
 contained in a deliberately opened work-detail view rather than repeated on every
 card.
 
-### Agent settings
+### Plan with AI
+
+**Plan with AI** is a focused conversation about an outcome, not a form for
+creating database records. It begins with one question: **What do you want to
+achieve?** The supporting copy makes the consequence explicit: Kanban will draft
+tasks and their order, and the person decides whether to create them.
+
+The draft-review surface shows concise task cards, the proposed order and safe
+parallel work, assumptions requiring an answer, proposed worker, and expected
+scope. It supports **Ask to revise**, direct task editing/removal, **Create
+tasks**, and **Discard draft**. A proposed worker can be changed per task without
+opening command configuration. Creating tickets is distinct from starting them.
+The normal view does not expose planner profile names, model flags, or raw agent
+messages.
+
+After tickets exist, the board explains its working mode in user language:
+
+- **You approve actions** (the default) means the organiser can recommend what
+  should start, retry, stop, or return for correction, but the person confirms
+  each action.
+- **Kanban coordinates within limits** is the autonomous opt-in. Before enabling
+  it, the person reviews the coordinator, task-worker defaults, approved limits,
+  and actions Kanban will never take. The board keeps its activity and **Pause
+  automation** control immediately accessible.
+
+When the organiser returns a task for correction, the task detail says what it
+found, what evidence it considered, and what happens next. It never makes a
+rejected result disappear or look like a completed task.
+
+### Agent and automation settings
 
 Settings is where a person configures the product, not where they supervise a
-board. Its first section answers one simple question: **Which installed agent
-should work on new tasks?** It detects Codex CLI, Claude Code, and Cline CLI from
-the local machine without starting them. Each installed option is selectable in
-one action and shows the selected default. A missing option is marked **Not
-installed** and links to that provider's official installation guidance; Kanban
-does not install software or authenticate an account on the person's behalf.
+board. Its first two questions are **Which installed agent should plan and
+coordinate work?** and **Which installed agent should work on new tasks?** It
+detects Codex CLI, Claude Code, and Cline CLI from the local machine without
+starting them. Each installed option is selectable in one action and shows the
+chosen default. A missing option is marked **Not installed** and links to that
+provider's official installation guidance; Kanban does not install software or
+authenticate an account on the person's behalf.
 
 The normal path contains no provider arguments, credentials, permission-bypass
 flags, worktree paths, or event-protocol terminology. An intentionally separate
@@ -178,6 +213,13 @@ advanced section retains manual custom bridges and planner profiles for an
 experienced team that needs them. Linear and board support/project details use
 their own settings sections, so they cannot distract from choosing an agent or
 moving work.
+
+The separate **Automation** section translates policy into consequences. It
+defaults to **You approve actions**. Choosing **Kanban coordinates within
+limits** presents the allowed workers, parallel-task limit, time/cost boundary,
+and actions that still always require the person. It does not use unexplained
+terms such as policy IDs or execution authority, and it never makes unsafe
+permission bypasses a convenience setting.
 
 The Dependencies view is a navigable graph plus a companion list. Selecting a
 task highlights upstream blockers, downstream impact, critical-path membership,
@@ -204,9 +246,12 @@ look like successful completion.
 - Loading is local and specific: show which board or action is loading without
   disabling unrelated safe navigation. Success and error messages identify the
   action, outcome, and recovery path.
-- Never auto-start work, auto-send to Linear, or hide an unresolved plan
-  assumption. The UX makes existing daemon authority and approval boundaries more
-  legible; it does not replace them.
+- In **You approve actions** mode, never auto-start work, auto-send to Linear,
+  or hide an unresolved plan assumption. In autonomous mode, only the explicitly
+  approved, daemon-authorized coordination actions may run automatically; the UI
+  always exposes their scope, evidence, and immediate pause control. The UX makes
+  existing daemon authority and approval boundaries more legible; it does not
+  replace them.
 
 ## What is deliberately out of scope for this phase
 
@@ -226,6 +271,7 @@ The implementation backlog uses these observable scenarios:
 | First local board | A developer selects a valid repository, gives the board a name, creates it, and reaches the outcome prompt without entering an ID or filesystem path. |
 | Returning board | A developer opens a previously used board by recognition from the library; no ID is required. A missing repository is explained before opening. |
 | First plan | A developer enters an outcome, inspects the proposed tasks/dependencies/assumptions, and can confirm or reject it without a worker starting early. |
+| Organised delivery | A developer can tell whether they or Kanban will decide the next worker action, see why an organiser made a recommendation, pause automation, and return a worker result for correction without losing evidence. |
 | Blocker explanation | A developer can answer “why cannot this task start?” from one task view, including upstream work, reason, owner, and next action. |
 | Recovery | A developer can distinguish failed, interrupted, awaiting-input, review, and done work and choose the permitted recovery action. |
 | Accessible navigation | Keyboard-only use reaches the same board, task, dependency, and recovery decisions as pointer use. |

@@ -199,6 +199,54 @@ tasks:
       - The proposal is shown through the existing exact preview and confirmation workflow, including dependencies, critical path, parallel stages, budgets, and assumptions.
     notes: Completed on 2026-08-08 with durable provider-neutral planner profiles, a direct bounded process bridge, strict draft parsing, and daemon-derived plan/task/dependency identity. The UI accepts a goal, shows the existing exact preview, and preserves explicit confirmation as the only task-materialization authority. Planner I/O is capped at 8,000-byte goals, 65,536-byte output, and 45 seconds; raw goals, standard error, and raw provider output are not persisted. A generic profile remains explicitly user-trusted local code rather than a claimed filesystem sandbox; provider-specific sandbox guarantees must be implemented and tested by a dedicated adapter.
 
+  - id: ORCH-005
+    epic: ORCH
+    title: Ship bounded, opt-in dependency coordination
+    status: done
+    priority: P0
+    depends_on: [ORCH-001, ORCH-003, ORCH-004, EXEC-004]
+    acceptance_criteria:
+      - The board makes Plan with AI the plain-language entry point and retains the existing typed, unconfirmed plan preview and explicit confirmation gate.
+      - You approve actions is the default. Kanban coordinates is an explicit board choice, displays the selected default task worker and a Pause automation action, and does not expose raw commands or credentials.
+      - The daemon coordinates only confirmed board work: it moves Inbox work to Planned, promotes work to Ready only when hard dependencies are Done, and starts only one dependency-ready task through the existing policy, workspace, adapter, and execution lifecycle.
+      - The coordination path cannot mark a task Done, send Linear updates, bypass protected actions, or weaken existing quality and human-review rules. Worker completion still returns to Review.
+      - A rejected review records the decision and returns the task to Ready with its reason, retaining existing evidence and activity history.
+      - Tests cover manual non-launch, explicit opt-in and pause, dependency-safe preparation, required inputs, the command bridge, correction handling, and every executable package remains at or above 80% line, statement, function, and branch coverage.
+    notes: >-
+      Completed on 2026-08-09. This first executable orchestration slice uses a
+      manual default and explicit board opt-in, durable dependency preparation,
+      and one policy-authorized worker start. The direct user request accepts its
+      focused UI scope while UX-004 through UX-006 remain separately planned full
+      redesign work; it does not claim those larger tasks are complete.
+      Coordination is intentionally not an AI evaluator, retry loop, or automatic
+      Done. ADR 0025 records the authority boundary.
+
+  - id: ORCH-006
+    epic: ORCH
+    title: Complete reviewable AI plan editing and separate organiser selection
+    status: ready
+    priority: P0
+    depends_on: [ORCH-005, UX-004, UX-006]
+    acceptance_criteria:
+      - A person can revise, edit, remove, reorder, and assign a worker to each proposed task before creating the plan.
+      - Settings offers detected installed providers for the organiser separately from default task workers, including Codex, Claude Code, Cline, and compatible future adapters, without exposing command flags or credentials on the normal path.
+      - The plan review replaces opaque task IDs with names everywhere, shows scope and assumptions, and preserves confirmation as the only materialization authority.
+      - Tests cover edited/rejected/approved plans, worker reassignment, unavailable providers, and preservation of dependency and confirmation validation.
+    notes: This completes the human-supervised organiser experience before any model assesses worker outcomes automatically.
+
+  - id: ORCH-007
+    epic: ORCH
+    title: Add durable, explainable autonomous worker supervision
+    status: ready
+    priority: P0
+    depends_on: [ORCH-005, ORCH-006, UX-005, UX-006]
+    acceptance_criteria:
+      - Autonomous authority, selected organiser/workers, limits, pause state, and every coordination decision are durable board records owned by the daemon.
+      - The organiser receives only normalized state, dependency facts, bounded activity summaries, and evidence. Its recommendation, rationale, policy result, and outcome are visible without storing raw transcripts or credentials.
+      - Within explicit policy it can start dependency-ready work and recommend bounded retry or return-for-correction actions; a named user can pause it immediately, and it can never perform automatic Done, provider installation/authentication, protected Git, or external writes.
+      - Restart, duplicate events, policy/budget denials, stale decisions, pause, retry, correction, and recovery are covered by daemon and UI tests.
+    notes: This is the intelligent organiser loop in the product vision; do not simulate it with UI-only timers or unrecorded client state.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

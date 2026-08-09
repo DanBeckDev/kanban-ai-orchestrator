@@ -53,6 +53,10 @@ export interface BoardGateway {
   plannerProfiles(): Promise<readonly PlannerProfile[]>;
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
+  coordinateBoard(
+    boardId: string,
+    agentProfileName: string,
+  ): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   executionActivity(
     executionId: string,

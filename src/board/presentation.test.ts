@@ -153,6 +153,7 @@ describe("board presentation", () => {
     ];
 
     expect(nextTransitionStates("review")).toContain("done");
+    expect(nextTransitionStates("review")).toContain("ready");
     expect(nextTransitionStates("done")).toEqual([]);
     expect(nextTransitionStates("failed")).toEqual(["ready", "cancelled"]);
     expect(nextTransitionStates("awaiting_input")).toContain("interrupted");

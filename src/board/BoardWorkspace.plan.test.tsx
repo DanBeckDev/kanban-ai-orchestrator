@@ -16,13 +16,18 @@ describe("board plan workflow", () => {
     openPlan();
 
     const generationForm = await screen.findByRole("form", {
-      name: "Generate board plan",
+      name: "Plan with AI",
     });
-    fireEvent.change(within(generationForm).getByLabelText("Goal"), {
-      target: { value: "Build a dependable planning workflow." },
-    });
+    fireEvent.change(
+      within(generationForm).getByLabelText("What do you want to achieve?"),
+      {
+        target: { value: "Build a dependable planning workflow." },
+      },
+    );
     fireEvent.click(
-      within(generationForm).getByRole("button", { name: "Generate preview" }),
+      within(generationForm).getByRole("button", {
+        name: "Create plan preview",
+      }),
     );
 
     await waitFor(() =>
@@ -42,7 +47,7 @@ describe("board plan workflow", () => {
     const confirmationForm = screen.getByRole("form", {
       name: "Confirm board plan",
     });
-    fireEvent.change(within(confirmationForm).getByLabelText("Confirm as"), {
+    fireEvent.change(within(confirmationForm).getByLabelText("Your name"), {
       target: { value: "Daniel" },
     });
     fireEvent.click(
@@ -64,14 +69,16 @@ describe("board plan workflow", () => {
       new Error("Planner profiles must use a declared program."),
     );
     await createBoard(boardGateway);
-    openSettings("Planning");
+    openSettings("Organiser");
     const profileForm = screen.getByRole("form", {
-      name: "Save planner profile",
+      name: "Save organiser connection",
     });
-    const nameInput = within(profileForm).getByLabelText("Profile name");
+    const nameInput = within(profileForm).getByLabelText("Connection name");
     fireEvent.change(nameInput, { target: { value: "local planner" } });
     fireEvent.click(
-      within(profileForm).getByRole("button", { name: "Save planner profile" }),
+      within(profileForm).getByRole("button", {
+        name: "Save organiser connection",
+      }),
     );
 
     expect(await within(profileForm).findByRole("alert")).toHaveTextContent(
@@ -89,12 +96,16 @@ describe("board plan workflow", () => {
     await configurePlanner();
     openPlan();
     const generationForm = await screen.findByRole("form", {
-      name: "Generate board plan",
+      name: "Plan with AI",
     });
-    const goalInput = within(generationForm).getByLabelText("Goal");
+    const goalInput = within(generationForm).getByLabelText(
+      "What do you want to achieve?",
+    );
     fireEvent.change(goalInput, { target: { value: "Build a safe plan." } });
     fireEvent.click(
-      within(generationForm).getByRole("button", { name: "Generate preview" }),
+      within(generationForm).getByRole("button", {
+        name: "Create plan preview",
+      }),
     );
 
     expect(await within(generationForm).findByRole("alert")).toHaveTextContent(
@@ -109,9 +120,9 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Propose board plan",
+      name: "Add an existing plan",
     });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
@@ -144,7 +155,7 @@ describe("board plan workflow", () => {
     const confirmationForm = screen.getByRole("form", {
       name: "Confirm board plan",
     });
-    fireEvent.change(within(confirmationForm).getByLabelText("Confirm as"), {
+    fireEvent.change(within(confirmationForm).getByLabelText("Your name"), {
       target: { value: "Daniel" },
     });
     fireEvent.click(
@@ -170,21 +181,21 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Propose board plan",
+      name: "Add an existing plan",
     });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
       within(proposalForm).getByRole("button", { name: "Preview plan" }),
     );
-    await screen.findByRole("button", { name: "Revise proposal" });
+    await screen.findByRole("button", { name: "Revise plan" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Revise proposal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
     const revisionForm = screen.getByRole("form", {
-      name: "Revise board plan",
+      name: "Revise an existing plan",
     });
-    fireEvent.change(within(revisionForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(revisionForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(revisedPlanDraft()) },
     });
     fireEvent.click(
@@ -207,19 +218,19 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Propose board plan",
+      name: "Add an existing plan",
     });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
       within(proposalForm).getByRole("button", { name: "Preview plan" }),
     );
-    await screen.findByRole("button", { name: "Revise proposal" });
+    await screen.findByRole("button", { name: "Revise plan" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Revise proposal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revise plan" }));
     const revisionForm = screen.getByRole("form", {
-      name: "Revise board plan",
+      name: "Revise an existing plan",
     });
     fireEvent.click(
       within(revisionForm).getByRole("button", { name: "Cancel revision" }),
@@ -229,7 +240,7 @@ describe("board plan workflow", () => {
       "Foundation",
     );
     expect(
-      screen.queryByRole("form", { name: "Revise board plan" }),
+      screen.queryByRole("form", { name: "Revise an existing plan" }),
     ).toBeNull();
   });
 
@@ -238,9 +249,9 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Propose board plan",
+      name: "Add an existing plan",
     });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify({ dependencies: [] }) },
     });
     fireEvent.click(
@@ -248,7 +259,7 @@ describe("board plan workflow", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Plan draft JSON must contain a workItems array.",
+      "Plan JSON must contain a workItems array.",
     );
     expect(boardGateway.proposePlan).not.toHaveBeenCalled();
   });
@@ -261,9 +272,9 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openPlan();
     const proposalForm = screen.getByRole("form", {
-      name: "Propose board plan",
+      name: "Add an existing plan",
     });
-    fireEvent.change(within(proposalForm).getByLabelText("Plan draft JSON"), {
+    fireEvent.change(within(proposalForm).getByLabelText("Plan JSON"), {
       target: { value: JSON.stringify(planDraft()) },
     });
     fireEvent.click(
@@ -276,22 +287,24 @@ describe("board plan workflow", () => {
       ),
     ).toHaveLength(2);
     expect(
-      screen.getByRole("form", { name: "Propose board plan" }),
+      screen.getByRole("form", { name: "Add an existing plan" }),
     ).toBeVisible();
     expect(screen.queryByRole("list", { name: "Plan tasks" })).toBeNull();
   });
 });
 
 async function configurePlanner() {
-  openSettings("Planning");
+  openSettings("Organiser");
   const profileForm = screen.getByRole("form", {
-    name: "Save planner profile",
+    name: "Save organiser connection",
   });
-  fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
+  fireEvent.change(within(profileForm).getByLabelText("Connection name"), {
     target: { value: "local planner" },
   });
   fireEvent.click(
-    within(profileForm).getByRole("button", { name: "Save planner profile" }),
+    within(profileForm).getByRole("button", {
+      name: "Save organiser connection",
+    }),
   );
   await waitFor(() => expect(screen.getByText("local planner")).toBeVisible());
   fireEvent.click(screen.getByRole("button", { name: "Back to board" }));

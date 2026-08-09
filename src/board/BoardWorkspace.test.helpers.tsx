@@ -25,7 +25,7 @@ export async function createBoard(boardGateway: BoardGateway) {
 }
 
 export function openPlan() {
-  fireEvent.click(screen.getByRole("button", { name: "Plan work" }));
+  fireEvent.click(screen.getByRole("button", { name: "Plan with AI" }));
 }
 
 export function openNewTask() {
@@ -38,7 +38,7 @@ export function openDependencies() {
 }
 
 export function openSettings(
-  section?: "Agent" | "Planning" | "Linear" | "Project",
+  section?: "Agent" | "Organiser" | "Linear" | "Project",
 ) {
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
   if (section !== undefined) {

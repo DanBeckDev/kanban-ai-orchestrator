@@ -18,7 +18,6 @@ import {
   createBoard,
   openDependencies,
   openNewTask,
-  openSettings,
   openTask,
 } from "./BoardWorkspace.test.helpers";
 
@@ -188,7 +187,7 @@ describe("board workspace", () => {
     );
   });
 
-  it("records the human reviewer decision before a task can be marked done", async () => {
+  it("records a rejection and returns the task for correction", async () => {
     const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
 
     await createBoard(boardGateway);
@@ -202,9 +201,9 @@ describe("board workspace", () => {
     fireEvent.change(within(form).getByLabelText("Decision summary"), {
       target: { value: "Acceptance criteria verified." },
     });
-    fireEvent.click(within(form).getByLabelText("Accept review"));
+    fireEvent.click(within(form).getByLabelText("Accept this work"));
     fireEvent.click(
-      within(form).getByRole("button", { name: "Record decision" }),
+      within(form).getByRole("button", { name: "Return for correction" }),
     );
 
     await waitFor(() =>
@@ -217,6 +216,15 @@ describe("board workspace", () => {
         summary: "Acceptance criteria verified.",
         accepted: false,
       }),
+    );
+    await waitFor(() =>
+      expect(boardGateway.transitionWorkItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workItemId: "review-task",
+          nextState: "ready",
+          reason: "Acceptance criteria verified.",
+        }),
+      ),
     );
   });
 
@@ -336,99 +344,5 @@ describe("board workspace", () => {
     expect(screen.getByText(/codex-cli · awaiting review/)).toBeVisible();
     expect(screen.getByText("Session: session-1")).toBeVisible();
     expect(screen.getByText("Unit tests passed.")).toBeVisible();
-  });
-
-  it("saves a direct agent profile and starts it from a ready task", async () => {
-    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
-
-    await createBoard(boardGateway);
-    openSettings("Agent");
-    fireEvent.click(screen.getByText("Set up a custom agent"));
-    const profileForm = screen.getByRole("form", { name: /save agent/i });
-    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
-      target: { value: "structured-worker" },
-    });
-    fireEvent.change(within(profileForm).getByLabelText("Program"), {
-      target: { value: "agent-worker" },
-    });
-    fireEvent.change(
-      within(profileForm).getByLabelText("Arguments (one per line)"),
-      {
-        target: { value: "--jsonl" },
-      },
-    );
-    fireEvent.click(
-      within(profileForm).getByRole("button", { name: "Save profile" }),
-    );
-    await waitFor(() =>
-      expect(boardGateway.saveAgentProfile).toHaveBeenCalledOnce(),
-    );
-    expect(boardGateway.saveAgentProfile).toHaveBeenCalledWith({
-      name: "structured-worker",
-      kind: "structured_process",
-      program: "agent-worker",
-      arguments: ["--jsonl"],
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
-    openTask("Task ready-task");
-
-    const launchForm = screen.getByRole("form", {
-      name: "Start agent for Task ready-task",
-    });
-    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
-      target: { value: "structured-worker" },
-    });
-    fireEvent.click(
-      within(launchForm).getByRole("button", { name: "Start agent" }),
-    );
-
-    await waitFor(() =>
-      expect(boardGateway.startExecution).toHaveBeenCalledOnce(),
-    );
-    expect(boardGateway.startExecution).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workItemId: "ready-task",
-        agentProfileName: "structured-worker",
-      }),
-    );
-  });
-
-  it("shows the selected provider's unsupported capabilities before task start", async () => {
-    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
-
-    await createBoard(boardGateway);
-    openSettings("Agent");
-    fireEvent.click(screen.getByText("Set up a custom agent"));
-    const profileForm = screen.getByRole("form", { name: /save agent/i });
-    fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
-      target: { value: "cline-pass-worker" },
-    });
-    fireEvent.change(within(profileForm).getByLabelText("Adapter"), {
-      target: { value: "cline_pass_cli" },
-    });
-    expect(within(profileForm).getByLabelText("Program")).toHaveValue("cline");
-    expect(
-      within(profileForm).getByText(/locally configured clinepass account/i),
-    ).toBeVisible();
-    fireEvent.click(
-      within(profileForm).getByRole("button", { name: "Save profile" }),
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
-    openTask("Task ready-task");
-
-    const launchForm = await screen.findByRole("form", {
-      name: "Start agent for Task ready-task",
-    });
-    fireEvent.change(within(launchForm).getByLabelText("Agent profile"), {
-      target: { value: "cline-pass-worker" },
-    });
-
-    expect(
-      within(launchForm).getByText(
-        /feedback, session resume, and safe process-tree cancellation are not available yet/i,
-      ),
-    ).toBeVisible();
   });
 });

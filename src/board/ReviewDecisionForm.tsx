@@ -7,12 +7,14 @@ type ReviewDecisionFormProps = Readonly<{
   busy: boolean;
   workItem: WorkItem;
   onRecord: (request: RecordReviewDecisionRequest) => Promise<void>;
+  onReturnForCorrection: (summary: string, recordedAt: string) => Promise<void>;
 }>;
 
 export function ReviewDecisionForm({
   busy,
   workItem,
   onRecord,
+  onReturnForCorrection,
 }: ReviewDecisionFormProps) {
   const [reviewer, setReviewer] = useState("");
   const [summary, setSummary] = useState("");
@@ -29,6 +31,9 @@ export function ReviewDecisionForm({
       accepted,
       recordedAt,
     });
+    if (!accepted) {
+      await onReturnForCorrection(summary, recordedAt);
+    }
     setSummary("");
   }
 
@@ -62,10 +67,16 @@ export function ReviewDecisionForm({
           type="checkbox"
           onChange={(event) => setAccepted(event.target.checked)}
         />
-        Accept review
+        Accept this work
       </label>
+      {!accepted && (
+        <p className="field-hint">
+          Kanban will keep the review record and return this task to Ready with
+          this summary.
+        </p>
+      )}
       <button disabled={busy} type="submit">
-        Record decision
+        {accepted ? "Record decision" : "Return for correction"}
       </button>
     </form>
   );

@@ -47,7 +47,7 @@ export function BoardCanvas({
         </EmptyHeader>
         <EmptyContent>
           <Button onClick={onPlanWork} type="button">
-            Plan the work
+            Describe an outcome
           </Button>
           <Button onClick={onCreateTask} type="button" variant="outline">
             Create a task

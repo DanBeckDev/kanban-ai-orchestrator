@@ -207,6 +207,10 @@ export function BoardWorkspace({
     await run(() => gateway.startExecution(request));
   }
 
+  async function coordinateBoard(boardId: string, agentProfileName: string) {
+    await run(() => gateway.coordinateBoard(boardId, agentProfileName));
+  }
+
   async function stopExecution(executionId: string) {
     await run(() => gateway.stopExecution(executionId));
   }
@@ -410,6 +414,7 @@ export function BoardWorkspace({
           onSaveAgentProfile={saveAgentProfile}
           onSelectDefaultAgentProfile={selectDefaultAgentProfile}
           onSavePlannerProfile={savePlannerProfile}
+          onCoordinateBoard={coordinateBoard}
           onStartExecution={startExecution}
           onStopExecution={stopExecution}
           onLoadExecutionActivity={loadExecutionActivity}

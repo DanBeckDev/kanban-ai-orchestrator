@@ -32,6 +32,9 @@ pub(crate) type LocalLinearOAuthService = LinearOAuthService<KeyringCredentialSt
 type LocalLinearCommentPublisher = ReqwestLinearCommentPublisher;
 type LocalLinearIssueReader = LinearIssueReader<ReqwestLinearGraphQlTransport>;
 
+#[path = "desktop_coordination.rs"]
+pub(crate) mod coordination;
+
 pub(crate) struct BoardDaemonState {
     _daemon_lock: DaemonLock,
     linear_comment_publisher: LocalLinearCommentPublisher,

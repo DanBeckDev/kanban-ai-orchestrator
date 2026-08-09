@@ -84,7 +84,7 @@ export function BoardSettings({
       <Tabs defaultValue="agent" orientation="vertical">
         <TabsList aria-label="Settings sections" variant="line">
           <TabsTrigger value="agent">Agent</TabsTrigger>
-          <TabsTrigger value="planning">Planning</TabsTrigger>
+          <TabsTrigger value="planning">Organiser</TabsTrigger>
           <TabsTrigger value="linear">Linear</TabsTrigger>
           <TabsTrigger value="project">Project</TabsTrigger>
         </TabsList>
@@ -101,10 +101,10 @@ export function BoardSettings({
         <TabsContent value="planning">
           <section className="settings-section">
             <div>
-              <h3>Planning agent</h3>
+              <h3>Plan organiser</h3>
               <p>
-                Add an advanced planner bridge only when your team has one to
-                use. Planning never starts a task without your confirmation.
+                Connect the AI that turns an outcome into a reviewable plan. It
+                never starts a task until you confirm the plan.
               </p>
             </div>
             <PlannerProfileForm

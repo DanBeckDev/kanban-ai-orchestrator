@@ -4,6 +4,7 @@ import { ListPlusIcon, Settings2Icon, SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardAutomation } from "./BoardAutomation";
 import { BoardManagement, SurfaceHeader } from "./BoardManagement";
 import { BoardSettings } from "./BoardSettings";
 import { PlanProposalPanel } from "./PlanProposalPanel";
@@ -68,6 +69,10 @@ type BoardViewProps = Readonly<{
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
   onSelectDefaultAgentProfile: (profileName: string) => void;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
+  onCoordinateBoard: (
+    boardId: string,
+    agentProfileName: string,
+  ) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
   onLoadExecutionActivity: (
@@ -110,6 +115,7 @@ export function BoardView({
   onSaveAgentProfile,
   onSelectDefaultAgentProfile,
   onSavePlannerProfile,
+  onCoordinateBoard,
   onStartExecution,
   onStopExecution,
   onLoadExecutionActivity,
@@ -140,19 +146,29 @@ export function BoardView({
         onPlanWork={() => setSurface("plan")}
       />
       {surface === "board" && (
-        <BoardCanvas
-          snapshot={snapshot}
-          onCreateTask={() => setSurface("new-task")}
-          onOpenTask={openTask}
-          onPlanWork={() => setSurface("plan")}
-        />
+        <>
+          <BoardAutomation
+            defaultAgentProfileName={defaultAgentProfileName}
+            hasDefaultAgent={agentProfiles.some(
+              ({ name }) => name === defaultAgentProfileName,
+            )}
+            snapshot={snapshot}
+            onCoordinate={onCoordinateBoard}
+          />
+          <BoardCanvas
+            snapshot={snapshot}
+            onCreateTask={() => setSurface("new-task")}
+            onOpenTask={openTask}
+            onPlanWork={() => setSurface("plan")}
+          />
+        </>
       )}
       {surface === "plan" && (
-        <section aria-label="Plan work" className="workspace-surface">
+        <section aria-label="Plan with AI" className="workspace-surface">
           <SurfaceHeader
-            description="Describe the outcome, inspect the proposal, then confirm the work you want to create."
+            description="Describe the outcome, review the proposed tasks, then decide what to create."
             onBack={returnToBoard}
-            title="Plan work"
+            title="Plan with AI"
           />
           <PlanProposalPanel
             boardId={snapshot.board.id}
@@ -245,7 +261,7 @@ function BoardHeader({
       <div className="board-toolbar">
         <Button onClick={onPlanWork} type="button">
           <SparklesIcon data-icon="inline-start" />
-          Plan work
+          Plan with AI
         </Button>
         <Button onClick={onCreateTask} type="button" variant="outline">
           <ListPlusIcon data-icon="inline-start" />

@@ -30,13 +30,13 @@ the flow has already been validated.
 │ Pick up where you left off. Everything is stored on this device.      │
 │                                                                       │
 │ ┌─────────────────────────────────────────────────────────────────┐ │
-│ │ Website reliability                              Continue        │ │
+│ │ Website reliability                              Open board      │ │
 │ │ kanban-ai-orchestrator · opened today                            │ │
 │ │ Needs your attention: 2 decisions · 1 agent working              │ │
 │ └─────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │ ┌─────────────────────────────────────────────────────────────────┐ │
-│ │ Linear migration                                Continue          │ │
+│ │ Linear migration                                Try again         │ │
 │ │ api-platform · opened 6 days ago                                │ │
 │ │ Repository unavailable. [Locate repository] [Try again]          │ │
 │ └─────────────────────────────────────────────────────────────────┘ │
@@ -59,7 +59,7 @@ the flow has already been validated.
 **Participant prompts**
 
 - “You want to resume the Website reliability work. What would you do?”
-- “What do you expect after choosing Continue on the unavailable board?”
+- “What do you expect after choosing Try again on the unavailable board?”
 - “Where would you create a board for a different repository?”
 
 **Design decisions being tested**

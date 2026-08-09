@@ -62,6 +62,10 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   reviewed plan-preview/confirmation flow. Manual task creation remains available
   but is not the primary path; no UX shortcut may start a worker before plan and
   policy authorization.
+- A saved board without an optional plan opens to that same outcome prompt. The
+  desktop command adapter must normalise optional JSON values to the explicit
+  frontend absence state, and any unexpected workspace rendering failure must
+  show a clear retry state rather than a blank screen.
 - The board home derives a concise, actionable attention list from authoritative
   task, execution, review, policy, and connector state. It must not invent status
   or scheduling decisions in the UI.

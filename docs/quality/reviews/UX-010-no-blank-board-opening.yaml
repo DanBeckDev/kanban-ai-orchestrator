@@ -1,0 +1,62 @@
+work_item: UX-010
+scope:
+  - "Opening a saved board without an optional plan."
+  - "Normalisation of optional Tauri command values at the frontend boundary."
+  - "A semantic retry state that prevents an unexpected workspace render error from becoming a blank screen."
+source_structure:
+  reviewed_files:
+    - path: src/App.tsx
+      meaningful_lines: 42
+      responsibilities: "Composes application chrome, theme, workspace dependencies, and the workspace recovery boundary."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 153
+      responsibilities: "Adapts typed frontend board commands to Tauri and normalises optional command responses."
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 91
+      responsibilities: "Covers command mappings and JSON-null normalisation at the Tauri adapter boundary."
+      decision: kept cohesive
+    - path: src/board/WorkspaceErrorBoundary.tsx
+      meaningful_lines: 55
+      responsibilities: "Contains workspace render failures and presents a semantic, retryable local recovery state."
+      decision: kept cohesive
+    - path: src/board/WorkspaceErrorBoundary.test.tsx
+      meaningful_lines: 27
+      responsibilities: "Proves a thrown workspace render is replaced with meaningful recovery rather than a blank screen."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T12:34:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Tauri serialises Rust Option::None as JSON null, while the frontend BoardGateway contract represents an absent plan as undefined."
+    change: "Normalised the board_plan response at the gateway boundary before it can enter UI state; a saved board without a plan now follows the ordinary outcome-planning path."
+  - finding: "An uncaught React child-render error removed the workspace with no recovery interface."
+    change: "Wrapped the workspace with a focused error boundary that states durable data is unchanged and provides a retry action."
+  - finding: "The initial recovery title was not a semantic heading."
+    change: "Added an explicit level-two heading role and a focused accessibility assertion before completion."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.33
+        statements: 85.83
+        functions: 81.51
+        branches: 83.73
+      - package_or_crate: src-tauri-rust
+        lines: 83.97
+        statements: 80.15
+        functions: 83.76
+        branches: 80.34
+    threshold_met: true
+exceptions: []

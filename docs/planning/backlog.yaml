@@ -310,6 +310,27 @@ tasks:
       Rust coverage metric above 80%; the review receipt is
       docs/quality/reviews/UX-009-one-screen-first-board-setup.yaml.
 
+  - id: UX-010
+    epic: UX
+    title: Keep board opening recoverable when optional local state is absent
+    status: done
+    priority: P0
+    depends_on: [UX-002, UX-009]
+    acceptance_criteria:
+      - Opening a saved board with no stored plan shows its normal outcome-planning entry state; it never renders a blank screen.
+      - The Tauri adapter normalises an absent optional plan from its JSON null representation to the frontend's explicit absent state.
+      - An unexpected workspace render failure presents a semantic recovery message and Try again action, stating that durable board data was not changed.
+      - Focused adapter and recovery-boundary tests reproduce the null-response case and prove visible recovery. The full quality gate and every coverage metric remain at or above 80%.
+    notes: >-
+      Completed on 2026-08-09 from live usability testing. Selecting a saved
+      project and continuing exposed a JSON-null optional plan at the typed
+      command boundary; the unnormalised value caused the PlanPreview component
+      to throw and React removed the workspace. The Tauri adapter now normalises
+      that absence and a tested workspace error boundary presents recovery rather
+      than a blank screen. The full quality gate passed with every coverage
+      metric above 80%; the review receipt is
+      docs/quality/reviews/UX-010-no-blank-board-opening.yaml.
+
   - id: UI-001
     epic: UI
     title: Establish a polished shadcn visual system across the desktop board

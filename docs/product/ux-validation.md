@@ -68,12 +68,15 @@ follow-ups such as “What are you looking for?”, “What do you expect next?�
 repository. It has two decisions waiting and one active agent. Today the folder
 for a different board is no longer where the app expects it.”
 
-**Tasks:** Open Website reliability; describe why you chose it; then explain
-what you would do with the unavailable board.
+**Tasks:** Open Website reliability; describe why you chose it and what the
+empty outcome-planning state means; then explain what you would do with the
+unavailable board.
 
 **Success without moderator assistance:** Select the intended board from visible
-recognition cues, identify the attention summary, and choose or describe the
-Locate/Retry recovery path without requesting or inventing an ID.
+recognition cues, identify the attention summary and first outcome action, and
+choose or describe the Locate/Retry recovery path without requesting or
+inventing an ID. If the application encounters an unexpected rendering failure,
+the participant sees a clear Try again state rather than an empty window.
 
 ### Scenario B — create safely
 

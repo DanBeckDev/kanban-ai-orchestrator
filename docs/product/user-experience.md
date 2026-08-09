@@ -55,7 +55,7 @@ The next phase makes the desktop app feel like a trustworthy work space:
 
 | Place | Primary question answered | Primary action |
 | --- | --- | --- |
-| **Your boards** | “What was I working on, and what needs attention?” | Continue a board or create one |
+| **Your boards** | “What was I working on, and what needs attention?” | Open a board or create one |
 | **Create a board** | “Which repository and outcome am I coordinating?” | Select repository and create |
 | **Board home** | “What is the safest next move?” | Describe an outcome, resolve attention, or review |
 | **Board** | “What work exists and what is its state?” | Inspect, create, or transition work |
@@ -94,12 +94,14 @@ and keeps the first release focused on the minimal coherent user outcome.
 ### Returning person
 
 1. Launch opens **Your boards**, not an ID field.
-2. The most recently opened board is the first, clearly labelled **Continue**.
+2. The most recently opened board is the first, clearly labelled **Open board**.
 3. Each board row shows its name, repository folder name, last opened time, and a
    compact attention summary such as “2 need your decision” or “3 agents active”.
 4. Choosing a board loads its durable snapshot. If its repository is unavailable,
    the row explains the problem and offers **Locate repository**; it never opens a
    misleading empty board.
+5. A board without a saved plan opens to **Describe the outcome**. An unexpected
+   workspace failure gives a clear retry state and never leaves a blank screen.
 
 ### First visit or creating a board
 

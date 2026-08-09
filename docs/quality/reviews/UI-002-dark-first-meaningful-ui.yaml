@@ -1,0 +1,130 @@
+work_item: UI-002
+scope:
+  - "Concise product identity, meaningful board-entry copy, and specific board re-entry actions."
+  - "A local, dark-first Light/Dark preference using source-owned shadcn Toggle Group primitives and semantic theme tokens."
+  - "Accessible focus, touch, browser-chrome theme colour, visual-language documentation, and no broad colour or transition overrides in product components."
+source_structure:
+  reviewed_files:
+    - path: src/App.test.tsx
+      meaningful_lines: 33
+      responsibilities: "Covers concise application chrome and observable appearance changes."
+      decision: kept cohesive
+    - path: src/App.tsx
+      meaningful_lines: 39
+      responsibilities: "Composes the product header, accessible skip target, theme provider, and injectable board workspace."
+      decision: kept cohesive
+    - path: src/board/BoardLibrary.tsx
+      meaningful_lines: 155
+      responsibilities: "Presents recognised boards with clear, accessible re-entry and recovery actions."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 203
+      responsibilities: "Presents the repository-first local board creation flow and safe advanced settings."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 227
+      responsibilities: "Coordinates active-board context, status, columns, and progressively disclosed controls."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.library.test.tsx
+      meaningful_lines: 98
+      responsibilities: "Covers board recognition, entry failure recovery, empty state, and available/unavailable re-entry actions."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 72
+      responsibilities: "Covers Linear interactions after opening a recognised board."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 383
+      responsibilities: "Covers board workspace interactions outside the focused library journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 387
+      responsibilities: "Coordinates board-library, setup, active-board, and gateway-backed status state."
+      decision: kept cohesive
+    - path: src/components/ui/badge.tsx
+      meaningful_lines: 44
+      responsibilities: "Defines source-owned compact status variants with explicit animated properties."
+      decision: kept cohesive
+    - path: src/components/ui/button.tsx
+      meaningful_lines: 62
+      responsibilities: "Defines source-owned button variants and composition behavior with explicit animated properties."
+      decision: kept cohesive
+    - path: src/components/ui/tabs.tsx
+      meaningful_lines: 82
+      responsibilities: "Defines source-owned accessible tab primitives and variants with explicit animated properties."
+      decision: kept cohesive
+    - path: src/components/ui/toggle-group.tsx
+      meaningful_lines: 82
+      responsibilities: "Defines the source-owned Radix toggle-group composition used for two-state appearance selection."
+      decision: kept cohesive
+    - path: src/components/ui/toggle.test.tsx
+      meaningful_lines: 11
+      responsibilities: "Covers the source-owned toggle primitive's pressed state and accessible name."
+      decision: kept cohesive
+    - path: src/components/ui/toggle.tsx
+      meaningful_lines: 41
+      responsibilities: "Defines the source-owned Radix toggle primitive and its variants."
+      decision: kept cohesive
+    - path: src/lib/productMetadata.ts
+      meaningful_lines: 3
+      responsibilities: "Exposes the concise visible product name."
+      decision: kept cohesive
+    - path: src/main.tsx
+      meaningful_lines: 15
+      responsibilities: "Applies the saved appearance before mounting the React application."
+      decision: kept cohesive
+    - path: src/theme/ThemeProvider.tsx
+      meaningful_lines: 42
+      responsibilities: "Owns React theme state and synchronises the local UI preference with the document."
+      decision: kept cohesive
+    - path: src/theme/ThemeToggle.tsx
+      meaningful_lines: 32
+      responsibilities: "Renders the labelled Dark/Light appearance selector."
+      decision: kept cohesive
+    - path: src/theme/theme-preference.test.ts
+      meaningful_lines: 38
+      responsibilities: "Covers preference fallback, persistence, document classes, and browser-chrome colour."
+      decision: kept cohesive
+    - path: src/theme/theme-preference.ts
+      meaningful_lines: 31
+      responsibilities: "Defines the validated local theme preference and document-application boundary."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T11:45:09+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The first library-load failure exposed a raw local invocation error and redundant technical alert."
+    change: "Replaced it with one outcome-led recovery state and suppressed the duplicate raw error on first load."
+  - finding: "Recognised-board actions were exposed as the ambiguous label Continue."
+    change: "Used a visible Open board action and accessible names that identify the board or retry target."
+  - finding: "New and existing source-owned primitives used broad transition-all animation."
+    change: "Replaced it with the exact colour, background, border, shadow, and transform properties each primitive changes."
+  - finding: "Theme validation was duplicated between the preference boundary and the selector."
+    change: "Exported one validated theme type guard from the preference boundary and reused it in the selector."
+  - finding: "The shadcn-generated toggle source imported types as runtime values."
+    change: "Converted those imports to type-only imports and reran the lint gate with no warnings."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.21
+        statements: 85.71
+        functions: 81.22
+        branches: 83.85
+      - package_or_crate: src-tauri-rust
+        lines: 83.97
+        statements: 80.09
+        functions: 83.76
+        branches: 80.27
+    threshold_met: true
+exceptions: []

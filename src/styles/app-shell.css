@@ -2,8 +2,8 @@
   min-height: 100vh;
   padding: clamp(1rem, 4vw, 4rem);
   background:
-    radial-gradient(circle at 84% -10%, color-mix(in oklch, var(--primary), transparent 88%), transparent 32rem),
-    radial-gradient(circle at -10% 20%, color-mix(in oklch, var(--chart-2), transparent 94%), transparent 28rem);
+    radial-gradient(circle at 84% -10%, color-mix(in oklch, var(--primary), transparent 80%), transparent 32rem),
+    radial-gradient(circle at -10% 20%, color-mix(in oklch, var(--chart-2), transparent 88%), transparent 28rem);
 }
 
 .application-frame {
@@ -22,6 +22,32 @@
 
 .application-header {
   padding: 0.5rem 0 2.5rem;
+}
+
+.appearance-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 1;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.6rem 0.9rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-radius: var(--radius-md);
+  transform: translateY(-150%);
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .eyebrow {
@@ -80,20 +106,6 @@ p {
   line-height: 1.55;
 }
 
-.application-status {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin: 0;
-}
-
-.application-status div {
-  min-width: 9rem;
-  padding-left: 0.85rem;
-  border-inline-start: 1px solid var(--border);
-}
-
 dt {
   color: var(--muted-foreground);
   font-size: 0.72rem;
@@ -117,7 +129,7 @@ dd {
     display: grid;
   }
 
-  .application-status {
+  .appearance-control {
     justify-content: flex-start;
   }
 }

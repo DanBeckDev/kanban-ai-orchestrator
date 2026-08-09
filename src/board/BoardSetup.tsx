@@ -85,7 +85,6 @@ export function BoardSetup({
   return (
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
-        <p className="eyebrow">Local-first board</p>
         <h2 id="board-setup-title">Create a board</h2>
         <p>
           Choose the local Git repository whose work you want to coordinate.
@@ -94,7 +93,7 @@ export function BoardSetup({
       </div>
       <Card className="board-setup-card">
         <CardHeader>
-          <CardTitle>Choose a local repository</CardTitle>
+          <CardTitle>Choose a repository</CardTitle>
         </CardHeader>
         <CardContent>
           <form

@@ -10,6 +10,7 @@ High-risk tasks use a second, independent reviewer-agent session. The board reco
 
 - [Product vision and principles](docs/product/vision.md)
 - [Product requirements](docs/product/requirements.md)
+- [Visual and content language](docs/product/visual-language.md)
 - [System architecture](docs/architecture/overview.md)
 - [Planner-profile bridge contract](docs/integrations/planner-profiles.md)
 - [Linear integration](docs/integrations/linear.md)

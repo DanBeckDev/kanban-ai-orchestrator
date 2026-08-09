@@ -1,5 +1,7 @@
 import { TooltipProvider } from "./components/ui/tooltip";
 import { productMetadata } from "./lib/productMetadata";
+import { ThemeProvider } from "./theme/ThemeProvider";
+import { ThemeToggle } from "./theme/ThemeToggle";
 
 import { BoardWorkspace } from "./board/BoardWorkspace";
 import type { RepositoryPicker } from "./board/BoardSetup";
@@ -12,31 +14,29 @@ type AppProps = Readonly<{
 
 export function App({ gateway, repositoryPicker }: AppProps) {
   return (
-    <TooltipProvider>
-      <main className="app-shell">
-        <section aria-labelledby="product-title" className="application-frame">
-          <header className="application-header">
-            <div>
-              <p className="eyebrow">Local-first agent coordination</p>
-              <h1 id="product-title">{productMetadata.name}</h1>
-            </div>
-            <dl aria-label="Application status" className="application-status">
+    <ThemeProvider>
+      <TooltipProvider>
+        <a className="skip-link" href="#board-content">
+          Skip to board
+        </a>
+        <div className="app-shell">
+          <div className="application-frame">
+            <header className="application-header">
               <div>
-                <dt>Execution authority</dt>
-                <dd>Rust local core</dd>
+                <h1 id="product-title">{productMetadata.name}</h1>
+                <p>Plan &amp; oversee agent work.</p>
               </div>
-              <div>
-                <dt>Current milestone</dt>
-                <dd>{productMetadata.milestone}</dd>
-              </div>
-            </dl>
-          </header>
-          <BoardWorkspace
-            gateway={gateway}
-            repositoryPicker={repositoryPicker}
-          />
-        </section>
-      </main>
-    </TooltipProvider>
+              <ThemeToggle />
+            </header>
+            <main id="board-content" tabIndex={-1}>
+              <BoardWorkspace
+                gateway={gateway}
+                repositoryPicker={repositoryPicker}
+              />
+            </main>
+          </div>
+        </div>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }

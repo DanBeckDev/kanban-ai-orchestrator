@@ -295,6 +295,8 @@ export function BoardWorkspace({
   );
 
   const boardId = snapshot?.board.id;
+  const boardLibraryLoadFailed =
+    snapshot === undefined && boardLibrary === undefined && error !== undefined;
   useEffect(() => {
     void loadBoardLibrary();
   }, [loadBoardLibrary]);
@@ -321,30 +323,28 @@ export function BoardWorkspace({
 
   return (
     <section className="board-shell">
-      {error !== undefined && (
+      {error !== undefined && !boardLibraryLoadFailed && (
         <Alert
           aria-live="polite"
           className="error-notice"
           variant="destructive"
         >
           <AlertCircleIcon aria-hidden="true" />
-          <AlertTitle>The local daemon rejected that request.</AlertTitle>
+          <AlertTitle>Kanban could not complete that request.</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      {snapshot === undefined &&
-      boardLibrary === undefined &&
-      error !== undefined ? (
+      {snapshot === undefined && boardLibraryLoadFailed ? (
         <Empty className="board-library-loading">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <AlertCircleIcon />
             </EmptyMedia>
             <EmptyTitle aria-level={2} role="heading">
-              Your boards could not be loaded
+              Kanban could not load your boards
             </EmptyTitle>
             <EmptyDescription>
-              Check that the local daemon is available, then try again.
+              Try again. If it keeps happening, restart Kanban.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

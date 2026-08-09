@@ -53,6 +53,11 @@ The repository provides an installable pre-commit hook. It runs the local qualit
 
 CI is the non-bypassable merge/release authority. The `quality:verify` job must run the full quality suite and publish coverage. Branch protection must require its successful status before merge. A green build is required even when a local hook was bypassed.
 
+CI runs changed-source structure and review-receipt policy before expensive platform and coverage
+work. Stable Cargo dependency/build artifacts may be cached only with keys that include the
+platform, compiler identity, and Cargo dependency inputs; credentials and nightly coverage artifacts
+are never cache inputs. See [ADR 0019](../decisions/0019-fast-fail-quality-ci-and-safe-rust-caching.md).
+
 ## Receipt and exceptions
 
 Copy `docs/quality/review-receipt.template.yaml` to `docs/quality/reviews/<work-item>.yaml`. A valid receipt has no unresolved actionable findings. For code-bearing changes, the pre-commit hook and pull-request CI require a changed receipt that identifies the Clean Code skill, reviewer, passing `npm run quality:verify` command, met coverage threshold, and zero unresolved actionable findings.

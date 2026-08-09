@@ -6,12 +6,49 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
+  policy:
+    name: policy
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Verify source structure and quality-review evidence for a pull request
+        if: github.event_name == 'pull_request'
+        run: |
+          node scripts/check-code-structure.mjs --base-ref origin/${{ github.base_ref }}
+          node scripts/verify-quality-receipt.mjs --base-ref origin/${{ github.base_ref }}
+
+      - name: Verify source structure and quality-review evidence for a non-initial push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: |
+          node scripts/check-code-structure.mjs --base-ref ${{ github.event.before }}
+          node scripts/verify-quality-receipt.mjs --base-ref ${{ github.event.before }}
+
+      - name: Verify all source structure and quality-review evidence for an initial push or manual run
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000')
+        run: |
+          node scripts/check-code-structure.mjs --all
+          node scripts/verify-quality-receipt.mjs --all
+
   platform-core:
     name: core (${{ matrix.platform }})
+    needs: policy
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,7 +71,19 @@ jobs:
           cache: npm
 
       - name: Set up stable Rust
+        id: stable-rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore stable Cargo dependencies and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-
 
       - name: Install Linux desktop build dependencies
         if: runner.os == 'Linux'
@@ -51,6 +100,7 @@ jobs:
 
   quality:
     name: quality
+    needs: policy
     runs-on: ubuntu-24.04
     steps:
       - name: Check out source
@@ -70,40 +120,35 @@ jobs:
           sudo apt-get install --yes build-essential curl file libayatana-appindicator3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget
 
       - name: Set up stable Rust
+        id: stable-rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore stable Cargo dependencies and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-
 
       - name: Set up nightly Rust coverage tooling
         run: |
           rustup toolchain install nightly --profile minimal
           rustup component add --toolchain nightly llvm-tools-preview
-          cargo install cargo-llvm-cov --version 0.8.7 --locked
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.8.7
+          fallback: none
 
       - name: Install JavaScript dependencies
         run: npm ci
 
       - name: Verify quality and coverage
+        env:
+          CARGO_LLVM_COV_TARGET_DIR: src-tauri/coverage-target
         run: npm run quality:verify
-
-      - name: Verify source structure
-        if: github.event_name == 'pull_request'
-        run: node scripts/check-code-structure.mjs --base-ref origin/${{ github.base_ref }}
-
-      - name: Verify source structure for a non-initial push
-        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        run: node scripts/check-code-structure.mjs --base-ref ${{ github.event.before }}
-
-      - name: Verify all source structure for an initial push or manual run
-        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000')
-        run: node scripts/check-code-structure.mjs --all
-
-      - name: Verify quality-review receipt
-        if: github.event_name == 'pull_request'
-        run: node scripts/verify-quality-receipt.mjs --base-ref origin/${{ github.base_ref }}
-
-      - name: Verify quality-review receipt for a non-initial push
-        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        run: node scripts/verify-quality-receipt.mjs --base-ref ${{ github.event.before }}
-
-      - name: Verify recorded quality-review receipts for an initial push or manual run
-        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000')
-        run: node scripts/verify-quality-receipt.mjs --all

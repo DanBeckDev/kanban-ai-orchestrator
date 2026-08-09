@@ -355,3 +355,15 @@ tasks:
       - The receipt validator rejects missing or stale source-structure evidence while retaining validation of historical receipts.
       - Focused tests prove a receipt cannot omit a changed source file and a complete inventory passes.
     notes: Completed on 2026-08-08. Quality-review receipts now inventory every changed source file with its verified meaningful-line count, cohesive responsibility, and decision; the validator rejects omissions and stale counts while historical receipts remain readable.
+
+  - id: QUAL-006
+    epic: QUAL
+    title: Fail CI policy early and cache stable Rust checks safely
+    status: done
+    priority: P0
+    depends_on: [QUAL-002, QUAL-005, REL-002]
+    acceptance_criteria:
+      - Source-structure and review-receipt policy fail before the platform matrix or full coverage suite starts.
+      - Stable Cargo test and Clippy inputs are cached per platform, compiler identity, and dependency graph without caching credentials or nightly coverage artifacts.
+      - Linux, macOS, and Windows portable-core checks and the Linux full 80%-coverage quality gate remain required.
+    notes: Completed on 2026-08-09. CI validates source structure and review evidence in a lightweight prerequisite job, then runs the full Linux coverage gate and Linux/macOS/Windows portable-core matrix only when policy passes. Stable Cargo registry, Git dependencies, and artifacts are cached by OS, architecture, Rust compiler identity, Cargo lockfile, and manifest; nightly coverage output is isolated and cargo-llvm-cov is installed from its verified release installer. The initial foundation's 64 missing source-structure inventory entries were reviewed and recorded rather than weakening the PR policy.

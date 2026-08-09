@@ -114,6 +114,45 @@ whether focus location, labels, state announcements, and errors are predictable.
 Do not prescribe a technique. Record functional barriers, not medical details or
 tool configuration beyond what the participant volunteers as relevant.
 
+### Facilitator capture sheet
+
+Copy this short form once per participant. It deliberately captures behaviour
+and decisions rather than a person's identity, private project data, screen
+recording, or a verbatim transcript. A participant can omit any answer.
+
+```text
+Study ID: P-01 / P-02 / P-03
+Relevant working style volunteered by participant: keyboard-first / assistive technology / neither stated
+
+Scenario A — return to work
+- Completed without moderator assistance: yes / partly / no
+- Recognition cue used to choose the board:
+- What the participant believed the attention summary and first action meant:
+- Recovery choice for unavailable board:
+
+Scenario B — create safely
+- Completed without moderator assistance: yes / partly / no
+- What the participant believed Create board would do:
+- Invalid-folder or cancelled-picker recovery:
+- Could they find and explain the optional different starting point: yes / no
+
+Scenario C — make the first plan
+- Completed without moderator assistance: yes / partly / no
+- First action the participant found:
+- What they believed proposal confirmation would do:
+- What they chose to inspect, revise, reject, or confirm:
+
+Observed confusion or barrier (one row per finding)
+- Finding:
+- Severity: critical / major / refinement
+- Repeated in another study: yes / no / not known
+- Proposed disposition and linked backlog item:
+```
+
+Record only the condensed findings and dispositions in the table below. The
+facilitator notes remain outside the repository unless the participant has
+explicitly consented to sharing them.
+
 ## Decision framework
 
 | Category | Prototype decision | Rationale to test |

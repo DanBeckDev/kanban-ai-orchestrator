@@ -23,6 +23,12 @@ describe("tauri board gateway", () => {
       policySetId: "standard",
     };
     const board = { boardId: "board-1", projectId: "project-1", name: "MVP" };
+    const localBoard = {
+      name: "MVP",
+      repositoryPath: "/projects/project",
+      baseRef: "main",
+      policySetId: "standard",
+    };
     const workItem = {
       eventId: "create-1",
       workItemId: "task-1",
@@ -55,6 +61,8 @@ describe("tauri board gateway", () => {
 
     await tauriBoardGateway.createProject(project);
     await tauriBoardGateway.createBoard(board);
+    await tauriBoardGateway.inspectRepository("/projects/project");
+    await tauriBoardGateway.createLocalBoard(localBoard);
     await tauriBoardGateway.boardLibrary();
     await tauriBoardGateway.openBoard("board-1");
     await tauriBoardGateway.createWorkItem(workItem);
@@ -66,6 +74,8 @@ describe("tauri board gateway", () => {
     expect(invoke.mock.calls).toEqual([
       ["create_project", { request: project }],
       ["create_board", { request: board }],
+      ["inspect_repository", { repositoryPath: "/projects/project" }],
+      ["create_local_board", { request: localBoard }],
       ["board_library"],
       ["open_board", { boardId: "board-1" }],
       ["create_work_item", { request: workItem }],

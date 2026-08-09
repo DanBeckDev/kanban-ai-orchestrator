@@ -250,6 +250,19 @@ export type CreateBoardRequest = Readonly<{
   name: string;
 }>;
 
+export type RepositorySetup = Readonly<{
+  repositoryPath: string;
+  suggestedBoardName: string;
+  baseRef: string;
+}>;
+
+export type CreateLocalBoardRequest = Readonly<{
+  name: string;
+  repositoryPath: string;
+  baseRef?: string;
+  policySetId?: string;
+}>;
+
 export type CreateWorkItemRequest = Readonly<{
   eventId: string;
   workItemId: string;

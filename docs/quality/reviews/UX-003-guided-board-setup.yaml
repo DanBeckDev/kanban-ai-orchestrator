@@ -1,0 +1,162 @@
+work_item: UX-003
+scope:
+  - "Native repository selection, Rust-side Git-root validation, and atomic local-board creation."
+  - "Guided board setup, generated-ID support details, and accessible recovery states."
+  - "Tauri dialog capability constrained to opening one directory."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_requests.rs
+      meaningful_lines: 75
+      responsibilities: "Defines typed application requests crossing the board command boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 365
+      responsibilities: "Defines the board repository port and established board use cases."
+      decision: kept cohesive
+    - path: src-tauri/src/application/local_board_service.rs
+      meaningful_lines: 85
+      responsibilities: "Generates local identifiers, applies safe defaults, and delegates one local-board creation use case."
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 64
+      responsibilities: "Composes and exports application-layer board contracts."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_board_setup.rs
+      meaningful_lines: 25
+      responsibilities: "Validates repository setup outside the daemon lock and invokes local-board creation."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 83
+      responsibilities: "Composes Tauri plugins and registers typed desktop commands."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 225
+      responsibilities: "Adapts the application board repository port to SQLite operations."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/local_board_store.rs
+      meaningful_lines: 37
+      responsibilities: "Persists the project, board, and recency entry in one SQLite transaction."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store_tests.rs
+      meaningful_lines: 398
+      responsibilities: "Covers durable board persistence, including atomic local-board rollback."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 30
+      responsibilities: "Composes persistence stores and exposes the SQLite event-store boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/git_cli.rs
+      meaningful_lines: 336
+      responsibilities: "Provides sanitized, typed Git operations for workspace and repository validation."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/mod.rs
+      meaningful_lines: 304
+      responsibilities: "Coordinates repository validation and workspace management without UI dependencies."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/repository_setup_tests.rs
+      meaningful_lines: 36
+      responsibilities: "Covers repository-root inspection and base-reference validation for setup."
+      decision: kept cohesive
+    - path: src/App.tsx
+      meaningful_lines: 33
+      responsibilities: "Composes application chrome and injectable board dependencies."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 144
+      responsibilities: "Presents the guided repository-first board-creation interaction."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.test.tsx
+      meaningful_lines: 84
+      responsibilities: "Covers cancellation, invalid selection, safe defaults, and advanced creation input."
+      decision: kept cohesive
+    - path: src/board/BoardSupportDetails.tsx
+      meaningful_lines: 21
+      responsibilities: "Keeps generated identifiers in a compact support-only disclosure."
+      decision: kept cohesive
+    - path: src/board/BoardSupportDetails.test.tsx
+      meaningful_lines: 17
+      responsibilities: "Covers the collapsed generated-identifier support disclosure."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 207
+      responsibilities: "Coordinates the board workspace presentation and its action panels."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 358
+      responsibilities: "Coordinates board library, guided creation, and active board state through the gateway."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.library.test.tsx
+      meaningful_lines: 91
+      responsibilities: "Covers recognition-based board-library and create-entry journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 370
+      responsibilities: "Provides deterministic typed gateway fixtures for board-workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 21
+      responsibilities: "Provides the focused repository-first board-creation test helper."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 377
+      responsibilities: "Covers board-workspace interactions outside the focused library suite."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 84
+      responsibilities: "Defines the typed frontend gateway contract for board behavior."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 152
+      responsibilities: "Implements the frontend Tauri invocation adapter."
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 81
+      responsibilities: "Covers frontend-to-Tauri command mappings."
+      decision: kept cohesive
+    - path: src/board/repositoryPicker.ts
+      meaningful_lines: 9
+      responsibilities: "Wraps the native dialog plugin in one repository-selection operation."
+      decision: kept cohesive
+    - path: src/board/repositoryPicker.test.ts
+      meaningful_lines: 15
+      responsibilities: "Acts as a learning test for the constrained native dialog invocation."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 375
+      responsibilities: "Defines typed frontend board data and command contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T10:18:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The first chooser button was nested inside a label, which gave it the wrong accessible name."
+    change: "Separated the chooser label and button, retaining an explicit accessible description and focused interaction test."
+  - finding: "Repository setup tests made the established workspace test module exceed the structural limit."
+    change: "Moved independent setup scenarios into a focused repository_setup_tests module."
+  - finding: "A successful transaction was covered, but rollback behavior was not proven."
+    change: "Added a persistence test that forces the recency insert to fail and verifies no project or board remains."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 87.34
+        statements: 86.70
+        functions: 81.64
+        branches: 86.10
+      - package_or_crate: src-tauri-rust
+        lines: 83.97
+        statements: 80.09
+        functions: 83.76
+        branches: 80.27
+    threshold_met: true
+exceptions: []

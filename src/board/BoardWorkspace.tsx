@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { BoardLibrary } from "./BoardLibrary";
-import { BoardSetup, type CreateBoardInput } from "./BoardSetup";
+import { BoardSetup, type RepositoryPicker } from "./BoardSetup";
 import { BoardView } from "./BoardView";
 import { tauriBoardGateway } from "./gateway";
+import { selectRepository } from "./repositoryPicker";
 import type {
   AddDependencyRequest,
   AgentProfile,
@@ -11,6 +12,7 @@ import type {
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
+  CreateLocalBoardRequest,
   CreateWorkItemRequest,
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
@@ -30,6 +32,7 @@ import type {
 
 type BoardWorkspaceProps = Readonly<{
   gateway?: BoardGateway;
+  repositoryPicker?: RepositoryPicker;
 }>;
 
 const disconnectedLinearStatus: LinearConnectionStatus = {
@@ -38,6 +41,7 @@ const disconnectedLinearStatus: LinearConnectionStatus = {
 
 export function BoardWorkspace({
   gateway = tauriBoardGateway,
+  repositoryPicker = selectRepository,
 }: BoardWorkspaceProps) {
   const [snapshot, setSnapshot] = useState<BoardSnapshot>();
   const [boardLibrary, setBoardLibrary] =
@@ -73,21 +77,10 @@ export function BoardWorkspace({
     }
   }
 
-  async function createBoard(input: CreateBoardInput) {
+  async function createBoard(input: CreateLocalBoardRequest) {
     await run(async () => {
-      await gateway.createProject({
-        projectId: input.projectId,
-        name: input.projectName,
-        repositoryPath: input.repositoryPath,
-        baseRef: input.baseRef,
-        policySetId: input.policySetId,
-      });
-      const boardSnapshot = await gateway.createBoard({
-        boardId: input.boardId,
-        projectId: input.projectId,
-        name: input.boardName,
-      });
-      await loadBoardContext(input.boardId);
+      const boardSnapshot = await gateway.createLocalBoard(input);
+      await loadBoardContext(boardSnapshot.board.id);
       return boardSnapshot;
     });
   }
@@ -343,6 +336,8 @@ export function BoardWorkspace({
       ) : snapshot === undefined && showBoardSetup ? (
         <BoardSetup
           busy={busy}
+          repositoryPicker={repositoryPicker}
+          onInspectRepository={gateway.inspectRepository}
           onBack={() => {
             setShowBoardSetup(false);
             void loadBoardLibrary();

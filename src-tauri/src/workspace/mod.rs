@@ -7,6 +7,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::Serialize;
+
 use crate::domain::{Execution, Project, WorkItemId};
 
 use git_cli::GitCli;
@@ -18,6 +20,9 @@ use path::{
 pub use error::WorkspaceError;
 pub use git_cli::GitError;
 pub use path::PathAccess;
+
+#[cfg(test)]
+mod repository_setup_tests;
 
 const TASK_BRANCH_PREFIX: &str = "kanban";
 
@@ -40,6 +45,14 @@ pub struct WorkspaceAssignment {
     branch_name: String,
     path: PathBuf,
     dependency_sharing: DependencySharingStrategy,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepositorySetup {
+    pub repository_path: String,
+    pub suggested_board_name: String,
+    pub base_ref: String,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -276,6 +289,48 @@ impl WorkspaceManager {
         }
         Ok(())
     }
+}
+
+pub fn inspect_project_repository(
+    repository_path: impl AsRef<Path>,
+) -> Result<RepositorySetup, WorkspaceError> {
+    repository_setup(repository_path.as_ref(), None)
+}
+
+pub fn validate_project_repository(
+    repository_path: impl AsRef<Path>,
+    base_ref: Option<&str>,
+) -> Result<RepositorySetup, WorkspaceError> {
+    repository_setup(repository_path.as_ref(), base_ref)
+}
+
+fn repository_setup(
+    repository_path: &Path,
+    requested_base_ref: Option<&str>,
+) -> Result<RepositorySetup, WorkspaceError> {
+    let declared_path = resolved_existing_path(repository_path)?;
+    let git = GitCli;
+    let detected_path = resolved_existing_path(&git.repository_root(&declared_path)?)?;
+    if declared_path != detected_path {
+        return Err(WorkspaceError::ProjectRepositoryMustBeRoot {
+            declared_path,
+            detected_path,
+        });
+    }
+    let base_ref = requested_base_ref
+        .map(str::to_owned)
+        .unwrap_or(git.current_branch(&detected_path)?);
+    git.validate_revision(&detected_path, &base_ref)?;
+    let suggested_board_name = detected_path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "Local board".to_owned());
+
+    Ok(RepositorySetup {
+        repository_path: detected_path.display().to_string(),
+        suggested_board_name,
+        base_ref,
+    })
 }
 
 #[cfg(test)]

@@ -12,6 +12,7 @@ pub mod policy;
 pub mod workspace;
 
 mod desktop;
+mod desktop_board_setup;
 mod desktop_daemon_lock;
 mod desktop_execution_activity;
 mod desktop_execution_policy;
@@ -33,6 +34,7 @@ fn foundation_summary() -> FoundationSummary {
 #[cfg_attr(coverage_nightly, coverage(off))]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let daemon = desktop::open_daemon(app.handle())
@@ -44,6 +46,8 @@ pub fn run() {
             foundation_summary,
             desktop::create_project,
             desktop::create_board,
+            desktop_board_setup::inspect_repository,
+            desktop_board_setup::create_local_board,
             desktop::board_library,
             desktop::open_board,
             desktop::create_work_item,

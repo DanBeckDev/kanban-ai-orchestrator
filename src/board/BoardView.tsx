@@ -1,4 +1,5 @@
 import { AgentProfileForm } from "./AgentProfileForm";
+import { BoardSupportDetails } from "./BoardSupportDetails";
 import { boardColumns, workItemsForColumn } from "./presentation";
 import { DependencyForm } from "./DependencyForm";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
@@ -108,14 +109,17 @@ export function BoardView({
     <section aria-labelledby="board-title" className="board-workspace">
       <header className="board-header">
         <div>
-          <p className="eyebrow">Project {snapshot.board.projectId}</p>
+          <p className="eyebrow">Local board</p>
           <h2 id="board-title">{snapshot.board.name}</h2>
           <p>
             {workItems.length} tasks · {snapshot.dependencies.length}{" "}
             dependencies
           </p>
         </div>
-        <span className="local-status">Local daemon connected</span>
+        <div>
+          <span className="local-status">Local daemon connected</span>
+          <BoardSupportDetails board={snapshot.board} />
+        </div>
       </header>
       <div className="board-layout">
         <section aria-label="Kanban board" className="kanban-board">

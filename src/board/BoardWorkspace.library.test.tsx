@@ -86,7 +86,7 @@ describe("board library", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create a board" }));
 
     expect(
-      await screen.findByRole("heading", { name: "Create a local board" }),
+      await screen.findByRole("heading", { name: "Create a board" }),
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Back to your boards" }),

@@ -13,6 +13,7 @@ mod event_store_support;
 mod execution_activation_store;
 mod execution_store;
 mod external_link_store;
+mod local_board_store;
 mod plan_store;
 mod planner_profile_store;
 pub(crate) mod sqlite_event_store;

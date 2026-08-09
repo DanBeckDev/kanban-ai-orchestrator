@@ -84,6 +84,12 @@ export function gateway(
   return {
     createProject: vi.fn().mockResolvedValue(undefined),
     createBoard: vi.fn().mockImplementation(async () => current),
+    inspectRepository: vi.fn().mockResolvedValue({
+      repositoryPath: "/projects/project",
+      suggestedBoardName: "Project",
+      baseRef: "main",
+    }),
+    createLocalBoard: vi.fn().mockImplementation(async () => current),
     boardLibrary: vi.fn().mockResolvedValue(initialLibrary),
     openBoard: vi.fn().mockImplementation(async () => current),
     createWorkItem: vi

@@ -251,7 +251,7 @@ tasks:
   - id: UX-002
     epic: UX
     title: Build a durable board library and recognition-based re-entry
-    status: in_progress
+    status: completed
     priority: P0
     depends_on: [UX-001, UX-008, APP-001]
     acceptance_criteria:
@@ -271,7 +271,7 @@ tasks:
   - id: UX-003
     epic: UX
     title: Replace ID-driven board setup with a guided repository-first flow
-    status: ready
+    status: in_progress
     priority: P0
     depends_on: [UX-001, UX-008, UX-002, APP-002]
     acceptance_criteria:
@@ -280,7 +280,12 @@ tasks:
       - The default base ref and standard policy are displayed as safe defaults. Their overrides are in a collapsed Advanced setup section with clear effect text.
       - Cancelling or failing validation does not persist a partial project/board. A successful creation opens the board home and preserves all existing project-boundary protections.
       - Tests exercise picker cancellation, invalid/non-root repository selection, generated identifiers, default/advanced configuration, and successful creation at the required coverage threshold.
-    notes: This is intentionally a separate PR from UX-002 because it adds a Tauri capability, migration-safe command changes, and a user-facing form replacement.
+    notes: >-
+      This is intentionally a separate PR from UX-002 because it adds a Tauri
+      capability, migration-safe command changes, and a user-facing form
+      replacement. On 2026-08-09, the product owner directed continued
+      incremental delivery while UX-008's representative walkthrough evidence
+      remains in progress. UX-008's completion gate remains unchanged.
 
   - id: UX-004
     epic: UX

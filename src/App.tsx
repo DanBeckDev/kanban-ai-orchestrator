@@ -1,12 +1,14 @@
 import { BoardWorkspace } from "./board/BoardWorkspace";
+import type { RepositoryPicker } from "./board/BoardSetup";
 import type { BoardGateway } from "./board/types";
 import { productMetadata } from "./lib/productMetadata";
 
 type AppProps = Readonly<{
   gateway?: BoardGateway;
+  repositoryPicker?: RepositoryPicker;
 }>;
 
-export function App({ gateway }: AppProps) {
+export function App({ gateway, repositoryPicker }: AppProps) {
   return (
     <main className="app-shell">
       <section aria-labelledby="product-title" className="application-frame">
@@ -26,7 +28,7 @@ export function App({ gateway }: AppProps) {
             </div>
           </dl>
         </header>
-        <BoardWorkspace gateway={gateway} />
+        <BoardWorkspace gateway={gateway} repositoryPicker={repositoryPicker} />
       </section>
     </main>
   );

@@ -88,7 +88,7 @@ the flow has already been validated.
 │ Suggested from the repository folder.                                │
 │                                                                       │
 │ Safe defaults                                                        │
-│ Base branch: main · Policy: Standard                                 │
+│ Base branch: detected branch (main here) · Policy: Standard           │
 │                                                                       │
 │ ▸ Advanced setup                                                     │
 │   Change base branch, policy, or self-managed integrations.          │
@@ -132,9 +132,9 @@ Advanced setup expanded
 - Board name is editable and defaults from the folder name. Project and board
   identifiers are generated locally and are only exposed in support details,
   never requested in this flow.
-- `main` and Standard policy are proposed, visible defaults—not invisible
-  assumptions. Advanced options are available but closed because they are not
-  required to create the ordinary local board.
+- The checked-out branch (shown as `main` here) and Standard policy are proposed,
+  visible defaults—not invisible assumptions. Advanced options are available but
+  closed because they are not required to create the ordinary local board.
 - `Create board` is an explicit commit point. The confirmation is for durable
   local setup, not consent to start agents, sync Linear, or execute work.
 

@@ -6,6 +6,7 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateBoardRequest,
+  CreateLocalBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
   ExecutionActivityPage,
@@ -20,6 +21,7 @@ import type {
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
+  RepositorySetup,
   StartExecutionRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -31,6 +33,8 @@ import type {
 export interface BoardGateway {
   createProject(request: CreateProjectRequest): Promise<void>;
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot>;
+  inspectRepository(repositoryPath: string): Promise<RepositorySetup>;
+  createLocalBoard(request: CreateLocalBoardRequest): Promise<BoardSnapshot>;
   boardLibrary(): Promise<readonly BoardLibraryEntry[]>;
   openBoard(boardId: string): Promise<BoardSnapshot>;
   createWorkItem(request: CreateWorkItemRequest): Promise<BoardSnapshot>;

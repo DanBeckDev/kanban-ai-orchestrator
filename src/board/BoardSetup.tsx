@@ -1,137 +1,154 @@
 import { useState, type FormEvent } from "react";
 
+import type { CreateLocalBoardRequest, RepositorySetup } from "./types";
+
+export type RepositoryPicker = () => Promise<string | null>;
+
 type BoardSetupProps = Readonly<{
   busy: boolean;
-  onCreate: (input: CreateBoardInput) => Promise<void>;
+  repositoryPicker: RepositoryPicker;
+  onInspectRepository: (repositoryPath: string) => Promise<RepositorySetup>;
+  onCreate: (input: CreateLocalBoardRequest) => Promise<void>;
   onBack: () => void;
 }>;
 
-export type CreateBoardInput = Readonly<{
-  projectId: string;
-  projectName: string;
-  repositoryPath: string;
-  baseRef: string;
-  policySetId: string;
-  boardId: string;
-  boardName: string;
-}>;
+const standardPolicySetId = "standard";
 
-const initialCreateBoardInput: CreateBoardInput = {
-  projectId: "",
-  projectName: "",
-  repositoryPath: "",
-  baseRef: "main",
-  policySetId: "standard",
-  boardId: "",
-  boardName: "",
-};
+export function BoardSetup({
+  busy,
+  repositoryPicker,
+  onInspectRepository,
+  onCreate,
+  onBack,
+}: BoardSetupProps) {
+  const [repository, setRepository] = useState<RepositorySetup>();
+  const [boardName, setBoardName] = useState("");
+  const [baseRef, setBaseRef] = useState("");
+  const [policySetId, setPolicySetId] = useState(standardPolicySetId);
+  const [chooserMessage, setChooserMessage] = useState<string>();
+  const [choosing, setChoosing] = useState(false);
 
-export function BoardSetup({ busy, onCreate, onBack }: BoardSetupProps) {
-  const [createInput, setCreateInput] = useState(initialCreateBoardInput);
-
-  function updateCreateInput(field: keyof CreateBoardInput, value: string) {
-    setCreateInput((current) => ({ ...current, [field]: value }));
+  async function chooseRepository() {
+    setChoosing(true);
+    setChooserMessage(undefined);
+    try {
+      const selectedPath = await repositoryPicker();
+      if (selectedPath === null) {
+        setChooserMessage("No repository selected. No board has been created.");
+        return;
+      }
+      const inspectedRepository = await onInspectRepository(selectedPath);
+      setRepository(inspectedRepository);
+      setBoardName(inspectedRepository.suggestedBoardName);
+      setBaseRef(inspectedRepository.baseRef);
+    } catch (error) {
+      setRepository(undefined);
+      setChooserMessage(errorMessage(error));
+    } finally {
+      setChoosing(false);
+    }
   }
 
   async function createBoard(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onCreate(createInput);
+    if (repository === undefined) return;
+    await onCreate({
+      name: boardName,
+      repositoryPath: repository.repositoryPath,
+      baseRef,
+      policySetId,
+    });
   }
+
+  const disabled = busy || choosing;
 
   return (
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
         <p className="eyebrow">Local-first board</p>
-        <h2 id="board-setup-title">Create a local board</h2>
+        <h2 id="board-setup-title">Create a board</h2>
         <p>
-          Board creation currently uses the existing advanced project details.
-          The board is stored on this device, and its state and dependency rules
-          are enforced by the local daemon, not the browser.
+          Choose the local Git repository whose work you want to coordinate.
+          Nothing is created until you confirm.
         </p>
       </div>
-      <div className="setup-grid">
-        <form className="panel form-panel" onSubmit={createBoard}>
-          <h3>Create a board</h3>
-          <label>
-            Project ID
-            <input
-              required
-              value={createInput.projectId}
-              onChange={(event) =>
-                updateCreateInput("projectId", event.target.value)
-              }
-            />
-          </label>
-          <label>
-            Project name
-            <input
-              required
-              value={createInput.projectName}
-              onChange={(event) =>
-                updateCreateInput("projectName", event.target.value)
-              }
-            />
-          </label>
-          <label>
-            Repository path
-            <input
-              required
-              value={createInput.repositoryPath}
-              onChange={(event) =>
-                updateCreateInput("repositoryPath", event.target.value)
-              }
-            />
-          </label>
-          <div className="form-row">
-            <label>
-              Base ref
-              <input
-                required
-                value={createInput.baseRef}
-                onChange={(event) =>
-                  updateCreateInput("baseRef", event.target.value)
-                }
-              />
-            </label>
-            <label>
-              Policy set
-              <input
-                required
-                value={createInput.policySetId}
-                onChange={(event) =>
-                  updateCreateInput("policySetId", event.target.value)
-                }
-              />
-            </label>
-          </div>
-          <label>
-            New board ID
-            <input
-              required
-              value={createInput.boardId}
-              onChange={(event) =>
-                updateCreateInput("boardId", event.target.value)
-              }
-            />
-          </label>
-          <label>
-            New board name
-            <input
-              required
-              value={createInput.boardName}
-              onChange={(event) =>
-                updateCreateInput("boardName", event.target.value)
-              }
-            />
-          </label>
-          <button disabled={busy} type="submit">
-            Create local board
+      <form className="panel form-panel" onSubmit={createBoard}>
+        <div>
+          <p id="repository-label">Repository</p>
+          <button
+            aria-describedby="repository-label"
+            disabled={disabled}
+            onClick={() => void chooseRepository()}
+            type="button"
+          >
+            Choose repository
           </button>
-          <button disabled={busy} onClick={onBack} type="button">
+        </div>
+        {repository !== undefined && (
+          <p className="repository-selection">
+            <span>{repository.repositoryPath}</span> <strong>Git root</strong>
+          </p>
+        )}
+        {chooserMessage !== undefined && (
+          <p aria-live="polite" className="setup-message" role="status">
+            {chooserMessage}
+          </p>
+        )}
+        <label>
+          Board name
+          <input
+            disabled={disabled || repository === undefined}
+            onChange={(event) => setBoardName(event.target.value)}
+            required
+            value={boardName}
+          />
+        </label>
+        <p className="form-hint">Suggested from the repository folder.</p>
+        <section aria-label="Safe defaults" className="safe-defaults">
+          <h3>Safe defaults</h3>
+          <p>Base branch: {repository?.baseRef ?? "—"} · Policy: Standard</p>
+        </section>
+        <details>
+          <summary>Advanced setup</summary>
+          <label>
+            Base branch
+            <input
+              disabled={disabled || repository === undefined}
+              onChange={(event) => setBaseRef(event.target.value)}
+              value={baseRef}
+            />
+          </label>
+          <p className="form-hint">
+            Changing the base branch changes where task worktrees start.
+          </p>
+          <label>
+            Policy
+            <input
+              disabled={disabled || repository === undefined}
+              onChange={(event) => setPolicySetId(event.target.value)}
+              value={policySetId}
+            />
+          </label>
+          <p className="form-hint">
+            Changing the policy changes which local actions need approval.
+          </p>
+        </details>
+        <div className="form-actions">
+          <button disabled={disabled} onClick={onBack} type="button">
             Back to your boards
           </button>
-        </form>
-      </div>
+          <button
+            disabled={disabled || repository === undefined || !boardName.trim()}
+            type="submit"
+          >
+            Create board
+          </button>
+        </div>
+      </form>
     </section>
   );
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

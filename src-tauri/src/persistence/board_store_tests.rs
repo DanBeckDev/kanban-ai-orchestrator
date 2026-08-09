@@ -10,6 +10,8 @@ use crate::domain::{
     WorkItem, WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
 };
 
+use super::sqlite_event_store_tests::transition_command;
+
 fn project(id: &str) -> Project {
     Project {
         schema: SchemaMetadata::current(),
@@ -269,6 +271,88 @@ fn validates_dependency_cycles_and_reuses_matching_dependency_commands() {
             DependencyGraphError::HardDependencyCycle { .. }
         ))
     ));
+}
+
+#[test]
+fn persists_recent_board_entries_with_derived_attention_counts() {
+    let temporary_directory = TempDir::new().expect("temporary directory should exist");
+    let repository_path = temporary_directory.path().join("project");
+    let database_path = temporary_directory.path().join("board-library.sqlite");
+    std::fs::create_dir(&repository_path).expect("repository directory should exist");
+    let mut store = opened_store(&database_path);
+    let mut project = project("project-1");
+    project.repository_path = repository_path.display().to_string();
+    store
+        .create_project(project)
+        .expect("project should persist");
+    store
+        .create_board(board("board-1", "project-1"))
+        .expect("first board should persist");
+    store
+        .create_board(Board {
+            schema: SchemaMetadata::current(),
+            id: BoardId::from("board-2"),
+            project_id: ProjectId::from("project-1"),
+            name: "Planning".to_owned(),
+        })
+        .expect("second board should persist");
+    store
+        .create_board_work_item(create_work_item_command("task-1", "board-1"))
+        .expect("work item should persist");
+    store
+        .create_board_work_item(create_work_item_command("task-2", "board-1"))
+        .expect("second work item should persist");
+    for (event_id, next_state) in [
+        ("plan-task-1", WorkItemState::Planned),
+        ("ready-task-1", WorkItemState::Ready),
+        ("run-task-1", WorkItemState::Running),
+    ] {
+        store
+            .transition_work_item(transition_command(event_id, "task-1", next_state))
+            .expect("transition should persist");
+    }
+    for (event_id, next_state) in [
+        ("plan-task-2", WorkItemState::Planned),
+        ("ready-task-2", WorkItemState::Ready),
+        ("run-task-2", WorkItemState::Running),
+        ("review-task-2", WorkItemState::Review),
+    ] {
+        store
+            .transition_work_item(transition_command(event_id, "task-2", next_state))
+            .expect("second transition should persist");
+    }
+    store
+        .record_board_opened(&BoardId::from("board-1"), "2026-08-09T08:00:00Z".to_owned())
+        .expect("first board access should persist");
+    store
+        .record_board_opened(&BoardId::from("board-2"), "2026-08-09T09:00:00Z".to_owned())
+        .expect("second board access should persist");
+    drop(store);
+
+    let reopened_store = opened_store(&database_path);
+    let records = reopened_store
+        .board_library_records()
+        .expect("library should persist across reopen");
+
+    assert_eq!(records.len(), 2);
+    let running_board = records
+        .iter()
+        .find(|record| record.board.id == BoardId::from("board-1"))
+        .expect("running board should remain in the library");
+    assert_eq!(
+        running_board.last_opened_at.as_deref(),
+        Some("2026-08-09T08:00:00Z")
+    );
+    assert_eq!(running_board.attention.active_work_item_count, 1);
+    assert_eq!(running_board.attention.needs_attention_count, 1);
+    let recent_board = records
+        .iter()
+        .find(|record| record.board.id == BoardId::from("board-2"))
+        .expect("second board should remain in the library");
+    assert_eq!(
+        recent_board.last_opened_at.as_deref(),
+        Some("2026-08-09T09:00:00Z")
+    );
 }
 
 #[test]

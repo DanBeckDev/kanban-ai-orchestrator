@@ -10,8 +10,8 @@ use tauri::{AppHandle, Manager, State};
 use crate::{
     agent::AgentProfile,
     application::{
-        AddDependencyRequest, BoardPlan, BoardService, BoardSnapshot, ConfirmPlanRequest,
-        CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
+        AddDependencyRequest, BoardLibraryEntry, BoardPlan, BoardService, BoardSnapshot,
+        ConfirmPlanRequest, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
         ImportLinearBlockerRequest, ImportLinearIssueRequest, ProposePlanRequest,
         RecordCleanCodeReviewRequest, RecordReviewCheckRequest, RecordReviewDecisionRequest,
         StartExecutionRequest, TransitionWorkItemRequest,
@@ -92,6 +92,23 @@ pub(crate) fn create_board(
 ) -> Result<BoardSnapshot, String> {
     lock_service(&state)?
         .create_board(request)
+        .map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn board_library(
+    state: State<'_, BoardDaemonState>,
+) -> Result<Vec<BoardLibraryEntry>, String> {
+    lock_service(&state)?.board_library().map_err(error_message)
+}
+
+#[tauri::command]
+pub(crate) fn open_board(
+    state: State<'_, BoardDaemonState>,
+    board_id: String,
+) -> Result<BoardSnapshot, String> {
+    lock_service(&state)?
+        .open_board(&board_id)
         .map_err(error_message)
 }
 

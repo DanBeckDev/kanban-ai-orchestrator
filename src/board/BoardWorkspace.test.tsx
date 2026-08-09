@@ -8,7 +8,12 @@ import {
 import { describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
-import { gateway, snapshot, workItem } from "./BoardWorkspace.test.fixtures";
+import {
+  boardLibraryEntry,
+  gateway,
+  snapshot,
+  workItem,
+} from "./BoardWorkspace.test.fixtures";
 import { createBoard } from "./BoardWorkspace.test.helpers";
 
 describe("board workspace", () => {
@@ -29,19 +34,6 @@ describe("board workspace", () => {
       projectId: "project-1",
       name: "MVP",
     });
-  });
-
-  it("opens an existing local board by ID", async () => {
-    const boardGateway = gateway(snapshot([workItem("task-1")]));
-    render(<App gateway={boardGateway} />);
-
-    fireEvent.change(screen.getByLabelText("Existing board ID"), {
-      target: { value: "board-1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Open board" }));
-
-    expect(await screen.findByRole("heading", { name: "MVP" })).toBeVisible();
-    expect(boardGateway.boardSnapshot).toHaveBeenCalledWith("board-1");
   });
 
   it("adds a task and a typed dependency, then renders its reason and owner", async () => {
@@ -148,15 +140,12 @@ describe("board workspace", () => {
       }),
     );
 
-    const failingGateway = gateway();
-    failingGateway.boardSnapshot = vi
+    const failingGateway = gateway(snapshot(), [boardLibraryEntry()]);
+    failingGateway.openBoard = vi
       .fn()
       .mockRejectedValue(new Error("not found"));
     render(<App gateway={failingGateway} />);
-    fireEvent.change(screen.getByLabelText("Existing board ID"), {
-      target: { value: "missing" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Open board" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("not found");
   });
 

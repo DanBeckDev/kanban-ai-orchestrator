@@ -1,0 +1,150 @@
+work_item: UX-002
+scope:
+  - "Recognition-based local board re-entry, durable recency, and availability diagnostics."
+  - "Typed Tauri board-library/open commands and their React gateway and presentation."
+  - "Migration-safe SQLite board-access storage and focused frontend/Rust coverage."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_library.rs
+      meaningful_lines: 95
+      responsibilities: "Defines the typed local board-library response and deterministic ordering."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_library_tests.rs
+      meaningful_lines: 72
+      responsibilities: "Covers recognised board listing and safe opening outcomes at the application boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 359
+      responsibilities: "Coordinates typed board commands, validation, persistence, and snapshots."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_error.rs
+      meaningful_lines: 275
+      responsibilities: "Defines actionable application errors for board commands."
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 63
+      responsibilities: "Composes and re-exports the application-layer board contracts."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 395
+      responsibilities: "Bridges typed desktop commands to the mutex-protected local service."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 79
+      responsibilities: "Registers desktop commands and composes application modules."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_library_store.rs
+      meaningful_lines: 84
+      responsibilities: "Loads local board-recognition records, derives attention counts, and persists recency."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 217
+      responsibilities: "Implements the application repository port with SQLite operations."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store.rs
+      meaningful_lines: 316
+      responsibilities: "Persists boards, projects, dependencies, and board-scoped work-item queries."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store_tests.rs
+      meaningful_lines: 341
+      responsibilities: "Covers durable board, dependency, and board-library persistence behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 29
+      responsibilities: "Composes persistence stores and exposes the SQLite event-store boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 383
+      responsibilities: "Owns SQLite event-store lifecycle and ordered schema migrations."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: "Covers safe forward migration and future-schema rejection."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 377
+      responsibilities: "Covers core event-store persistence, replay, and schema-version behavior."
+      decision: kept cohesive
+    - path: src/board/BoardLibrary.tsx
+      meaningful_lines: 85
+      responsibilities: "Presents local board recognition, attention, availability, and re-entry actions."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 130
+      responsibilities: "Presents the bounded existing advanced board-creation form and return action."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.library.test.tsx
+      meaningful_lines: 91
+      responsibilities: "Covers board-library recognition, recovery, empty state, and unavailable-repository journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 70
+      responsibilities: "Covers Linear interactions after entering a board through the library."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 364
+      responsibilities: "Provides deterministic typed board-gateway fixtures for workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 26
+      responsibilities: "Provides focused board-workspace creation setup for interaction tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 380
+      responsibilities: "Covers general board-workspace interactions outside the focused library suite."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 363
+      responsibilities: "Coordinates board-library loading, board opening, and existing board workspace interactions."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 80
+      responsibilities: "Defines the typed frontend gateway contract for board behavior."
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 71
+      responsibilities: "Covers frontend-to-Tauri command mapping."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 144
+      responsibilities: "Implements the frontend Tauri invocation adapter."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 364
+      responsibilities: "Defines typed frontend board data and command contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T09:48:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The board-library timestamp is serialized by Rust as nullable, while the frontend treated it as an omitted optional value and could render a Unix-epoch date."
+    change: "Modelled the timestamp explicitly as string-or-null and added a never-opened board test."
+  - finding: "Board opening duplicated repository-availability logic already used by board listing."
+    change: "Reused the shared availability predicate so listing and opening enforce the same local-folder rule."
+  - finding: "The general board-workspace test file exceeded the 400 meaningful-line structural limit after adding library coverage."
+    change: "Moved library journeys into a focused BoardWorkspace.library.test.tsx suite."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.90
+        statements: 86.37
+        functions: 81.26
+        branches: 85.96
+      - package_or_crate: src-tauri-rust
+        lines: 83.92
+        statements: 80.04
+        functions: 83.72
+        branches: 80.38
+    threshold_met: true
+exceptions: []

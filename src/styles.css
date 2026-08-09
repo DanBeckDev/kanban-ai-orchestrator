@@ -138,6 +138,8 @@ dd {
 
 .board-shell,
 .board-setup,
+.board-library,
+.board-library-loading,
 .board-workspace {
   padding: clamp(1rem, 3vw, 1.5rem);
   border: 1px solid #2f3e54;
@@ -151,6 +153,59 @@ dd {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.board-setup .setup-grid {
+  grid-template-columns: minmax(0, 36rem);
+}
+
+.board-library-heading,
+.board-library-entry {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.board-library-heading {
+  margin-bottom: 1rem;
+}
+
+.board-library-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-library-entry {
+  padding: 1rem;
+  border: 1px solid #314057;
+  border-radius: 0.8rem;
+  background: #111a27;
+}
+
+.board-library-entry h3,
+.board-library-entry p {
+  margin-bottom: 0.3rem;
+}
+
+.board-library-entry p {
+  color: #aebbd0;
+  font-size: 0.84rem;
+}
+
+.board-library-warning {
+  color: #f2ddb0 !important;
+}
+
+.board-library-empty {
+  max-width: 36rem;
+}
+
+.board-library-loading {
+  max-width: 42rem;
 }
 
 .board-layout {
@@ -503,6 +558,8 @@ legend,
 @media (max-width: 58rem) {
   .application-header,
   .board-header,
+  .board-library-heading,
+  .board-library-entry,
   .setup-grid,
   .board-layout {
     grid-template-columns: 1fr;

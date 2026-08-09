@@ -5,6 +5,9 @@ import type { BoardGateway } from "./types";
 
 export async function createBoard(boardGateway: BoardGateway) {
   render(<App gateway={boardGateway} />);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Create a board" }),
+  );
   fireEvent.change(screen.getByLabelText("Project ID"), {
     target: { value: "project-1" },
   });

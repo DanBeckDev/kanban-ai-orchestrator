@@ -1,4 +1,5 @@
 mod agent_profile_store;
+mod board_library_store;
 mod board_repository;
 pub(crate) mod board_store;
 mod board_store_error;

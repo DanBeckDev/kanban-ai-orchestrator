@@ -54,9 +54,9 @@ The repository provides an installable pre-commit hook. It runs the local qualit
 CI is the non-bypassable merge/release authority. The `quality:verify` job must run the full quality suite and publish coverage. Branch protection must require its successful status before merge. A green build is required even when a local hook was bypassed.
 
 CI runs changed-source structure and review-receipt policy before expensive platform and coverage
-work. Stable Cargo dependency/build artifacts may be cached only with keys that include the
-platform, compiler identity, and Cargo dependency inputs; credentials and nightly coverage artifacts
-are never cache inputs. See [ADR 0019](../decisions/0019-fast-fail-quality-ci-and-safe-rust-caching.md).
+work. Stable platform build artifacts and Cargo dependency inputs may be cached only with keys that
+include the platform, compiler identity, and Cargo dependency inputs; credentials and nightly
+coverage artifacts are never cache inputs. See [ADR 0019](../decisions/0019-fast-fail-quality-ci-and-safe-rust-caching.md).
 
 ## Receipt and exceptions
 

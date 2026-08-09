@@ -278,14 +278,16 @@ review:
         decision_reference: QUAL-006 and ADR-0014
       - finding: "Nightly coverage artifacts are expensive and are not safe to share with stable Cargo test and Clippy jobs."
         resolution: implemented
-        rationale: "The workflow caches only stable Cargo dependency and target inputs, isolates nightly coverage output, and retains the full nightly coverage gate."
+        rationale: "The portable-core matrix caches stable Cargo dependencies and target artifacts; the coverage job caches dependency downloads only, isolates nightly coverage output, and retains the full nightly coverage gate."
         decision_reference: ADR-0019
   unresolved_actionable_findings: 0
 remediation:
   - finding: "Review-receipt policy ran after the expensive quality suite, delaying feedback for a missing source inventory."
     change: "Added a lightweight policy job and made both the platform matrix and full quality suite depend on it."
   - finding: "Hosted runners rebuilt stable Cargo dependencies and the coverage executable on each run."
-    change: "Added safe compiler- and dependency-keyed Cargo caching and installed the pinned coverage executable from its verified release installer."
+    change: "Added safe compiler- and dependency-keyed Cargo caching, retaining target artifacts only where portable tests can reuse them, and installed the pinned coverage executable from its verified release installer."
+  - finding: "The isolated nightly coverage job restored a stable target directory that it cannot use, adding cache-transfer time without improving coverage execution."
+    change: "Limited that job's cache to Cargo registry and Git dependencies; the platform matrix retains the stable target cache that its tests can reuse."
   - finding: "The initial PR lacked structural review evidence for 64 source files."
     change: "Added the complete reviewed-file inventory with verified line counts and responsibility decisions."
 verification:

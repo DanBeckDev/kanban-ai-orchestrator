@@ -18,9 +18,10 @@ overwrite the stable artifacts used by the portable test matrix.
   platform or full-quality job. The expensive `quality` job requires that job to pass.
 - Keep the Linux, macOS, and Windows portable-core matrix and the Linux full quality/coverage job;
   performance work must not reduce cross-platform or coverage evidence.
-- Restore only Cargo registry, Git dependency, and stable `src-tauri/target` artifacts. Key that
-  cache by operating system, architecture, installed Rust compiler identity, and the Cargo lockfile
-  and manifest. Never cache credentials or a cross-platform target directory.
+- Restore Cargo registry and Git dependencies in every Rust job. Cache stable `src-tauri/target`
+  artifacts only for the portable-core matrix, which can reuse them; key each cache by operating
+  system, architecture, installed Rust compiler identity, and the Cargo lockfile and manifest.
+  Never cache credentials or a cross-platform target directory.
 - Put nightly `cargo-llvm-cov` output in `src-tauri/coverage-target`, outside the stable cache.
   Install the already-version-pinned coverage executable through its maintained verified release
   installer rather than compiling that executable from source in every run.
@@ -29,8 +30,9 @@ overwrite the stable artifacts used by the portable test matrix.
 ## Consequences
 
 - Policy errors stop in seconds and do not consume platform capacity.
-- A warmed cache from `main` or a previous run avoids repeat downloads and recompilation for
-  stable `cargo test` and Clippy, while Cargo still validates cache artifacts against the exact
-  compiler and dependency inputs.
+- A warmed portable-core cache from `main` or a previous run avoids repeat downloads and
+  recompilation for stable `cargo test`, while the quality job avoids downloading a stable target it
+  cannot use. Cargo still validates cache artifacts against the exact compiler and dependency
+  inputs.
 - The first run after a compiler or dependency change remains a cache miss by design. Nightly
   coverage remains independent and authoritative, rather than being made unsafely incremental.

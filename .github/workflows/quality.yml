@@ -123,16 +123,15 @@ jobs:
         id: stable-rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Restore stable Cargo dependencies and build artifacts
+      - name: Restore Cargo dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src-tauri/target
-          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
+          key: cargo-quality-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-${{ hashFiles('src-tauri/Cargo.lock', 'src-tauri/Cargo.toml') }}
           restore-keys: |
-            cargo-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-
+            cargo-quality-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.stable-rust.outputs.cachekey }}-
 
       - name: Set up nightly Rust coverage tooling
         run: |

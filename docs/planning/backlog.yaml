@@ -1,6 +1,6 @@
 schema_version: 1
 project: Kanban AI Orchestrator
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 
 # Status values: ready, in_progress, blocked, done.
 # A task starts only after all IDs in depends_on are done unless its notes record an
@@ -248,13 +248,14 @@ tasks:
   - id: REL-001
     epic: REL
     title: Build responsive terminal/activity data paths
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [FDN-002, CORE-003, EXEC-002]
     acceptance_criteria:
       - Live agent activity is exposed as normalized chunks of at most 1 KiB, retained only in a bounded per-execution buffer, and raw provider transcripts remain outside board snapshots and durable state.
       - An activity request returns no more than 32 chunks; the card viewer virtualizes its fixed-height rows, so switching cards never requires rendering an unbounded terminal snapshot.
       - Activity chunks are recorded by the existing per-execution reader/monitor path; event ingestion starts no additional runtime or worker per event.
+    notes: Completed on 2026-08-09. A bounded 1 KiB/128-chunk ephemeral daemon stream, 32-chunk paging, and a virtualized card viewer passed local quality gates and GitHub Actions full quality plus core Linux/macOS/Windows checks (run 31285775277). A Linux CI timing-dependent detached-process test was replaced with a deterministic scripted-adapter lifecycle test; the receipt records the finding and remediation.
 
   - id: REL-002
     epic: REL

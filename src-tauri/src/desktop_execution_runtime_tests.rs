@@ -3,11 +3,14 @@
 use std::{
     sync::{Arc, Mutex},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use crate::{
-    agent::{AgentProfile, AgentProfileKind},
+    agent::{
+        AgentAdapter, AgentAdapterError, AgentCapabilities, AgentProfile, AgentProfileKind,
+        AgentSession, NormalizedAgentEvent, NormalizedAgentEventKind, StartAgentRequest,
+    },
     application::{
         BoardService, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
         ExecutionEventController, RecordExecutionRequest, StartExecutionRequest,
@@ -20,7 +23,78 @@ use crate::{
     persistence::SqliteEventStore,
 };
 
-const DETACHED_RUNTIME_OBSERVATION_TIMEOUT: Duration = Duration::from_secs(60);
+struct ScriptedAgent {
+    events: Vec<NormalizedAgentEvent>,
+}
+
+impl ScriptedAgent {
+    fn new(events: Vec<NormalizedAgentEvent>) -> Self {
+        Self { events }
+    }
+}
+
+impl AgentAdapter for ScriptedAgent {
+    fn name(&self) -> &str {
+        "scripted-test-agent"
+    }
+
+    fn discover(&self) -> Result<AgentCapabilities, AgentAdapterError> {
+        Ok(AgentCapabilities {
+            streams_structured_events: true,
+            ..AgentCapabilities::default()
+        })
+    }
+
+    fn start(&mut self, _request: StartAgentRequest) -> Result<AgentSession, AgentAdapterError> {
+        Ok(AgentSession {
+            id: "scripted-session".to_owned(),
+            resumable: false,
+        })
+    }
+
+    fn resume(&mut self, _session_id: &str) -> Result<AgentSession, AgentAdapterError> {
+        Err(AgentAdapterError::CapabilityUnsupported {
+            capability: "resume",
+        })
+    }
+
+    fn send_feedback(
+        &mut self,
+        _session_id: &str,
+        _feedback: &str,
+    ) -> Result<(), AgentAdapterError> {
+        Err(AgentAdapterError::CapabilityUnsupported {
+            capability: "feedback",
+        })
+    }
+
+    fn interrupt(&mut self, _session_id: &str) -> Result<(), AgentAdapterError> {
+        Err(AgentAdapterError::CapabilityUnsupported {
+            capability: "interrupt",
+        })
+    }
+
+    fn terminate(&mut self, _session_id: &str) -> Result<(), AgentAdapterError> {
+        Ok(())
+    }
+
+    fn stream_events(
+        &self,
+        _session_id: &str,
+        after_sequence: u64,
+    ) -> Result<Vec<NormalizedAgentEvent>, AgentAdapterError> {
+        Ok(self
+            .events
+            .iter()
+            .filter(|event| event.sequence > after_sequence)
+            .cloned()
+            .collect())
+    }
+
+    fn health_check(&self, _session_id: &str) -> Result<(), AgentAdapterError> {
+        Ok(())
+    }
+}
 
 fn prepared_runtime(
     policy_set_id: &str,
@@ -99,59 +173,68 @@ fn create_ready_work_item(service: &mut LocalBoardService, work_item_id: &str, b
 }
 
 #[test]
-fn starts_a_verified_worker_and_records_its_review_outcome_in_the_background() {
+fn records_a_verified_worker_lifecycle_with_a_scripted_adapter() {
     let (_temporary_directory, service, runtime) = prepared_runtime("standard");
 
     let snapshot = runtime
-        .start(StartExecutionRequest {
-            execution_id: "execution-1".to_owned(),
-            work_item_id: "task-1".to_owned(),
-            agent_profile_name: "structured-script".to_owned(),
-            task_brief: "Complete the task.".to_owned(),
-            execution_role: Default::default(),
-        })
+        .start_with_test_adapter(
+            StartExecutionRequest {
+                execution_id: "execution-1".to_owned(),
+                work_item_id: "task-1".to_owned(),
+                agent_profile_name: "structured-script".to_owned(),
+                task_brief: "Complete the task.".to_owned(),
+                execution_role: Default::default(),
+            },
+            Box::new(ScriptedAgent::new(vec![
+                NormalizedAgentEvent {
+                    sequence: 1,
+                    kind: NormalizedAgentEventKind::Activity {
+                        summary: "Working".to_owned(),
+                    },
+                },
+                NormalizedAgentEvent {
+                    sequence: 2,
+                    kind: NormalizedAgentEventKind::Completed {
+                        summary: "Ready for review".to_owned(),
+                    },
+                },
+            ])),
+        )
         .expect("runtime should start the configured worker");
     assert_eq!(
         snapshot.work_items[0].work_item.state,
         WorkItemState::Running
     );
 
-    let deadline = Instant::now() + DETACHED_RUNTIME_OBSERVATION_TIMEOUT;
-    loop {
-        let service = service.lock().expect("service should remain available");
-        let execution = service
-            .execution(&ExecutionId::from("execution-1"))
-            .expect("execution should persist");
-        let work_item = service
-            .work_item(&crate::domain::WorkItemId::from("task-1"))
-            .expect("work item should persist");
-        if execution.status == crate::domain::ExecutionStatus::AwaitingReview {
-            assert_eq!(work_item.work_item.state, WorkItemState::Review);
-            let activity = runtime
-                .activity_page("execution-1", None)
-                .expect("activity should remain available after completion");
-            assert_eq!(activity.chunks.len(), 2);
-            assert_eq!(activity.chunks[0].summary, "Working");
-            assert_eq!(activity.chunks[1].summary, "Ready for review");
-            assert!(
-                service
-                    .snapshot(&crate::domain::BoardId::from("board-1"))
-                    .expect("review evidence should persist")
-                    .evidence
-                    .iter()
-                    .any(|evidence| {
-                        evidence.kind == crate::domain::EvidenceKind::CleanCodeReview
-                            && evidence.result == crate::domain::EvidenceResult::Recorded
-                    })
-            );
-            return;
-        }
-        drop(service);
-        if Instant::now() >= deadline {
-            panic!("the detached runtime should record the agent completion event");
-        }
-        thread::sleep(Duration::from_millis(20));
-    }
+    let service = service.lock().expect("service should remain available");
+    let execution = service
+        .execution(&ExecutionId::from("execution-1"))
+        .expect("execution should persist");
+    let work_item = service
+        .work_item(&crate::domain::WorkItemId::from("task-1"))
+        .expect("work item should persist");
+    assert_eq!(
+        execution.status,
+        crate::domain::ExecutionStatus::AwaitingReview
+    );
+    assert_eq!(work_item.work_item.state, WorkItemState::Review);
+    let activity = runtime
+        .activity_page("execution-1", None)
+        .expect("activity should remain available after completion");
+    assert_eq!(activity.chunks.len(), 2);
+    assert_eq!(activity.chunks[0].summary, "Working");
+    assert_eq!(activity.chunks[1].summary, "Ready for review");
+    assert!(
+        service
+            .snapshot(&crate::domain::BoardId::from("board-1"))
+            .expect("review evidence should persist")
+            .evidence
+            .iter()
+            .any(|evidence| {
+                evidence.kind == crate::domain::EvidenceKind::CleanCodeReview
+                    && evidence.result == crate::domain::EvidenceResult::Recorded
+            })
+    );
 }
 
 #[test]

@@ -35,3 +35,15 @@
 **Outcome:** signed macOS release, continuously tested Windows/Linux builds, performance and crash recovery validation, optional webhook-relay design, onboarding, and import/migration tooling.
 
 **Exit gate:** the release gates in `docs/quality/reliability.md` are automated where feasible and manually verified otherwise.
+
+## Phase 6 — Usable local desktop experience
+
+**Outcome:** the existing durable, dependency-aware core becomes a clear daily
+workspace for new and returning developers instead of a form for internal IDs.
+
+**Exit gate:** a developer can select a local Git repository, name and create a
+board without entering an ID or path manually, return by recognising a saved
+board, produce and confirm a plan from an outcome, and explain any blocker or
+recovery state from the board. Keyboard-only users have an equivalent dependency
+and decision path. The normal Linear connection flow is product-ready rather than
+asking for OAuth implementation parameters.

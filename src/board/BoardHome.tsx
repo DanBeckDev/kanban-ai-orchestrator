@@ -41,7 +41,7 @@ export function BoardHome({ snapshot, onOpenTask }: BoardHomeProps) {
       <header className="board-home-header">
         <div>
           <p className="eyebrow">Board home</p>
-          <h3 id="board-home-title">What Needs Your Attention</h3>
+          <h3 id="board-home-title">Your next decisions</h3>
           <p>{boardHomeSummary(attention, activeWork, delivery.ready)}</p>
         </div>
         <Badge variant={attention.length > 0 ? "destructive" : "secondary"}>
@@ -55,7 +55,7 @@ export function BoardHome({ snapshot, onOpenTask }: BoardHomeProps) {
           icon={CircleAlertIcon}
           items={attention}
           onOpenTask={onOpenTask}
-          title="Needs Attention"
+          title="Needs your attention"
         />
         <FocusList
           emptyCopy="No agents are working right now."
@@ -63,7 +63,7 @@ export function BoardHome({ snapshot, onOpenTask }: BoardHomeProps) {
           icon={BotIcon}
           items={activeWork}
           onOpenTask={onOpenTask}
-          title="Work in Motion"
+          title="Work in motion"
         />
       </div>
       <section
@@ -72,7 +72,7 @@ export function BoardHome({ snapshot, onOpenTask }: BoardHomeProps) {
       >
         <div className="delivery-picture-heading">
           <CircleDotDashedIcon aria-hidden="true" />
-          <h4 id="delivery-picture-title">Delivery Picture</h4>
+          <h4 id="delivery-picture-title">Delivery picture</h4>
         </div>
         <dl>
           {delivery.entries.map(({ count, label }) => (

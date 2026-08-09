@@ -479,7 +479,7 @@ tasks:
   - id: UX-004
     epic: UX
     title: Make the board home outcome-first and action-oriented
-    status: ready
+    status: done
     priority: P0
     depends_on: [UX-001, UX-008, UX-003, ORCH-004]
     acceptance_criteria:

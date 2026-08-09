@@ -16,19 +16,21 @@ export type BoardColumn = Readonly<{
 }>;
 
 export const boardColumns: readonly BoardColumn[] = [
-  { id: "planned", label: "Plan", states: ["inbox", "planned"] },
-  { id: "ready", label: "Ready", states: ["ready"] },
-  { id: "active", label: "Active", states: ["running", "awaiting_input"] },
+  {
+    id: "backlog",
+    label: "Backlog",
+    states: ["inbox", "planned", "ready"],
+  },
+  {
+    id: "in-progress",
+    label: "In progress",
+    states: ["running", "awaiting_input"],
+  },
   { id: "review", label: "Review", states: ["review"] },
   {
     id: "done",
     label: "Done",
     states: ["done", "cancelled"],
-  },
-  {
-    id: "recovery",
-    label: "Recovery",
-    states: ["blocked", "failed", "interrupted"],
   },
 ];
 

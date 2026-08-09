@@ -55,6 +55,15 @@ export function openTask(title: string) {
   fireEvent.click(action);
 }
 
+export async function selectOption(label: string, name: string | RegExp) {
+  fireEvent.pointerDown(screen.getByLabelText(label), {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+  fireEvent.click(await screen.findByRole("option", { name }));
+}
+
 function selectBoardView(name: "Dependencies" | "Settings") {
   fireEvent.pointerDown(screen.getByRole("button", { name: "Workflow" }), {
     button: 0,

@@ -382,6 +382,13 @@
   font-size: 0.78rem;
 }
 
+.compact-work-item-actor {
+  margin: 0.6rem 0 0;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .board-empty-state {
   min-height: 20rem;
   background: color-mix(in oklch, var(--card), transparent 8%);
@@ -597,29 +604,131 @@
 }
 
 .work-item-card {
-  padding: 0.9rem;
-  border: 1px solid color-mix(in oklch, var(--border), transparent 15%);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  box-shadow: 0 0.5rem 1.3rem color-mix(in oklch, var(--foreground), transparent 94%);
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }
 
-.work-item-card h4 {
-  margin: 0.35rem 0;
+.task-decision-card[data-state="failed"] {
+  border-inline-start: 0.25rem solid var(--status-danger);
 }
 
-.work-item-card > p,
-.work-item-card > .budget-summary,
-.work-item-card > .review-requirement {
-  margin-bottom: 0.65rem;
+.task-decision-card[data-state="blocked"],
+.task-decision-card[data-state="awaiting_input"] {
+  border-inline-start: 0.25rem solid var(--status-warning);
 }
 
-.card-state {
-  color: var(--primary);
-  font-size: 0.69rem;
-  font-weight: 720;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.task-decision-card[data-state="interrupted"] {
+  border-inline-start: 0.25rem dashed var(--status-danger);
+}
+
+.task-decision-card[data-state="review"] {
+  border-inline-start: 0.25rem solid var(--primary);
+}
+
+.task-decision-card[data-state="done"] {
+  border-inline-start: 0.25rem solid var(--status-success);
+}
+
+.task-decision-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.task-decision-content > dl,
+.task-dependency-list dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.task-decision-content dt,
+.task-dependency-list dt {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.task-decision-content dd,
+.task-dependency-list dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.task-decision-actor {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.task-decision-actor svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.task-action-panel-content,
+.task-detail-sections [data-slot="card-content"] {
+  display: grid;
+  gap: 1rem;
+}
+
+.task-action-panel-content > section,
+.task-action-panel-content > form,
+.task-action-panel-content > [data-slot="accordion"] {
+  min-width: 0;
+}
+
+.task-detail-disclosures [data-slot="accordion-content"] > div {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.task-detail-disclosures [data-slot="accordion-content"] p {
+  margin: 0;
+}
+
+.task-dependency-list,
+.task-history-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-dependency-list li,
+.task-history-list li {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--muted), transparent 40%);
+}
+
+.task-dependency-list li > strong,
+.task-history-list li > p {
+  margin: 0;
+}
+
+.task-dependency-list li > span,
+.task-history-list li > span,
+.task-history-list time {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.task-state-change-form {
+  padding-top: 0.5rem;
+}
+
+.completion-evidence-fields {
+  margin: 0;
 }
 
 .budget-summary,
@@ -660,40 +769,12 @@
   color: var(--muted-foreground);
 }
 
-.execution-history,
-.evidence-history,
-.decision-history,
 .activity-stream,
 .external-links,
 .execution-control,
 .recovery-actions {
   margin: 0.8rem 0;
   font-size: 0.78rem;
-}
-
-.execution-history ol,
-.evidence-history ol,
-.decision-history ol {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0.55rem 0 0;
-  padding-left: 1.15rem;
-}
-
-.execution-history p,
-.evidence-history p,
-.decision-history p {
-  margin-bottom: 0.2rem;
-}
-
-.execution-history span,
-.evidence-history span,
-.decision-history span,
-.execution-history time,
-.evidence-history time,
-.decision-history time {
-  display: block;
-  color: var(--muted-foreground);
 }
 
 .activity-stream h5 {
@@ -798,6 +879,11 @@
   }
 
   .dependency-view-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-decision-content > dl,
+  .task-dependency-list dl {
     grid-template-columns: 1fr;
   }
 

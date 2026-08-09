@@ -47,12 +47,11 @@ export function CompactWorkItemCard({
         </CardHeader>
         <CardContent>
           <p className="compact-work-item-summary">{workItem.description}</p>
+          <p className="compact-work-item-actor">
+            {principalActor(latestExecution?.adapterName)}
+          </p>
           <p className="compact-work-item-signal">
-            {taskSignal(
-              waitingOn,
-              workItemTitles,
-              latestExecution?.adapterName,
-            )}
+            {taskSignal(waitingOn, workItemTitles, workItem.state)}
           </p>
         </CardContent>
         <CardFooter>
@@ -83,7 +82,7 @@ export function CompactWorkItemCard({
 function taskSignal(
   blockers: readonly Dependency[],
   workItemTitles: ReadonlyMap<string, string>,
-  adapterName?: string,
+  state: WorkItem["state"],
 ): string {
   const blockedBy = blockers
     .map((dependency) => workItemTitles.get(dependency.upstreamWorkItemId))
@@ -93,9 +92,34 @@ function taskSignal(
       ? `Waiting on ${blockedBy[0]}`
       : `Waiting on ${blockedBy[0]} + ${blockedBy.length - 1} more`;
   }
+  return stateSignal(state);
+}
+
+function principalActor(adapterName?: string): string {
   return adapterName === undefined
-    ? "Ready for the next decision"
+    ? "No task worker has run yet."
     : `Last worked by ${adapterName}`;
+}
+
+function stateSignal(state: WorkItem["state"]): string {
+  switch (state) {
+    case "running":
+      return "A worker is active.";
+    case "awaiting_input":
+      return "A worker needs input.";
+    case "review":
+      return "A review decision is needed.";
+    case "done":
+      return "Completion evidence is available.";
+    case "blocked":
+    case "failed":
+    case "interrupted":
+      return "A recovery decision is needed.";
+    case "cancelled":
+      return "This task is cancelled.";
+    default:
+      return "Ready for the next decision.";
+  }
 }
 
 function badgeVariant(

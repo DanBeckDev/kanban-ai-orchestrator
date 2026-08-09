@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AgentLaunchForm } from "./AgentLaunchForm";
@@ -39,9 +39,12 @@ describe("AgentLaunchForm", () => {
     const form = screen.getByRole("form", {
       name: "Start independent reviewer for Task one",
     });
-    fireEvent.change(within(form).getByLabelText("Agent profile"), {
-      target: { value: "reviewer" },
+    fireEvent.pointerDown(screen.getByLabelText("Agent profile"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
     });
+    fireEvent.click(await screen.findByRole("option", { name: /reviewer/ }));
     fireEvent.submit(form);
 
     await vi.waitFor(() => expect(onStart).toHaveBeenCalledOnce());

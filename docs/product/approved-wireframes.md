@@ -143,7 +143,9 @@ without its existing authorization.
 - UX-004 implements the Workflow view, organiser composer, manual task route,
   and view-menu structure. It supersedes the earlier card-column assumption.
 - UX-005 implements the standalone Dependencies view and accessible graph/list
-  equivalence. UX-006 implements focused ticket AI and progressive disclosure.
+  equivalence. UX-006 implements the focused ticket entry and progressive
+  disclosure; ORCH-008 supplies the typed daemon contract for the complete
+  ticket-prompt action set.
 - ORCH-006 implements draft editing plus distinct organiser/worker selection;
   ORCH-007 implements durable autonomous supervision. These product surfaces
   must use their daemon-authoritative contracts rather than UI timers.

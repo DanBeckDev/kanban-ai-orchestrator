@@ -20,7 +20,7 @@ describe("focused board and agent settings", () => {
     ).toBeNull();
     expect(screen.queryByRole("form", { name: "Add dependency" })).toBeNull();
     expect(
-      screen.queryByRole("form", { name: "Start agent for Task ready-task" }),
+      screen.queryByRole("form", { name: "Prompt AI for Task ready-task" }),
     ).toBeNull();
 
     openTask("Task ready-task");
@@ -73,11 +73,11 @@ describe("focused board and agent settings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     openTask("Task ready-task");
     const launchForm = await screen.findByRole("form", {
-      name: "Start agent for Task ready-task",
+      name: "Prompt AI for Task ready-task",
     });
-    expect(within(launchForm).getByLabelText("Agent profile")).toHaveValue(
-      "Default Codex CLI",
-    );
+    expect(
+      within(launchForm).getByLabelText("Agent profile"),
+    ).toHaveTextContent("Default Codex CLI");
   });
 
   it("does not select an agent when its safe profile could not be saved", async () => {

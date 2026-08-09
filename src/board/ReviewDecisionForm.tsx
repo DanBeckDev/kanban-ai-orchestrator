@@ -1,5 +1,14 @@
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
 import { timestamp } from "./presentation";
 import type { RecordReviewDecisionRequest, WorkItem } from "./types";
 
@@ -43,41 +52,50 @@ export function ReviewDecisionForm({
       className="review-check-form"
       onSubmit={submit}
     >
-      <h5>Review decision</h5>
-      <label>
-        Reviewer
-        <input
-          required
-          value={reviewer}
-          onChange={(event) => setReviewer(event.target.value)}
-        />
-      </label>
-      <label>
-        Decision summary
-        <input
-          required
-          placeholder="e.g. Acceptance criteria verified"
-          value={summary}
-          onChange={(event) => setSummary(event.target.value)}
-        />
-      </label>
-      <label className="checkbox-label">
-        <input
-          checked={accepted}
-          type="checkbox"
-          onChange={(event) => setAccepted(event.target.checked)}
-        />
-        Accept this work
-      </label>
-      {!accepted && (
-        <p className="field-hint">
-          Kanban will keep the review record and return this task to Ready with
-          this summary.
-        </p>
-      )}
-      <button disabled={busy} type="submit">
-        {accepted ? "Record decision" : "Return for correction"}
-      </button>
+      <FieldGroup>
+        <h5>Review decision</h5>
+        <Field>
+          <FieldLabel htmlFor="reviewer">Reviewer</FieldLabel>
+          <Input
+            id="reviewer"
+            required
+            value={reviewer}
+            onChange={(event) => setReviewer(event.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="review-decision-summary">
+            Decision summary
+          </FieldLabel>
+          <Input
+            id="review-decision-summary"
+            required
+            placeholder="e.g. Acceptance criteria verified"
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+          />
+        </Field>
+        <Field orientation="horizontal">
+          <Input
+            checked={accepted}
+            id="review-decision-accepted"
+            type="checkbox"
+            onChange={(event) => setAccepted(event.target.checked)}
+          />
+          <FieldLabel htmlFor="review-decision-accepted">
+            Accept this work
+          </FieldLabel>
+        </Field>
+        {!accepted && (
+          <FieldDescription>
+            Kanban will keep the review record and return this task to Ready
+            with this summary.
+          </FieldDescription>
+        )}
+        <Button disabled={busy} type="submit">
+          {accepted ? "Record decision" : "Return for correction"}
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

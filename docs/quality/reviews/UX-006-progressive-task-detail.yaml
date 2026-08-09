@@ -1,0 +1,151 @@
+work_item: UX-006
+scope:
+  - "Focused task-detail decision summary, action panel, and progressive disclosures."
+  - "Distinct review, active, awaiting-input, completion, and recovery presentation."
+  - "shadcn task-action controls, reduced-motion accordion behaviour, and responsive decision layout."
+  - "Board-card actor and next-fact presentation without dense execution detail."
+source_structure:
+  reviewed_files:
+    - path: src/board/AgentLaunchForm.test.tsx
+      meaningful_lines: 54
+      responsibilities: "Covers the typed independent-review launch request through the accessible agent form."
+      decision: kept cohesive
+    - path: src/board/AgentLaunchForm.tsx
+      meaningful_lines: 138
+      responsibilities: "Collects a safe selected agent profile and bounded task brief before a typed execution request."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.agent.test.tsx
+      meaningful_lines: 91
+      responsibilities: "Covers agent profile selection and capability presentation in a ready task."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 97
+      responsibilities: "Covers focused settings and the saved default worker selection."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 67
+      responsibilities: "Supplies reusable board navigation and accessible Select interactions for workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 345
+      responsibilities: "Covers existing task, dependency, lifecycle, recovery, activity, and review journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.task-detail.test.tsx
+      meaningful_lines: 66
+      responsibilities: "Covers progressive disclosure, state-specific recovery presentation, and focus restoration."
+      decision: kept cohesive
+    - path: src/board/CleanCodeReviewForm.test.tsx
+      meaningful_lines: 75
+      responsibilities: "Covers selecting a completed independent reviewer and recording its structured result."
+      decision: kept cohesive
+    - path: src/board/CleanCodeReviewForm.tsx
+      meaningful_lines: 115
+      responsibilities: "Records bounded structured independent Clean Code review evidence."
+      decision: kept cohesive
+    - path: src/board/CompactWorkItemCard.test.tsx
+      meaningful_lines: 55
+      responsibilities: "Covers compact worker and blocker facts while excluding workspace detail."
+      decision: kept cohesive
+    - path: src/board/CompactWorkItemCard.tsx
+      meaningful_lines: 130
+      responsibilities: "Renders the workflow-card title, state, principal actor, and next relevant fact."
+      decision: kept cohesive
+    - path: src/board/ExecutionControl.tsx
+      meaningful_lines: 33
+      responsibilities: "Offers the existing typed direct-worker stop action only for controllable attempts."
+      decision: kept cohesive
+    - path: src/board/RecoveryActions.tsx
+      meaningful_lines: 89
+      responsibilities: "Explains and submits typed recovery, cancellation, and attempt-inspection actions."
+      decision: kept cohesive
+    - path: src/board/ReviewCheckForm.tsx
+      meaningful_lines: 65
+      responsibilities: "Records a bounded quality-gate result during review."
+      decision: kept cohesive
+    - path: src/board/ReviewDecisionForm.tsx
+      meaningful_lines: 95
+      responsibilities: "Records a review decision and routes rejected work through the typed correction transition."
+      decision: kept cohesive
+    - path: src/board/TaskActionPanel.tsx
+      meaningful_lines: 210
+      responsibilities: "Composes state-permitted task actions without owning daemon state or policy decisions."
+      decision: kept cohesive
+    - path: src/board/TaskDecisionSummary.tsx
+      meaningful_lines: 79
+      responsibilities: "Presents the current task decision, evidence status, worker, blockers, and permitted action."
+      decision: kept cohesive
+    - path: src/board/TaskDetailSections.tsx
+      meaningful_lines: 259
+      responsibilities: "Contains the task-detail disclosures for criteria, dependencies, bounded activity, evidence, history, and linked work."
+      decision: kept cohesive
+    - path: src/board/TaskStateChangeForm.tsx
+      meaningful_lines: 185
+      responsibilities: "Collects a permitted manual state change and completion evidence."
+      decision: kept cohesive
+    - path: src/board/WorkItemCard.tsx
+      meaningful_lines: 88
+      responsibilities: "Coordinates the focused task-detail presentation from snapshot data and typed callbacks."
+      decision: kept cohesive
+    - path: src/board/taskDetailPresentation.test.ts
+      meaningful_lines: 78
+      responsibilities: "Covers every state decision and safe worker, evidence, and blocker summary."
+      decision: kept cohesive
+    - path: src/board/taskDetailPresentation.ts
+      meaningful_lines: 160
+      responsibilities: "Derives display-only, safe task-decision facts from the daemon snapshot."
+      decision: kept cohesive
+    - path: src/board/taskDetailStyles.test.ts
+      meaningful_lines: 17
+      responsibilities: "Guards the documented responsive decision layout contract independently of operating-system line endings."
+      decision: kept cohesive
+    - path: src/components/ui/accordion.test.tsx
+      meaningful_lines: 24
+      responsibilities: "Guards reduced-motion accordion animation classes."
+      decision: kept cohesive
+    - path: src/components/ui/accordion.tsx
+      meaningful_lines: 83
+      responsibilities: "Wraps the shared accordion primitive with project styling and accessible motion preference support."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T23:20:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "A generic ticket prompt could imply state-changing effects that the daemon does not yet own."
+        resolution: implemented
+        rationale: "The focused UI exposes only existing typed start, review, recovery, and transition commands; ORCH-008 now tracks the complete daemon-owned ticket-prompt contract."
+        decision_reference: ORCH-008
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The previous task detail mixed decision context, actions, evidence, activity, recovery, and history in one nearly 400-line component."
+    change: "Split it into decision, action, disclosure, state-change, and presentation components with one responsibility each."
+  - finding: "Task-action controls used native form controls despite the project shadcn UI requirement."
+    change: "Replaced task agent, review, recovery, execution, and state-change controls with shared shadcn components and stable accessible labels."
+  - finding: "Review work could appear to permit a generic return-to-Ready transition that bypassed the dedicated review decision."
+    change: "Named and tested the permitted-manual-state rule so review correction remains coupled to its typed recorded decision."
+  - finding: "Accordion transitions and dense decision facts did not explicitly account for reduced motion or narrow screens."
+    change: "Added shared reduced-motion accordion classes, responsive decision grids, and regression coverage for both contracts."
+  - finding: "The responsive CSS contract test assumed Unix line endings and failed in the Windows portable-core check."
+    change: "Normalize stylesheet line endings in the test before asserting the responsive CSS contract."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 88.12
+        statements: 87.14
+        functions: 85.24
+        branches: 83.40
+      - package_or_crate: src-tauri-rust
+        lines: 84.58
+        statements: 81.03
+        functions: 84.53
+        branches: 80.28
+    threshold_met: true
+exceptions: []

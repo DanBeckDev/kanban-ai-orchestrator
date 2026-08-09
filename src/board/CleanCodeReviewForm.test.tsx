@@ -57,9 +57,14 @@ describe("CleanCodeReviewForm", () => {
     const form = screen.getByRole("form", {
       name: "Record Clean Code review for Task one",
     });
-    fireEvent.change(screen.getByLabelText("Completed reviewer run"), {
-      target: { value: "review-execution-1" },
+    fireEvent.pointerDown(screen.getByLabelText("Completed reviewer run"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
     });
+    fireEvent.click(
+      await screen.findByRole("option", { name: /review-execution-1/ }),
+    );
     fireEvent.change(screen.getByLabelText("Decision summary"), {
       target: { value: "No actionable findings." },
     });

@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
 import { timestamp } from "./presentation";
 import type { RecordReviewCheckRequest, WorkItem } from "./types";
 
@@ -37,27 +41,31 @@ export function ReviewCheckForm({
       className="review-check-form"
       onSubmit={submit}
     >
-      <h5>Quality gate</h5>
-      <label>
-        Result summary
-        <input
-          required
-          placeholder="e.g. npm test passed"
-          value={summary}
-          onChange={(event) => setSummary(event.target.value)}
-        />
-      </label>
-      <label className="checkbox-label">
-        <input
-          checked={passed}
-          type="checkbox"
-          onChange={(event) => setPassed(event.target.checked)}
-        />
-        Check passed
-      </label>
-      <button disabled={busy} type="submit">
-        Record quality gate
-      </button>
+      <FieldGroup>
+        <h5>Quality gate</h5>
+        <Field>
+          <FieldLabel htmlFor="quality-gate-summary">Result summary</FieldLabel>
+          <Input
+            id="quality-gate-summary"
+            required
+            placeholder="e.g. npm test passed"
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+          />
+        </Field>
+        <Field orientation="horizontal">
+          <Input
+            checked={passed}
+            id="quality-gate-passed"
+            type="checkbox"
+            onChange={(event) => setPassed(event.target.checked)}
+          />
+          <FieldLabel htmlFor="quality-gate-passed">Check passed</FieldLabel>
+        </Field>
+        <Button disabled={busy} type="submit">
+          Record quality gate
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

@@ -1,0 +1,74 @@
+work_item: REL-003
+scope:
+  - "Named, exact release-gate scenarios for restart, cancellation, dependencies, worktree races/recovery, connector conflicts, and scope escape."
+  - "Cross-platform advisory lock preventing a second desktop daemon from opening the same local board database or creating competing worktrees."
+  - "Three-platform command wiring and owned manual-release evidence requirements."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 382
+      responsibilities: "Initializes one local board daemon and exposes typed Tauri command boundaries."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 77
+      responsibilities: "Registers application modules and typed desktop commands."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_daemon_lock.rs
+      meaningful_lines: 96
+      responsibilities: "Owns the lifetime-held cross-platform local-daemon lock and its focused error coverage."
+      decision: kept cohesive
+    - path: scripts/verify-reliability-scenarios.mjs
+      meaningful_lines: 84
+      responsibilities: "Runs named exact Rust release-scenario tests with platform-aware selection."
+      decision: kept cohesive
+    - path: scripts/verify-reliability-scenarios.test.mjs
+      meaningful_lines: 63
+      responsibilities: "Covers reliability-scenario selection, Cargo command construction, and summary reporting."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T01:23:12Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric:
+      - finding: "Reliability-critical scenarios were covered only as unnamed members of broad test suites, making release evidence difficult to audit."
+      - finding: "The desktop documentation assumed a second local process could not share the app-data directory, but the runtime did not enforce that boundary."
+      - finding: "The initial lock open options left truncate behavior implicit and failed the warning-as-error Clippy gate."
+      - finding: "Initial lock error-path coverage lowered Rust statement coverage below the mandatory 80% floor."
+    considers:
+      - finding: "The generic adapter cannot safely claim process-tree cancellation on Windows."
+        resolution: accepted
+        rationale: "The command runs the direct-process cancellation scenario on Unix, while the release register assigns a provider-profile owner and blocks a Windows capability claim without target-native evidence."
+        decision_reference: EXEC-003 and docs/quality/platform-release.md
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Reliability-critical scenarios were covered only as unnamed members of broad test suites, making release evidence difficult to audit."
+    change: "Added a focused, unit-tested reliability command that invokes exact named Rust tests and wired it into the Linux, macOS, and Windows portable-core command."
+  - finding: "The desktop documentation assumed a second local process could not share the app-data directory, but the runtime did not enforce that boundary."
+    change: "Added a lifetime-held fs2 exclusive lock before SQLite startup; a duplicate daemon fails before it can open board state or provision a worktree."
+  - finding: "The initial lock open options left truncate behavior implicit and failed the warning-as-error Clippy gate."
+    change: "Declared truncate(false), preserving the lock file rather than rewriting it."
+  - finding: "Initial lock error-path coverage lowered Rust statement coverage below the mandatory 80% floor."
+    change: "Added focused tests for duplicate-lock and invalid-lock-path errors, including actionable messages and source preservation."
+verification:
+  commands:
+    - command: npm run test:platform
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.64
+        statements: 86.10
+        functions: 80.85
+        branches: 85.30
+      - package_or_crate: src-tauri-rust
+        lines: 83.95
+        statements: 80.15
+        functions: 83.77
+        branches: 80.03
+    threshold_met: true
+exceptions: []

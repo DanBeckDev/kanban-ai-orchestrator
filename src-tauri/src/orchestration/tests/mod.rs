@@ -11,6 +11,7 @@ use crate::{
 };
 
 pub(super) mod plan_tests;
+pub(super) mod planner_tests;
 pub(super) mod scheduler_tests;
 
 #[derive(Default)]

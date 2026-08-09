@@ -5,9 +5,9 @@ export type ProductMetadata = Readonly<{
 
 export const productMetadata: ProductMetadata = {
   name: "Kanban AI Orchestrator",
-  milestone: "Foundation",
+  milestone: "Local board core",
 };
 
 export function foundationMessage(metadata: ProductMetadata): string {
-  return `${metadata.name} is ready for its durable local core.`;
+  return `${metadata.name} persists local projects, boards, tasks, and dependencies through its Rust core.`;
 }

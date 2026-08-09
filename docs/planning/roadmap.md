@@ -26,7 +26,7 @@
 
 ## Phase 4 — Linear first-class alpha
 
-**Outcome:** OAuth connection, board/project mapping, dependency import, bidirectional configured-state sync, reconciliation, and safe comments/evidence links.
+**Outcome:** OAuth connection, board/project mapping, dependency import, explicit shared-field reconciliation, and safe manually sent comments/evidence links. Configured status writes, issue publishing, webhooks, and automatic synchronization remain later opt-in work.
 
 **Exit gate:** a real Linear project can be linked without data loss, silent overwrites, or an unexplainable difference between systems.
 

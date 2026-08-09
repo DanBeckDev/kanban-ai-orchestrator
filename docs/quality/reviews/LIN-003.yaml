@@ -1,0 +1,229 @@
+work_item: LIN-003
+scope:
+  - "Durable, idempotent Linear comment outbox with restart-safe uncertain-delivery recovery."
+  - "Explicit Linear shared-field refresh that preserves local and remote values as reconciliation records."
+  - "Least-privilege OAuth reauthorization, typed GraphQL boundaries, and first-class desktop controls."
+  - "Linear connector architecture, privacy contract, reliability requirements, and roadmap documentation."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 304
+      responsibilities: "Defines the connector-neutral board repository port used by application services."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_error.rs
+      meaningful_lines: 262
+      responsibilities: "Formats typed application errors without leaking connector internals."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_snapshot.rs
+      meaningful_lines: 46
+      responsibilities: "Defines the daemon-to-UI board snapshot contract."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_sync_request.rs
+      meaningful_lines: 17
+      responsibilities: "Defines narrow deserialized commands for Linear comment and reconciliation intents."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_sync_service.rs
+      meaningful_lines: 286
+      responsibilities: "Validates safe Linear intents and records immutable outbox and reconciliation outcomes."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_sync_service_tests.rs
+      meaningful_lines: 184
+      responsibilities: "Covers comment privacy, idempotency, delivery state, and shared-field comparison behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 57
+      responsibilities: "Exports application commands and registers focused application tests."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 357
+      responsibilities: "Bootstraps the local daemon and exposes the existing core Tauri command boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_linear_sync.rs
+      meaningful_lines: 224
+      responsibilities: "Owns short-lived Linear sync commands, external-I/O lock boundaries, and deterministic refresh identifiers."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/mod.rs
+      meaningful_lines: 26
+      responsibilities: "Re-exports provider-neutral domain records."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/connector_sync.rs
+      meaningful_lines: 58
+      responsibilities: "Defines versioned, connector-neutral outbox and reconciliation domain records."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/mod.rs
+      meaningful_lines: 27
+      responsibilities: "Registers domain model modules and public types."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/schema.rs
+      meaningful_lines: 44
+      responsibilities: "Defines stable typed identifiers and schema metadata."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 76
+      responsibilities: "Registers the desktop command surface and top-level modules."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/comment_publisher.rs
+      meaningful_lines: 127
+      responsibilities: "Contains the single typed Linear comment-mutation boundary and response parser."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/graphql.rs
+      meaningful_lines: 359
+      responsibilities: "Contains bounded read-only Linear GraphQL queries and typed response parsing."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/mod.rs
+      meaningful_lines: 19
+      responsibilities: "Exports Linear adapter components at the provider boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/oauth.rs
+      meaningful_lines: 372
+      responsibilities: "Owns PKCE authorization state, targeted scopes, secure credential refresh, and status."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/oauth/tests.rs
+      meaningful_lines: 397
+      responsibilities: "Covers core OAuth and credential behavior while delegating the focused comment-scope case."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/oauth/tests/comment_scope.rs
+      meaningful_lines: 30
+      responsibilities: "Covers targeted and broad Linear comment permission recognition."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 207
+      responsibilities: "Adapts the SQLite store to the application repository port."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store.rs
+      meaningful_lines: 316
+      responsibilities: "Builds materialized board snapshots from durable records."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/connector_sync_store.rs
+      meaningful_lines: 349
+      responsibilities: "Persists idempotent connector intents, guarded delivery transitions, and immutable reconciliation records."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/connector_sync_store_tests.rs
+      meaningful_lines: 244
+      responsibilities: "Covers outbox conflicts, ownership checks, claims, recovery, uncertainty, and reconciliation idempotency."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_error.rs
+      meaningful_lines: 261
+      responsibilities: "Defines persistence errors and safe actionable formatting."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_schema.rs
+      meaningful_lines: 115
+      responsibilities: "Defines SQLite schema creation for durable records."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 28
+      responsibilities: "Registers persistence modules and test modules."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 379
+      responsibilities: "Owns SQLite opening, schema migration, and transactional store composition."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: "Verifies migration to the current SQLite schema version."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 377
+      responsibilities: "Covers durable event-store behavior and schema-version invariants."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 203
+      responsibilities: "Composes board, planning, agent, Linear, and work-item UI sections."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 342
+      responsibilities: "Provides non-Linear in-memory gateway fixtures for board workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.linear.fixtures.ts
+      meaningful_lines: 182
+      responsibilities: "Provides isolated Linear gateway fixtures for board workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 314
+      responsibilities: "Coordinates local board state, typed gateway actions, and refresh lifecycle."
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.test.tsx
+      meaningful_lines: 90
+      responsibilities: "Covers the visible targeted-comment authorization affordance."
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.tsx
+      meaningful_lines: 82
+      responsibilities: "Presents secure OAuth connection and explicit comment-permission controls."
+      decision: kept cohesive
+    - path: src/board/LinearSyncPanel.test.tsx
+      meaningful_lines: 147
+      responsibilities: "Covers explicit public comments, refresh, outbox delivery, and conflict presentation."
+      decision: kept cohesive
+    - path: src/board/LinearSyncPanel.tsx
+      meaningful_lines: 184
+      responsibilities: "Presents manual safe-comment, outbox, refresh, and reconciliation controls."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 77
+      responsibilities: "Defines the presentation-to-daemon gateway contract independently from data types."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 137
+      responsibilities: "Maps typed gateway operations to explicit local Tauri commands."
+      decision: kept cohesive
+    - path: src/board/linearSyncTypes.ts
+      meaningful_lines: 48
+      responsibilities: "Defines frontend transport types for connector outbox and reconciliation records."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 351
+      responsibilities: "Defines provider-neutral board, execution, and request data contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T01:05:43Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric:
+      - finding: "The first implementation updated an outbox state after reading it without a database state predicate, which would not be a compare-and-swap transition across store instances."
+      - finding: "A final source scan found types.ts at 401 meaningful lines and OAuth tests at 422 meaningful lines."
+      - finding: "Initial Rust coverage fell below the mandatory branch and statement floor after the connector additions."
+      - finding: "The read-only and targeted-comment OAuth commands duplicated authorization browser/callback workflow code."
+    considers:
+      - finding: "Ambiguous externally visible comment writes are intentionally not automatically retried."
+        resolution: accepted
+        rationale: "A timeout cannot prove that Linear rejected the mutation; marking the durable item delivery_uncertain avoids duplicate external comments and leaves the decision visible to the user."
+        decision_reference: ADR-0018
+      - finding: "The first-class Linear alpha does not automatically write statuses, create issues, or poll Linear."
+        resolution: accepted
+        rationale: "The shipped capability is explicitly user-triggered refresh and manually sent comments with the minimum OAuth scope; broader remote authority remains a separately tracked opt-in capability."
+        decision_reference: ADR-0018
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The first implementation updated an outbox state after reading it without a database state predicate."
+    change: "Changed claim, delivery completion, and restart recovery to use guarded UPDATE predicates against the expected current state; a competing transition now fails closed."
+  - finding: "The full source scan found a 401-line frontend types module and a 422-line OAuth test module."
+    change: "Moved the board gateway contract to boardGateway.ts, isolated Linear workspace fixtures, and moved OAuth comment-scope coverage into a focused child test module. All source files are at or below 400 meaningful lines."
+  - finding: "Initial Rust coverage fell below the mandatory branch and statement floor."
+    change: "Added behavior tests for conflict keys, invalid link ownership, direct uncertain delivery, all shared fields, shared-field error responses, and both accepted comment permissions."
+  - finding: "OAuth commands duplicated browser/callback authorization orchestration."
+    change: "Extracted one begin_linear_authorization helper so read-only OAuth and targeted-comment reauthorization share the same secure callback lifecycle."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run test:coverage
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.44
+        statements: 85.89
+        functions: 80.56
+        branches: 84.98
+      - package_or_crate: src-tauri-rust
+        lines: 83.86
+        statements: 80.01
+        functions: 83.63
+        branches: 80.03
+    threshold_met: true
+exceptions: []

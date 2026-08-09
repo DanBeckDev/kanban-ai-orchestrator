@@ -1,6 +1,6 @@
 schema_version: 1
 project: Kanban AI Orchestrator
-last_updated: 2026-08-08
+last_updated: 2026-08-09
 
 # Status values: ready, in_progress, blocked, done.
 # A task starts only after all IDs in depends_on are done unless its notes record an
@@ -16,6 +16,8 @@ epics:
     title: Safe Git workspaces and agent execution
   - id: ORCH
     title: Orchestration, policy, and review
+  - id: APP
+    title: Local desktop board experience
   - id: LIN
     title: Linear first-class integration
   - id: REL
@@ -111,13 +113,26 @@ tasks:
   - id: EXEC-003
     epic: EXEC
     title: Add initial Codex CLI, Claude Code, and third-agent adapters
-    status: ready
+    status: done
     priority: P1
     depends_on: [EXEC-001, EXEC-002]
     acceptance_criteria:
       - Three adapters pass the common conformance suite.
       - Unsupported capabilities are visible before task start.
       - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
+    notes: Completed on 2026-08-08 with three provider-neutral execution profiles: a generic structured JSONL bridge, a native Codex CLI wrapper, and a native Claude Code wrapper. Each runs without a production shell, receives the brief through stdin, converts bounded structured output to safe normalized events, and passes one shared non-interactive conformance suite. The desktop profile and launch UI show the selected provider and its unavailable feedback, session-recovery, and safe process-tree cancellation capabilities before start. Codex protocol/sandbox controls and Claude protocol/permission controls are adapter-owned and profile validation rejects attempts to override them. Resume, interactive feedback, and process-tree cancellation remain explicitly unsupported until future provider/platform adapters prove them.
+
+  - id: EXEC-004
+    epic: EXEC
+    title: Add a ClinePass CLI worker adapter
+    status: done
+    priority: P1
+    depends_on: [EXEC-003]
+    acceptance_criteria:
+      - A ClinePass profile starts Cline's documented JSON event stream from the assigned worktree.
+      - Cline account credentials and ClinePass entitlement selection never enter board metadata or SQLite.
+      - Provider, credentials, approval, worktree, and protocol options remain adapter-owned and Cline lifecycle events pass the common conformance suite.
+    notes: Completed on 2026-08-09 with a dedicated ClinePass CLI profile. It uses the user's separately authenticated Cline account, fixes the Cline provider and noninteractive event/approval flags at the adapter boundary, normalizes only fixed Cline lifecycle summaries and usage, and rejects profile arguments that could supply a key, change billing/provider choice, detach the session, replace the worktree, or weaken the event contract.
 
   - id: ORCH-001
     epic: ORCH
@@ -146,78 +161,137 @@ tasks:
   - id: ORCH-003
     epic: ORCH
     title: Build evidence-first review and recovery flows
-    status: ready
+    status: done
     priority: P1
     depends_on: [CORE-003, EXEC-001, EXEC-002, ORCH-001]
     acceptance_criteria:
       - Review shows task criteria, diff/commit, checks, agent summary, and decision history.
       - Failure and interruption present retry, inspect, recover, and cancel actions.
       - A task cannot reach done without the configured evidence and approval.
+    notes: Completed on 2026-08-08. Board snapshots carry a compact ordered trail of the most recent 20 durable task creation and state-decision events per task, plus bounded recent execution attempts and evidence records. Cards preserve and render agent/session/workspace/usage context, diff/commit evidence, checks, completion reports, and reviewer decisions after reopening. The execution-event controller activates a pending attempt atomically with its session and `Running` task transition, rejects unstarted or out-of-order events, checkpoints usage/status monotonically, and persists input/failure/interruption/completion reports as evidence. The desktop monitors one verified, policy-authorized process per execution independently of the UI; completion moves only to `Review`. Recovery offers attempt inspection, recover-to-Ready/retry, and cancellation. A human-reviewed task cannot reach Done until passing checks, completion report, and a durable accepted review decision all exist.
+
+  - id: ORCH-004
+    epic: ORCH
+    title: Generate safe plan proposals from natural-language goals
+    status: done
+    priority: P0
+    depends_on: [APP-003, EXEC-003]
+    acceptance_criteria:
+      - A user can submit a goal and select a provider-neutral planner profile; the planner can produce only one typed, unconfirmed plan proposal for the selected board.
+      - Planner I/O is bounded, runs without a production shell, and parses only a strict plan payload; raw provider transcripts, credentials, and arbitrary lifecycle output are not persisted.
+      - A malformed, oversized, wrong-board, or invalid planner proposal cannot create or confirm tasks, and returns an actionable error while leaving the board unchanged.
+      - The proposal is shown through the existing exact preview and confirmation workflow, including dependencies, critical path, parallel stages, budgets, and assumptions.
+    notes: Completed on 2026-08-08 with durable provider-neutral planner profiles, a direct bounded process bridge, strict draft parsing, and daemon-derived plan/task/dependency identity. The UI accepts a goal, shows the existing exact preview, and preserves explicit confirmation as the only task-materialization authority. Planner I/O is capped at 8,000-byte goals, 65,536-byte output, and 45 seconds; raw goals, standard error, and raw provider output are not persisted. A generic profile remains explicitly user-trusted local code rather than a claimed filesystem sandbox; provider-specific sandbox guarantees must be implemented and tested by a dedicated adapter.
+
+  - id: APP-001
+    epic: APP
+    title: Expose durable local projects, boards, and dependencies through the desktop command boundary
+    status: done
+    priority: P0
+    depends_on: [CORE-001, CORE-002, CORE-003]
+    acceptance_criteria:
+      - Projects, boards, work items, and typed dependencies persist locally and survive reopening the same database.
+      - Project and board creation, board snapshots, work-item creation, state transitions, and dependency insertion are exposed through typed Tauri commands.
+      - The command boundary cannot bypass the daemon state machine, board ownership checks, dependency-cycle validation, or evidence requirements.
+      - Command and persistence tests cover valid behavior, duplicate identifiers, missing ownership, invalid dependencies, and a reopen scenario.
+    notes: Added on 2026-08-08 after the product audit found that the desktop rendered only a foundation card despite the existing domain core. Completed on 2026-08-08 with durable SQLite project, board, work-item, and dependency storage plus typed Tauri commands that remain behind the domain state-machine and validation boundary.
+
+  - id: APP-002
+    epic: APP
+    title: Build the interactive dependency-aware desktop board
+    status: done
+    priority: P0
+    depends_on: [APP-001]
+    acceptance_criteria:
+      - A user can create a project, board, and work items; see their states, criteria, budgets, blockers, and typed dependencies after restart.
+      - The board clearly separates Ready, active, Review, Done, and recovery work and explains every blocker with reason, owner, and next action.
+      - The UI sends commands to the local daemon and never derives authoritative scheduling or state transitions itself.
+      - Accessible component tests cover task creation, state-transition feedback, dependency visibility, and error presentation.
+    notes: Completed on 2026-08-08 with a Tauri-command-backed React board. Users can create or reopen local boards, create budgeted tasks, submit guarded transitions with completion evidence, manage typed dependencies, see dependency responsibility, and distinguish plan, ready, active, review, done, and recovery work. The board only presents daemon responses; it does not own persistence or state-machine authority.
+
+  - id: APP-003
+    epic: APP
+    title: Materialize durable, user-confirmed plan proposals through the desktop board
+    status: done
+    priority: P0
+    depends_on: [APP-001, APP-002, ORCH-002]
+    acceptance_criteria:
+      - A provider-neutral proposal can be submitted for one existing board and is rendered as its exact task, dependency, critical-path, parallel-stage, budget, and assumption preview.
+      - Confirmation names a user and time, survives reopening, and atomically creates the proposed tasks and validated dependencies exactly once.
+      - A rejected, mismatched, cross-board, duplicate, or already-confirmed proposal cannot partly mutate the board.
+      - The desktop clearly distinguishes an unconfirmed preview from a confirmed plan and sends only typed commands to the local daemon.
+    notes: Completed on 2026-08-08 with typed desktop commands, a durable SQLite proposal/confirmation record, exact daemon-generated previews, and one atomic materialization transaction. The UI can inspect, revise, cancel, reject, or confirm an unconfirmed proposal; confirmation records identity and time, survives reopening, and is idempotent on retry. Tests cover no partial mutation for mismatched, cross-board, duplicate, collision, and already-confirmed requests. A future provider-neutral orchestrator adapter will generate this same safe proposal contract.
 
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage
-    status: ready
+    status: done
     priority: P0
     depends_on: [FDN-002, CORE-001]
     acceptance_criteria:
       - OAuth/PKCE callback design, scopes, token refresh, and keychain storage are verified against Linear's current API.
       - The local-first refresh approach respects Linear rate-limit guidance.
       - The public-webhook relay remains optional and is not required for core use.
+    notes: Completed on 2026-08-09. The desktop OAuth/PKCE foundation is implemented and tested against Linear's current authorization, token, refresh, and rate-limit contract: an explicit loopback callback, state validation, S256 challenge, system-browser launch, native credential storage, bounded refresh, and read-only scope. Linear's documented April 2026 refresh-token migration was audited: current and legacy scope responses parse, and a replacement credential is stored only after success. A live end-to-end verification needs a user-created Linear OAuth app configured with the declared callback URI; no client secret or API token will be requested in this repository.
 
   - id: LIN-002
     epic: LIN
     title: Implement Linear issue/project links and provenance-aware import
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, CORE-002, LIN-001]
     acceptance_criteria:
       - Links use immutable Linear IDs and retain source/provenance.
       - Linear blockers import into the typed dependency graph without bypassing cycle validation.
       - Read-only and linked-execution connection modes work independently.
+    notes: Completed on 2026-08-09. The durable import foundation and authenticated assigned-issue retrieval retain immutable Linear UUIDs, explicit provenance and connection mode, safe HTTPS Linear URLs, and typed-cycle validation for imported blockers. Once the user connects through LIN-001 OAuth, an explicit UI action queries at most 50 assigned issues by recent update and pre-fills the same validated local-import flow; it neither polls nor writes remotely. Live project selection and all remote write/sync behavior remain incomplete in LIN-003; the board must not imply that those capabilities exist.
 
   - id: LIN-003
     epic: LIN
     title: Implement conflict-safe Linear synchronization and comments
-    status: ready
+    status: done
     priority: P1
     depends_on: [CORE-003, ORCH-003, LIN-002]
     acceptance_criteria:
       - Outbound changes use a durable idempotent outbox.
       - Concurrent shared-field edits create reconciliation items instead of overwriting data.
       - Transcripts, secrets, and private diffs are excluded from outbound comments by default.
+    notes: Completed on 2026-08-09. Linear linked-execution comments use a durable SQLite outbox with local idempotency, guarded pending-to-delivering-to-delivered transitions, targeted comments:create reauthorization, and explicit user send. A network or restart ambiguity becomes visible delivery_uncertain state with no automatic duplicate retry. An explicit per-issue refresh records immutable title, description, and workflow-state comparisons keyed by Linear revision; conflicts show both values and never overwrite either system. The manually entered one-line public comment input excludes raw agent transcripts, terminal output, secrets, and diffs. Full local quality:verify passed with all source paths under 400 meaningful lines and every required frontend/Rust coverage metric at least 80%.
 
   - id: REL-001
     epic: REL
     title: Build responsive terminal/activity data paths
-    status: ready
+    status: done
     priority: P0
     depends_on: [FDN-002, CORE-003, EXEC-002]
     acceptance_criteria:
-      - Large output is chunked, bounded, and virtualized.
-      - Switching cards never requires rendering an unbounded terminal snapshot.
-      - Event ingestion does not spawn a heavyweight runtime per event.
+      - Live agent activity is exposed as normalized chunks of at most 1 KiB, retained only in a bounded per-execution buffer, and raw provider transcripts remain outside board snapshots and durable state.
+      - An activity request returns no more than 32 chunks; the card viewer virtualizes its fixed-height rows, so switching cards never requires rendering an unbounded terminal snapshot.
+      - Activity chunks are recorded by the existing per-execution reader/monitor path; event ingestion starts no additional runtime or worker per event.
+    notes: Completed on 2026-08-09. A bounded 1 KiB/128-chunk ephemeral daemon stream, 32-chunk paging, and a virtualized card viewer passed local quality gates and GitHub Actions full quality plus core Linux/macOS/Windows checks (run 31285775277). A Linux CI timing-dependent detached-process test was replaced with a deterministic scripted-adapter lifecycle test; the receipt records the finding and remediation.
 
   - id: REL-002
     epic: REL
     title: Establish macOS, Windows, and Linux test and packaging matrix
-    status: ready
+    status: done
     priority: P0
     depends_on: [FDN-002, CORE-001, EXEC-001]
     acceptance_criteria:
       - CI exercises core domain/workspace tests on all three desktop platforms.
       - Agent command construction avoids OS command-line length limits.
       - Packaging/signing and platform-specific credential/PTY behavior have tracked test coverage.
+    notes: GitHub Actions core matrix and full quality gate passed on Linux, macOS, and Windows on 2026-08-09 (run 31283847977). Windows-native file URLs, Git verbatim worktree paths, and the detached-runtime CI observation deadline were corrected before completion. The platform release evidence documents remaining native signing, credential, PTY, and provider-lifecycle checks.
 
   - id: REL-003
     epic: REL
     title: Automate reliability release-gate scenarios
-    status: ready
+    status: done
     priority: P1
     depends_on: [CORE-002, CORE-003, EXEC-003, ORCH-003, LIN-003, REL-001, REL-002]
     acceptance_criteria:
       - Restart, cancellation, dependency, worktree-race, connector-conflict, and scope-escape scenarios are automated where practical.
       - Remaining manual release checks are documented with owner and evidence.
+    notes: Completed on 2026-08-09. The named reliability command runs nine Unix scenarios (eight on Windows, where direct-process cancellation is deliberately not claimed), including durable restart recovery, dependency blocking/cycle rejection, cross-process daemon locking and worktree recovery, Linear conflict/ambiguous-delivery protection, and scope escape. It is included in the three-platform core command. The platform release document records accountable owners and required evidence for the remaining target-native checks.
 
   - id: QUAL-001
     epic: QUAL
@@ -247,22 +321,49 @@ tasks:
   - id: QUAL-003
     epic: QUAL
     title: Enforce quality evidence in the product's agent workflow
-    status: ready
+    status: done
     priority: P0
     depends_on: [CORE-001, ORCH-001, ORCH-003, QUAL-001]
     acceptance_criteria:
-      - The task state machine cannot transition from review to done without successful quality-gate evidence.
-      - The orchestrator schedules an independent Clean Code review for substantial or high-risk work.
-      - Actionable review findings return the task to implementation until resolved.
+      - Every review-to-done transition requires a passed `quality_gate` evidence record created after the current implementation completion report; a generic passed check is not sufficient.
+      - In the MVP, `requires_human_review` is the explicit substantial/high-risk designation. When its implementation reaches review, the daemon durably records that an independent Clean Code review is required.
+      - An independent review is a durable review-role execution for the same work item, using an agent-profile name different from every implementation-role execution. The reviewer completion, reviewer profile, concise decision summary, and actionable-finding count are recorded without retaining a raw transcript.
+      - A zero-finding independent review can satisfy the independent-review gate only after its own review-role execution has completed. One or more actionable findings record a failed review and return the work item from review to ready for another implementation attempt.
+      - A later implementation attempt invalidates earlier completion, quality-gate, and review evidence for done eligibility; the complete evidence sequence must be recorded again after that attempt.
+    notes: Implemented and verified on 2026-08-08. The daemon distinguishes current-cycle quality gates from generic checks, schedules and validates role-separated independent reviews, persists one bounded review decision per reviewer run, returns findings to Ready atomically, and requires the independent decision before human acceptance. See ADR 0016 and quality receipt QUAL-003.
 
   - id: QUAL-004
     epic: QUAL
     title: Remove all temporary oversized-source exceptions
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [QUAL-002]
     acceptance_criteria:
       - Every file listed in docs/quality/code-structure-exceptions.json is split into cohesive production or focused test modules with no behavior change.
-      - npm run structure:check and CI reject an oversized changed source file without a valid, unexpired exception.
+      - npm run structure:verify and CI reject any oversized source file and any non-empty exception ledger.
       - The exceptions list is empty when QUAL-004 is complete, and the full quality gate passes after each refactor.
-    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. The P0 task removes the temporary migration records rather than normalizing them. The domain model record was split into focused modules on 2026-08-08, removing its first exception.
+    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. Completed on 2026-08-08: every listed module was split into focused source and test modules, the exception ledger is empty, and the full-repository gate now rejects any future exception.
+
+  - id: QUAL-005
+    epic: QUAL
+    title: Require structural review evidence for every changed source file
+    status: done
+    priority: P0
+    depends_on: [QUAL-004]
+    acceptance_criteria:
+      - Every changed source file is listed in the quality-review receipt with its exact meaningful-line count, cohesive responsibility, and review decision.
+      - The receipt validator rejects missing or stale source-structure evidence while retaining validation of historical receipts.
+      - Focused tests prove a receipt cannot omit a changed source file and a complete inventory passes.
+    notes: Completed on 2026-08-08. Quality-review receipts now inventory every changed source file with its verified meaningful-line count, cohesive responsibility, and decision; the validator rejects omissions and stale counts while historical receipts remain readable.
+
+  - id: QUAL-006
+    epic: QUAL
+    title: Fail CI policy early and cache stable Rust checks safely
+    status: done
+    priority: P0
+    depends_on: [QUAL-002, QUAL-005, REL-002]
+    acceptance_criteria:
+      - Source-structure and review-receipt policy fail before the platform matrix or full coverage suite starts.
+      - Stable Cargo test and Clippy inputs are cached per platform, compiler identity, and dependency graph without caching credentials or nightly coverage artifacts.
+      - Linux, macOS, and Windows portable-core checks and the Linux full 80%-coverage quality gate remain required.
+    notes: Completed on 2026-08-09. CI validates source structure and review evidence in a lightweight prerequisite job, then runs the full Linux coverage gate and Linux/macOS/Windows portable-core matrix only when policy passes. Stable Cargo registry, Git dependencies, and artifacts are cached by OS, architecture, Rust compiler identity, Cargo lockfile, and manifest; nightly coverage output is isolated and cargo-llvm-cov is installed from its verified release installer. The initial foundation's 64 missing source-structure inventory entries were reviewed and recorded rather than weakening the PR policy.

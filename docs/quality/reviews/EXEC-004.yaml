@@ -1,0 +1,98 @@
+work_item: EXEC-004
+scope:
+  - "Dedicated ClinePass CLI worker profile, native JSON-event normalization, and desktop profile selection."
+  - "Cline account credentials and ClinePass model selection remain in Cline rather than board metadata."
+  - "Provider adapters share one lifecycle delegator while retaining a single composition-boundary kind switch."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 22
+      responsibilities: "Registers agent modules, tests, and public adapter boundary types."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/process_event_reader.rs
+      meaningful_lines: 178
+      responsibilities: "Selects bounded event decoders and records normalized child-process output."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/profile.rs
+      meaningful_lines: 247
+      responsibilities: "Defines persisted agent-profile kinds and validates adapter-owned arguments."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter.rs
+      meaningful_lines: 189
+      responsibilities: "Composes a selected native CLI protocol with the shared process adapter."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter_tests.rs
+      meaningful_lines: 183
+      responsibilities: "Covers native profile command construction, runtime selection, and noninteractive conformance."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_event_decoder.rs
+      meaningful_lines: 180
+      responsibilities: "Normalizes bounded provider event streams without retaining provider text."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_event_decoder_tests.rs
+      meaningful_lines: 214
+      responsibilities: "Covers safe lifecycle, usage, error, malformed-event, and transcript-redaction scenarios."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 388
+      responsibilities: "Exercises end-to-end board workspace interactions, including agent-profile configuration."
+      decision: kept cohesive
+    - path: src/board/agentProfilePresentation.ts
+      meaningful_lines: 51
+      responsibilities: "Maps persisted profile kinds to concise desktop labels, defaults, and capability explanations."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 352
+      responsibilities: "Defines the stable TypeScript boundary types exchanged by the board UI and desktop gateway."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T01:50:18Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "Cline's non-TTY mode denies tool calls when approval is required, while a background worker must be able to act inside its policy-authorized worktree."
+        resolution: accepted
+        rationale: "The adapter fixes Cline's documented noninteractive approval option rather than allowing profiles to override it. The existing desktop launch policy, assigned-worktree boundary, evidence gates, and human review remain authoritative; release evidence must verify the real profile on each distributed platform."
+        decision_reference: ADR-0013 and docs/quality/platform-release.md
+      - finding: "ClinePass selection and account authentication are external Cline state rather than a board setting."
+        resolution: accepted
+        rationale: "Keeping account tokens, API keys, subscription state, and model entitlement out of SQLite prevents a provider credential from becoming board metadata. The user chooses the ClinePass model through Cline's authenticated configuration."
+        decision_reference: docs/integrations/cline-pass.md
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Adding a third native wrapper would repeat the same AgentAdapter lifecycle delegation and make future provider additions rigid."
+    change: "Replaced provider-specific wrappers with one NativeProcessAdapter; a single composition-boundary switch selects the provider's fixed arguments and event protocol."
+  - finding: "A Cline profile could otherwise supply provider, credential, approval, detached-session, worktree, or native-protocol options from SQLite-backed profile arguments."
+    change: "Added ClinePass profile validation that reserves those controls, then fixed the Cline provider, JSON output, and noninteractive approval flags in the adapter."
+  - finding: "Raw Cline agent text, tool content, and account-related output could become durable board activity."
+    change: "Added a bounded Cline agent_event decoder that persists only fixed activity/failure/completion summaries and numeric usage totals, with redaction regression tests."
+  - finding: "Provider decoder behavior and its growing test scenarios were vertically co-located."
+    change: "Moved decoder tests to a focused companion module, leaving the production decoder below the source-structure limit and dedicated to normalization."
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml agent:: --lib --no-fail-fast
+      result: passed (29 tests)
+    - command: npm test -- --run src/board/BoardWorkspace.test.tsx
+      result: passed (11 tests)
+    - command: npm run structure:check
+      result: passed (14 changed paths; no exceptions)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.64
+        statements: 86.10
+        functions: 80.85
+        branches: 85.30
+      - package_or_crate: src-tauri-rust
+        lines: 83.90
+        statements: 80.04
+        functions: 83.87
+        branches: 80.35
+    threshold_met: true
+exceptions: []

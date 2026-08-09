@@ -1,0 +1,79 @@
+work_item: ORCH-003
+scope:
+  - src-tauri/src/application/board_service.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/completion_evidence_service.rs
+  - src-tauri/src/application/review_check_request.rs
+  - src-tauri/src/application/review_decision_request.rs
+  - src-tauri/src/application/review_service.rs
+  - src-tauri/src/application/board_service_tests/review.rs
+  - src-tauri/src/application/mod.rs
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/desktop_execution_runtime.rs
+  - src-tauri/src/desktop_execution_runtime_control.rs
+  - src-tauri/src/desktop_execution_runtime_review.rs
+  - src-tauri/src/desktop_execution_runtime_support.rs
+  - src-tauri/src/desktop_execution_runtime_tests.rs
+  - src-tauri/src/domain/model/execution.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/persistence/board_repository.rs
+  - src-tauri/src/workspace/git_cli.rs
+  - src-tauri/src/workspace/mod.rs
+  - src-tauri/src/workspace/review_artifact_tests.rs
+  - src-tauri/src/workspace/tests.rs
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.test.tsx
+  - src/board/BoardWorkspace.tsx
+  - src/board/ExecutionControl.tsx
+  - src/board/RecoveryActions.tsx
+  - src/board/ReviewCheckForm.tsx
+  - src/board/ReviewDecisionForm.tsx
+  - src/board/WorkItemCard.tsx
+  - src/board/gateway.ts
+  - src/board/presentation.ts
+  - src/board/types.ts
+  - src/styles.css
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T20:09:20Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A completed worker entered Review without durable Git commit or diff evidence for a reviewer to inspect.
+    change: Collected verified-worktree commit and bounded diff statistics after each terminal worker event, including staged changes, and recorded them as typed evidence. Dedicated runtime evidence-mapping and workspace tests cover committed and staged output.
+  - finding: A reviewer could claim checks or a completion report existed while moving a card to Done without matching durable records.
+    change: Added a review-only check command and application-boundary validation that requires a recorded passing Check and recorded CompletionReport for the same work item before Done can be persisted.
+  - finding: A live direct worker could be visually cancelled through a generic state transition without stopping its process.
+    change: Replaced active-card cancellation with a direct-process stop request that records an Interrupted attempt; the Recovery column now supplies explicit inspection, recover-to-Ready/retry, and cancellation actions.
+  - finding: Focused board and workspace test modules exceeded the repository's 400-meaningful-line source limit while adding review and Git-artifact coverage.
+    change: Extracted cohesive board fixtures and review-artifact scenarios into dedicated test modules. The whole-repository structural scan now passes with no exceptions.
+  - finding: The asynchronous worker review test used a fixed one-second polling window and failed under coverage instrumentation despite the worker eventually completing.
+    change: Replaced the attempt-count timeout with a monotonic five-second deadline, retaining fast polling while making the assertion reliable under the slower coverage build.
+  - finding: A human-review checkbox on the Done transition was not a durable reviewer decision and could not prove who made the decision or why.
+    change: Added a typed review-decision command and form that persist reviewer, summary, and accepted/rejected result as ReviewDecision evidence. Done now requires a recorded passing decision whenever human review is required.
+  - finding: Adding completion-review tests grew the broad board-service test module to 474 meaningful lines.
+    change: The zero-exception structure gate stopped the change; review and completion cases now live in a dedicated focused submodule that shares only explicit fixtures.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml --lib
+      result: passed (142 tests)
+    - command: npm test -- --run
+      result: passed (39 tests)
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run structure:verify
+      result: passed (140 source paths; 0 over-limit files)
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 84.81
+    statements: 80.47
+    functions: 83.57
+    branches: 80.69
+    threshold_met: true
+exceptions: []

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   MAX_PRODUCTION_SOURCE_LINES,
   MAX_TEST_SOURCE_LINES,
-  baselineExceptionsFor,
   changedPathsFor,
   loadExceptions,
   meaningfulLineCount,
@@ -11,21 +12,20 @@ import {
   projectRootFor,
   runStructureCheck,
   sourceFileLimit,
-  validateExceptionLedger,
   validateSourceStructure,
 } from "./check-code-structure.mjs";
 
 describe("source structure gate", () => {
   it("resolves its root in Node and virtual test-module environments", () => {
+    const workspace = resolve("workspace");
     expect(
       projectRootFor(
-        "file:///workspace/scripts/check-code-structure.mjs",
-        "/ignored",
+        pathToFileURL(resolve(workspace, "scripts", "check-code-structure.mjs"))
+          .href,
+        "ignored",
       ),
-    ).toBe("/workspace");
-    expect(projectRootFor("vite://virtual-module", "/workspace")).toBe(
-      "/workspace",
-    );
+    ).toBe(workspace);
+    expect(projectRootFor("vite://virtual-module", workspace)).toBe(workspace);
   });
 
   it("classifies production, test, and non-source paths", () => {
@@ -87,45 +87,21 @@ describe("source structure gate", () => {
     ).toEqual([]);
   });
 
-  it("permits a temporary, owned exception only until its expiry and ceiling", () => {
-    const path = "src-tauri/src/legacy.rs";
-    const source = `${"let value = 1;\n".repeat(MAX_PRODUCTION_SOURCE_LINES + 1)}`;
-    const exceptions = [
-      {
-        path,
-        work_item: "QUAL-004",
-        expires_on: "2026-08-22",
-        maximum_meaningful_lines: MAX_PRODUCTION_SOURCE_LINES + 1,
-      },
-    ];
-
-    expect(
-      validateSourceStructure({
-        paths: [path],
-        readFile: () => source,
-        exceptions,
-        currentDate: "2026-08-08",
-      }),
-    ).toEqual([]);
-    expect(
-      validateSourceStructure({
-        paths: [path],
-        readFile: () =>
-          `${"let value = 1;\n".repeat(MAX_PRODUCTION_SOURCE_LINES + 2)}`,
-        exceptions,
-        currentDate: "2026-08-08",
-      }),
-    ).toEqual([
-      `${path} has ${MAX_PRODUCTION_SOURCE_LINES + 2} meaningful lines; the temporary exception ceiling is ${MAX_PRODUCTION_SOURCE_LINES + 1}. Split independent responsibilities into cohesive modules before merging.`,
-    ]);
-    expect(
-      validateSourceStructure({
-        paths: [path],
-        readFile: () => source,
-        exceptions,
-        currentDate: "2026-08-23",
-      }),
-    ).toHaveLength(1);
+  it("rejects a current exception ledger instead of allowing oversized source", () => {
+    expect(() =>
+      loadExceptions(() =>
+        JSON.stringify({
+          exceptions: [
+            {
+              path: "src-tauri/src/legacy.rs",
+              work_item: "QUAL-004",
+              expires_on: "2026-08-22",
+              maximum_meaningful_lines: 401,
+            },
+          ],
+        }),
+      ),
+    ).toThrow("must not contain source-structure exceptions");
   });
 
   it("parses supported change scopes and queries Git correctly", () => {
@@ -162,149 +138,55 @@ describe("source structure gate", () => {
 
     const sourcePaths = changedPathsFor({ mode: "all" }, (command, args) => {
       expect(command).toBe("git");
-      expect(args).toEqual(["ls-files", "src", "src-tauri/src", "scripts"]);
+      expect(args).toEqual([
+        "ls-files",
+        "--cached",
+        "--others",
+        "--exclude-standard",
+        "--",
+        "src",
+        "src-tauri/src",
+        "scripts",
+      ]);
       return "scripts/check-code-structure.mjs\n";
     });
     expect(sourcePaths).toEqual(["scripts/check-code-structure.mjs"]);
-  });
 
-  it("loads the base exception ledger only when the base contains one", () => {
-    const content = JSON.stringify({
-      exceptions: [
-        {
-          path: "src-tauri/src/legacy.rs",
-          work_item: "QUAL-004",
-          expires_on: "2026-08-22",
-          maximum_meaningful_lines: 401,
-        },
-      ],
-    });
-    expect(
-      baselineExceptionsFor(
-        { baseRef: "origin/main", mode: "base-ref" },
-        (command, args) => {
-          expect(command).toBe("git");
+    const workingTreePaths = changedPathsFor(
+      { mode: "working-tree" },
+      (command, args) => {
+        expect(command).toBe("git");
+        if (args[0] === "diff") {
           expect(args).toEqual([
-            "show",
-            "origin/main:docs/quality/code-structure-exceptions.json",
+            "diff",
+            "--name-only",
+            "--diff-filter=ACMR",
+            "HEAD",
           ]);
-          return content;
-        },
-      ),
-    ).toEqual(JSON.parse(content).exceptions);
-    expect(
-      baselineExceptionsFor({ mode: "all" }, () => {
-        throw new Error("all mode must not query Git history");
-      }),
-    ).toBeUndefined();
-    expect(
-      baselineExceptionsFor({ mode: "working-tree" }, () => {
-        const error = new Error("exception ledger does not exist yet");
-        error.status = 128;
-        throw error;
-      }),
-    ).toBeUndefined();
+          return "src/changed.ts\n";
+        }
+        expect(args).toEqual([
+          "ls-files",
+          "--others",
+          "--exclude-standard",
+          "--",
+          "src",
+          "src-tauri/src",
+          "scripts",
+        ]);
+        return "src/changed.ts\nsrc/untracked.ts\n";
+      },
+    );
+    expect(workingTreePaths).toEqual(["src/changed.ts", "src/untracked.ts"]);
   });
 
-  it("rejects exception-ledger growth relative to its base branch", () => {
-    const baseline = {
-      path: "src-tauri/src/legacy.rs",
-      work_item: "QUAL-004",
-      expires_on: "2026-08-22",
-      maximum_meaningful_lines: 401,
-    };
-    expect(
-      validateExceptionLedger({
-        exceptions: [baseline],
-        baselineExceptions: [baseline],
-      }),
-    ).toEqual([]);
-    expect(
-      validateExceptionLedger({
-        exceptions: [
-          {
-            ...baseline,
-            maximum_meaningful_lines: baseline.maximum_meaningful_lines + 1,
-          },
-        ],
-        baselineExceptions: [baseline],
-      }),
-    ).toEqual([
-      `${baseline.path} cannot raise its source-structure exception ceiling above ${baseline.maximum_meaningful_lines}.`,
-    ]);
-    expect(
-      validateExceptionLedger({
-        exceptions: [{ ...baseline, expires_on: "2026-08-23" }],
-        baselineExceptions: [baseline],
-      }),
-    ).toEqual([
-      `${baseline.path} cannot extend its source-structure exception expiry beyond ${baseline.expires_on}.`,
-    ]);
-    expect(
-      validateExceptionLedger({
-        exceptions: [{ ...baseline, work_item: "QUAL-005" }],
-        baselineExceptions: [baseline],
-      }),
-    ).toEqual([
-      `${baseline.path} cannot change its source-structure exception owner from ${baseline.work_item} to QUAL-005.`,
-    ]);
-    expect(
-      validateExceptionLedger({
-        exceptions: [{ ...baseline, path: "src-tauri/src/new-legacy.rs" }],
-        baselineExceptions: [baseline],
-      }),
-    ).toEqual([
-      "src-tauri/src/new-legacy.rs is a new source-structure exception. New exceptions require product-owner approval and an ADR.",
-    ]);
-  });
-
-  it("requires exceptions to have an owner, expiry, and fixed ceiling", () => {
+  it("requires the ledger to declare an empty exceptions array", () => {
     expect(() => loadExceptions(() => JSON.stringify({}))).toThrow(
-      "must contain exceptions",
+      "must declare an exceptions array",
     );
     expect(() =>
       loadExceptions(() =>
         JSON.stringify({
-          exceptions: [{ path: "legacy.rs", work_item: "QUAL-004" }],
-        }),
-      ),
-    ).toThrow("YYYY-MM-DD expiry");
-    expect(() =>
-      loadExceptions(() =>
-        JSON.stringify({
-          exceptions: [
-            {
-              path: "legacy.rs",
-              work_item: "QUAL-004",
-              expires_on: "2026-08-22",
-            },
-          ],
-        }),
-      ),
-    ).toThrow("maximum meaningful-line count");
-    expect(() =>
-      loadExceptions(() =>
-        JSON.stringify({
-          exceptions: [
-            {
-              path: "legacy.rs",
-              work_item: "QUAL-004",
-              expires_on: "2026-08-22",
-              maximum_meaningful_lines: 401,
-            },
-            {
-              path: "legacy.rs",
-              work_item: "QUAL-004",
-              expires_on: "2026-08-22",
-              maximum_meaningful_lines: 401,
-            },
-          ],
-        }),
-      ),
-    ).toThrow("must not duplicate");
-    expect(
-      loadExceptions(() =>
-        JSON.stringify({
           exceptions: [
             {
               path: "legacy.rs",
@@ -315,14 +197,7 @@ describe("source structure gate", () => {
           ],
         }),
       ),
-    ).toEqual([
-      {
-        path: "legacy.rs",
-        work_item: "QUAL-004",
-        expires_on: "2026-08-22",
-        maximum_meaningful_lines: 401,
-      },
-    ]);
+    ).toThrow("must not contain source-structure exceptions");
   });
 
   it("runs with injectable process and filesystem boundaries", () => {
@@ -330,7 +205,6 @@ describe("source structure gate", () => {
 
     runStructureCheck({
       args: ["--staged"],
-      currentDate: "2026-08-08",
       execute(command, args) {
         expect(command).toBe("git");
         expect(args).toEqual([
@@ -344,10 +218,7 @@ describe("source structure gate", () => {
       readFile() {
         return "let value = 1;\n";
       },
-      loadAllowedExceptions() {
-        return [];
-      },
-      loadBaselineExceptions() {
+      validateExceptionLedger() {
         return undefined;
       },
       log(message) {
@@ -370,10 +241,7 @@ describe("source structure gate", () => {
             MAX_PRODUCTION_SOURCE_LINES + 1,
           )}`;
         },
-        loadAllowedExceptions() {
-          return [];
-        },
-        loadBaselineExceptions() {
+        validateExceptionLedger() {
           return undefined;
         },
       }),

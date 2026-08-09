@@ -1,10 +1,10 @@
 use super::{
     Board, BoardId, Dependency, DependencyId, DependencyKind, DependencySource, Evidence,
     EvidenceId, EvidenceKind, EvidenceResult, Execution, ExecutionId, ExecutionStatus,
-    ExecutionUsage, ExternalLink, ExternalLinkId, ExternalLinkProvenance, PolicyAction,
-    PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId, ProtectedGitAction,
-    SchemaMetadata, ToolScope, VersionedSchema, WorkItem, WorkItemBudget, WorkItemId,
-    WorkItemState,
+    ExecutionUsage, ExternalConnectionMode, ExternalLink, ExternalLinkId, ExternalLinkProvenance,
+    PolicyAction, PolicyDecision, PolicyDecisionId, PolicyDecisionKind, Project, ProjectId,
+    ProtectedGitAction, SchemaMetadata, ToolScope, VersionedSchema, WorkItem, WorkItemBudget,
+    WorkItemId, WorkItemState,
 };
 
 #[test]
@@ -59,6 +59,7 @@ fn versioned_domain_records_start_at_the_current_schema() {
         schema: SchemaMetadata::current(),
         id: ExecutionId::from("execution-1"),
         work_item_id: work_item_id.clone(),
+        role: Default::default(),
         adapter_name: "fake-agent".to_owned(),
         status: ExecutionStatus::Pending,
         session_id: None,
@@ -74,6 +75,7 @@ fn versioned_domain_records_start_at_the_current_schema() {
         schema: SchemaMetadata::current(),
         id: EvidenceId::from("evidence-1"),
         work_item_id: work_item_id.clone(),
+        execution_id: None,
         kind: EvidenceKind::Check,
         result: EvidenceResult::Passed,
         summary: "All checks passed.".to_owned(),
@@ -101,7 +103,9 @@ fn versioned_domain_records_start_at_the_current_schema() {
         connector_id: "linear".to_owned(),
         provenance: ExternalLinkProvenance::Imported,
         external_id: "LIN-1".to_owned(),
+        display_identifier: "LIN-1".to_owned(),
         url: "https://linear.app/example/issue/LIN-1".to_owned(),
+        connection_mode: ExternalConnectionMode::ReadOnly,
     };
 
     assert!(project.uses_current_schema());
@@ -207,4 +211,15 @@ fn state_categories_keep_recovery_states_distinct_from_terminal_states() {
     assert!(WorkItemState::Interrupted.is_recoverable());
     assert!(!WorkItemState::Review.is_recoverable());
     assert!(!SchemaMetadata { version: 0 }.is_current());
+}
+
+#[test]
+fn execution_lifecycle_keeps_terminal_attempts_distinct_from_recoverable_progress() {
+    assert!(ExecutionStatus::Completed.is_terminal());
+    assert!(ExecutionStatus::Failed.is_terminal());
+    assert!(!ExecutionStatus::AwaitingInput.is_terminal());
+    assert!(ExecutionStatus::Pending.allows_transition_to(ExecutionStatus::Running));
+    assert!(ExecutionStatus::Running.allows_transition_to(ExecutionStatus::AwaitingReview));
+    assert!(ExecutionStatus::AwaitingInput.allows_transition_to(ExecutionStatus::Running));
+    assert!(!ExecutionStatus::Completed.allows_transition_to(ExecutionStatus::Running));
 }

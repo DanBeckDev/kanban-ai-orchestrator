@@ -1,0 +1,91 @@
+work_item: LIN-002
+scope:
+  - src-tauri/Cargo.toml
+  - src-tauri/Cargo.lock
+  - src-tauri/src/application/board_service.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/board_snapshot.rs
+  - src-tauri/src/application/linear_import_request.rs
+  - src-tauri/src/application/linear_import_service.rs
+  - src-tauri/src/application/linear_import_service_tests.rs
+  - src-tauri/src/application/mod.rs
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/domain/mod.rs
+  - src-tauri/src/domain/model/external_link.rs
+  - src-tauri/src/domain/model/mod.rs
+  - src-tauri/src/domain/model/tests.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/persistence/board_repository.rs
+  - src-tauri/src/persistence/board_store.rs
+  - src-tauri/src/persistence/event_store_error.rs
+  - src-tauri/src/persistence/event_store_schema.rs
+  - src-tauri/src/persistence/execution_store.rs
+  - src-tauri/src/persistence/external_link_store.rs
+  - src-tauri/src/persistence/mod.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - src-tauri/src/linear/graphql.rs
+  - src-tauri/src/linear/mod.rs
+  - src-tauri/src/linear/oauth.rs
+  - src-tauri/src/linear/oauth/tests.rs
+  - src-tauri/src/linear/oauth/tests/callback.rs
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.test.tsx
+  - src/board/BoardWorkspace.tsx
+  - src/board/ExternalLinks.test.tsx
+  - src/board/ExternalLinks.tsx
+  - src/board/LinearImportForm.test.tsx
+  - src/board/LinearImportForm.tsx
+  - src/board/WorkItemCard.tsx
+  - src/board/gateway.ts
+  - src/board/presentation.ts
+  - src/board/types.ts
+  - src/styles.css
+  - docs/integrations/linear.md
+  - docs/planning/backlog.yaml
+  - docs/quality/reviews/LIN-002.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T19:54:21Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: The production GraphQL transport is a deliberately thin external HTTP boundary and cannot be deterministically exercised against Linear from unit tests.
+        resolution: not-applicable
+        rationale: The request contract, response validation, error propagation, and read-only bounded query are tested through an injected transport. A live OAuth/Linear verification remains a user-owned end-to-end step and is not substituted with a flaky network unit test.
+        decision_reference: LIN-001
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: The import use case described an immutable Linear UUID but only accepted any nonblank string.
+    change: Added UUID parsing at the Rust application boundary, including a rejection test that verifies no invalid link is written.
+  - finding: An arbitrary URL could be durably stored and later opened by the board UI.
+    change: Accepted only HTTPS linear.app URLs at the authoritative boundary; the form now also gives the browser URL semantics.
+  - finding: A newly rendered task-select option made an existing text-only UI assertion ambiguous.
+    change: Scoped the assertion to the task heading so it verifies the intended card rather than incidental text anywhere on the page.
+  - finding: Refreshing an access token in the desktop command could have kept the shared OAuth mutex locked during network I/O.
+    change: Split credential selection from token resolution, then persist a refreshed credential only after the HTTP operation returns; the shared mutex now protects local state only.
+  - finding: GraphQL responses and transport errors needed an explicit boundary before they reached the board UI.
+    change: Added a bounded, read-only assigned-issues query behind an injectable transport and validate GraphQL errors, missing data, invalid JSON, and incomplete issue summaries before returning them.
+  - finding: OAuth callback tests grew beyond the 400-meaningful-line hard limit while adding security and failure coverage.
+    change: The whole-repository structure gate stopped the change at 408 lines; callback-specific tests were split into a focused submodule with no exception.
+  - finding: Full verification reported an immutable test fixture as a lint warning.
+    change: Changed the fixture binding to const and reran the full suite with no warnings.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: cargo test --manifest-path src-tauri/Cargo.toml application::linear_import_service_tests --lib
+      result: passed (3 tests)
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 84.57
+    statements: 80.13
+    functions: 83.57
+    branches: 81.23
+    threshold_met: true
+exceptions: []

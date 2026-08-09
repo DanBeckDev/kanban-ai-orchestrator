@@ -1,0 +1,47 @@
+work_item: EXEC-003
+scope:
+  - src-tauri/src/agent/contract.rs
+  - src-tauri/src/agent/process_adapter.rs
+  - src-tauri/src/agent/process_event_reader.rs
+  - src-tauri/src/agent/process_adapter_tests.rs
+  - src-tauri/src/agent/mod.rs
+  - docs/decisions/0013-structured-process-agent-adapter.md
+  - docs/architecture/overview.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T17:38:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: The generic process adapter cannot guarantee cancellation of an entire provider process tree across all desktop platforms.
+        resolution: implemented
+        rationale: It declares interruption and termination unsupported rather than killing only a direct child and presenting a false cancellation success. Provider/platform adapters must add the capability only with a tested tree controller.
+        decision_reference: ADR-0013
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A process setup failure could leave a newly spawned child running.
+    change: Explicitly terminate the direct child when writing the brief, acquiring stdout, or starting the reader fails.
+  - finding: Process launch, output parsing, and bounded queue behavior were vertically co-located.
+    change: Split the process lifecycle adapter from the bounded event-reader responsibility.
+  - finding: Provider output could be malformed, unbounded, or out of sequence.
+    change: Enforced JSON-lines sequencing, a 64 KiB line ceiling, a 1,000-event ceiling, and conversion of protocol failures into a normalized failed event.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml agent::process_adapter_tests
+      result: passed (4 tests)
+    - command: npm run rust:coverage
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: Rust core
+    lines: 88.23
+    statements: 84.32
+    functions: 86.85
+    branches: 88.26
+    threshold_met: true
+exceptions: []

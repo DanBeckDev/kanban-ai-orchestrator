@@ -1,0 +1,60 @@
+work_item: QUAL-005
+scope:
+  - scripts/verify-quality-receipt.mjs
+  - scripts/verify-quality-receipt.test.mjs
+  - docs/quality/review-receipt.template.yaml
+  - docs/quality/code-requirements.md
+  - docs/quality/code-structure.md
+  - docs/decisions/0014-source-structure-review-evidence.md
+  - docs/planning/backlog.yaml
+  - AGENTS.md
+source_structure:
+  reviewed_files:
+    - path: scripts/verify-quality-receipt.mjs
+      meaningful_lines: 206
+      responsibilities: Validates review-receipt evidence and reports actionable gate failures.
+      decision: kept cohesive
+    - path: scripts/verify-quality-receipt.test.mjs
+      meaningful_lines: 205
+      responsibilities: Exercises the review-receipt gate's observable acceptance and rejection cases.
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T22:22:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Historical receipts do not include the new changed-source inventory.
+        resolution: accepted
+        rationale: Rewriting historical evidence would not establish that an earlier review occurred. The repository-wide source gate remains authoritative for all code, while the new inventory is enforced for staged and pull-request changes from this decision onward.
+        decision_reference: ADR-0014
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A receipt could claim a completed Clean Code review while omitting changed source files and their structural assessment.
+    change: Added a strict source-structure inventory that requires every changed source path, its recalculated meaningful-line count, responsibility, and decision.
+  - finding: Receipt validation did not prove its inventory resisted omissions or stale counts.
+    change: Added focused tests for missing, complete, and stale line-count evidence.
+verification:
+  commands:
+    - command: npm test -- --run scripts/verify-quality-receipt.test.mjs
+      result: passed (10 tests)
+    - command: npm run structure:verify
+      result: passed (155 repository paths; no exceptions)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 90.29
+      statements: 90.15
+      functions: 85.61
+      branches: 88.32
+    rust_core:
+      lines: 86.09
+      statements: 82.04
+      functions: 84.69
+      branches: 80.00
+    threshold_met: true
+exceptions: []

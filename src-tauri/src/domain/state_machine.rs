@@ -13,7 +13,8 @@ pub struct TransitionConfig {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompletionEvidence {
-    pub checks_passed: bool,
+    #[serde(default, alias = "checksPassed")]
+    pub quality_gate_passed: bool,
     pub completion_report_present: bool,
     pub review_accepted: bool,
 }
@@ -39,7 +40,7 @@ impl fmt::Display for TransitionError {
             }
             Self::IncompleteEvidence => write!(
                 formatter,
-                "done requires passing checks and a completion report"
+                "done requires a passing quality gate and a completion report"
             ),
             Self::HumanReviewRequired => {
                 write!(formatter, "done requires an accepted human review")
@@ -91,7 +92,7 @@ fn is_allowed_transition(current: WorkItemState, next: WorkItemState) -> bool {
             )
             | (
                 Review,
-                Done | Running | Blocked | Failed | Interrupted | Cancelled
+                Ready | Done | Running | Blocked | Failed | Interrupted | Cancelled
             )
             | (Blocked, Planned | Ready | Cancelled)
             | (Failed, Ready | Cancelled)
@@ -107,7 +108,7 @@ fn validate_completion(
         return Err(TransitionError::IncompleteEvidence);
     };
 
-    if !evidence.checks_passed || !evidence.completion_report_present {
+    if !evidence.quality_gate_passed || !evidence.completion_report_present {
         return Err(TransitionError::IncompleteEvidence);
     }
 
@@ -130,7 +131,7 @@ mod tests {
         human_review_required: true,
     };
     const COMPLETE_EVIDENCE: CompletionEvidence = CompletionEvidence {
-        checks_passed: true,
+        quality_gate_passed: true,
         completion_report_present: true,
         review_accepted: true,
     };
@@ -152,6 +153,7 @@ mod tests {
             (WorkItemState::AwaitingInput, WorkItemState::Blocked),
             (WorkItemState::AwaitingInput, WorkItemState::Failed),
             (WorkItemState::AwaitingInput, WorkItemState::Interrupted),
+            (WorkItemState::Review, WorkItemState::Ready),
             (WorkItemState::Review, WorkItemState::Running),
             (WorkItemState::Review, WorkItemState::Blocked),
             (WorkItemState::Review, WorkItemState::Failed),
@@ -262,7 +264,7 @@ mod tests {
                 WorkItemState::Done,
                 AUTOMATED_REVIEW,
                 Some(CompletionEvidence {
-                    checks_passed: false,
+                    quality_gate_passed: false,
                     completion_report_present: true,
                     review_accepted: false,
                 }),
@@ -275,7 +277,7 @@ mod tests {
                 WorkItemState::Done,
                 AUTOMATED_REVIEW,
                 Some(CompletionEvidence {
-                    checks_passed: true,
+                    quality_gate_passed: true,
                     completion_report_present: false,
                     review_accepted: false,
                 }),
@@ -313,7 +315,7 @@ mod tests {
     fn reports_actionable_transition_errors() {
         assert_eq!(
             TransitionError::IncompleteEvidence.to_string(),
-            "done requires passing checks and a completion report"
+            "done requires a passing quality gate and a completion report"
         );
         assert_eq!(
             TransitionError::HumanReviewRequired.to_string(),

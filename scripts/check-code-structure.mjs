@@ -3,17 +3,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { projectRootFor } from "./project-root.mjs";
+
+export { projectRootFor } from "./project-root.mjs";
+
 export const MAX_PRODUCTION_SOURCE_LINES = 400;
 export const MAX_TEST_SOURCE_LINES = 400;
 
-export function projectRootFor(moduleUrl, workingDirectory) {
-  return moduleUrl.startsWith("file:")
-    ? resolve(fileURLToPath(new URL("..", moduleUrl)))
-    : workingDirectory;
-}
-
 const projectRoot = projectRootFor(import.meta.url, process.cwd());
 const exceptionsPath = "docs/quality/code-structure-exceptions.json";
+const sourceRoots = ["src", "src-tauri/src", "scripts"];
 
 export function sourceFileLimit(path) {
   const isSourceFile =
@@ -62,9 +61,20 @@ export function parseOptions(args) {
 }
 
 export function changedPathsFor(options, execute = execFileSync) {
+  const executeGit = (args) =>
+    execute("git", args, { cwd: projectRoot, encoding: "utf8" })
+      .split("\n")
+      .filter(Boolean);
   let args;
   if (options.mode === "all") {
-    args = ["ls-files", "src", "src-tauri/src", "scripts"];
+    args = [
+      "ls-files",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      "--",
+      ...sourceRoots,
+    ];
   } else if (options.mode === "staged") {
     args = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
   } else if (options.mode === "base-ref") {
@@ -74,124 +84,37 @@ export function changedPathsFor(options, execute = execFileSync) {
       "--diff-filter=ACMR",
       `${options.baseRef}...HEAD`,
     ];
-  } else {
+  } else if (options.mode === "working-tree") {
     args = ["diff", "--name-only", "--diff-filter=ACMR", "HEAD"];
+    const modifiedPaths = executeGit(args);
+    const untrackedPaths = executeGit([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--",
+      ...sourceRoots,
+    ]);
+    return [...new Set([...modifiedPaths, ...untrackedPaths])];
   }
 
-  return execute("git", args, { cwd: projectRoot, encoding: "utf8" })
-    .split("\n")
-    .filter(Boolean);
+  return executeGit(args);
 }
 
 export function loadExceptions(readFile = readFileSync) {
-  return parseExceptions(
+  const ledger = JSON.parse(
     readFile(resolve(projectRoot, exceptionsPath), "utf8"),
   );
-}
-
-export function parseExceptions(content) {
-  const parsed = JSON.parse(content);
-
-  if (
-    !Array.isArray(parsed.exceptions) ||
-    parsed.exceptions.some(
-      (exception) =>
-        typeof exception.path !== "string" ||
-        typeof exception.work_item !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(exception.expires_on) ||
-        !Number.isInteger(exception.maximum_meaningful_lines) ||
-        exception.maximum_meaningful_lines <= MAX_TEST_SOURCE_LINES,
-    )
-  ) {
+  if (!Array.isArray(ledger.exceptions)) {
+    throw new Error(`${exceptionsPath} must declare an exceptions array.`);
+  }
+  if (ledger.exceptions.length > 0) {
     throw new Error(
-      `${exceptionsPath} must contain exceptions with a path, work item, YYYY-MM-DD expiry, and a maximum meaningful-line count over ${MAX_TEST_SOURCE_LINES}.`,
+      `${exceptionsPath} must not contain source-structure exceptions. Split every oversized file before merging.`,
     );
   }
-
-  const paths = new Set(parsed.exceptions.map((exception) => exception.path));
-  if (paths.size !== parsed.exceptions.length) {
-    throw new Error(`${exceptionsPath} must not duplicate an exception path.`);
-  }
-
-  return parsed.exceptions;
 }
 
-function activeException(path, exceptions, currentDate) {
-  return exceptions.find(
-    (exception) =>
-      exception.path === path && exception.expires_on >= currentDate,
-  );
-}
-
-export function baselineExceptionsFor(options, execute = execFileSync) {
-  const baseRef =
-    options.mode === "base-ref"
-      ? options.baseRef
-      : options.mode === "all"
-        ? undefined
-        : "HEAD";
-  if (baseRef === undefined) {
-    return undefined;
-  }
-
-  try {
-    return parseExceptions(
-      execute("git", ["show", `${baseRef}:${exceptionsPath}`], {
-        cwd: projectRoot,
-        encoding: "utf8",
-      }),
-    );
-  } catch (error) {
-    if (error.status === 128) {
-      return undefined;
-    }
-    throw error;
-  }
-}
-
-export function validateExceptionLedger({ exceptions, baselineExceptions }) {
-  if (baselineExceptions === undefined) {
-    return [];
-  }
-
-  const baselineByPath = new Map(
-    baselineExceptions.map((exception) => [exception.path, exception]),
-  );
-  return exceptions.flatMap((exception) => {
-    const baseline = baselineByPath.get(exception.path);
-    if (baseline === undefined) {
-      return [
-        `${exception.path} is a new source-structure exception. New exceptions require product-owner approval and an ADR.`,
-      ];
-    }
-    if (baseline.work_item !== exception.work_item) {
-      return [
-        `${exception.path} cannot change its source-structure exception owner from ${baseline.work_item} to ${exception.work_item}.`,
-      ];
-    }
-    if (baseline.expires_on < exception.expires_on) {
-      return [
-        `${exception.path} cannot extend its source-structure exception expiry beyond ${baseline.expires_on}.`,
-      ];
-    }
-    if (
-      baseline.maximum_meaningful_lines < exception.maximum_meaningful_lines
-    ) {
-      return [
-        `${exception.path} cannot raise its source-structure exception ceiling above ${baseline.maximum_meaningful_lines}.`,
-      ];
-    }
-
-    return [];
-  });
-}
-
-export function validateSourceStructure({
-  paths,
-  readFile = readFileSync,
-  exceptions = [],
-  currentDate = new Date().toISOString().slice(0, 10),
-}) {
+export function validateSourceStructure({ paths, readFile = readFileSync }) {
   return paths.flatMap((path) => {
     const limit = sourceFileLimit(path);
     if (limit === undefined) {
@@ -208,54 +131,38 @@ export function validateSourceStructure({
       throw error;
     }
     const lineCount = meaningfulLineCount(source);
-    const exception = activeException(path, exceptions, currentDate);
-    if (
-      lineCount <= limit ||
-      (exception && lineCount <= exception.maximum_meaningful_lines)
-    ) {
+    if (lineCount <= limit) {
       return [];
     }
 
-    const ceiling = exception
-      ? `the temporary exception ceiling is ${exception.maximum_meaningful_lines}`
-      : `the limit is ${limit}`;
-
     return [
-      `${path} has ${lineCount} meaningful lines; ${ceiling}. Split independent responsibilities into cohesive modules before merging.`,
+      `${path} has ${lineCount} meaningful lines; the limit is ${limit}. Split independent responsibilities into cohesive modules before merging.`,
     ];
   });
 }
 
 export function runStructureCheck({
   args = process.argv.slice(2),
-  currentDate,
   execute = execFileSync,
-  loadBaselineExceptions = baselineExceptionsFor,
-  loadAllowedExceptions = loadExceptions,
+  validateExceptionLedger = loadExceptions,
   log = console.log,
   readFile = readFileSync,
 } = {}) {
   const options = parseOptions(args);
   const paths = changedPathsFor(options, execute);
-  const exceptions = loadAllowedExceptions(readFile);
+  validateExceptionLedger(readFile);
   const violations = validateSourceStructure({
     paths,
     readFile,
-    exceptions,
-    currentDate,
   });
-  violations.push(
-    ...validateExceptionLedger({
-      exceptions,
-      baselineExceptions: loadBaselineExceptions(options, execute),
-    }),
-  );
 
   if (violations.length > 0) {
     throw new Error(violations.join("\n"));
   }
 
-  log(`Validated source structure for ${paths.length} changed path(s).`);
+  const scope =
+    options.mode === "all" ? "repository path(s)" : "changed path(s)";
+  log(`Validated source structure for ${paths.length} ${scope}.`);
 }
 
 /* v8 ignore next -- narrow CLI bootstrap; runStructureCheck is unit tested. */

@@ -1,0 +1,312 @@
+work_item: QUAL-006
+scope:
+  - .github/workflows/quality.yml
+  - docs/decisions/0019-fast-fail-quality-ci-and-safe-rust-caching.md
+  - docs/quality/code-requirements.md
+  - docs/planning/backlog.yaml
+  - "The initial-foundation source files whose structural review evidence was absent from earlier receipts."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/conformance_tests.rs
+      meaningful_lines: 98
+      responsibilities: "Exercises the provider-neutral agent adapter conformance contract."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/contract.rs
+      meaningful_lines: 173
+      responsibilities: "Defines normalized agent capabilities, sessions, lifecycle events, and adapter errors."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/fake_adapter.rs
+      meaningful_lines: 126
+      responsibilities: "Provides a deterministic in-memory agent adapter for behavior tests."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/process_adapter.rs
+      meaningful_lines: 245
+      responsibilities: "Starts bounded child processes and translates their lifecycle into the adapter contract."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/process_adapter_tests.rs
+      meaningful_lines: 90
+      responsibilities: "Covers process-adapter launch, output, failure, and shutdown behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/tests.rs
+      meaningful_lines: 267
+      responsibilities: "Tests common adapter contract behavior shared by all agent implementations."
+      decision: kept cohesive
+    - path: src-tauri/src/application/agent_profile_service.rs
+      meaningful_lines: 66
+      responsibilities: "Validates and persists selected worker-agent profiles through the application boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_plan.rs
+      meaningful_lines: 10
+      responsibilities: "Defines typed stored and derived board-plan data."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests/plan.rs
+      meaningful_lines: 339
+      responsibilities: "Exercises plan proposal, validation, preview, and confirmation scenarios for the board service."
+      decision: kept cohesive
+    - path: src-tauri/src/application/execution_policy_service.rs
+      meaningful_lines: 14
+      responsibilities: "Exposes the application-level policy check used before an execution starts."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_import_request.rs
+      meaningful_lines: 19
+      responsibilities: "Defines validated request DTOs for importing Linear issues and blockers."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_import_service.rs
+      meaningful_lines: 128
+      responsibilities: "Coordinates validated Linear issue and blocker import through board services."
+      decision: kept cohesive
+    - path: src-tauri/src/application/linear_import_service_tests.rs
+      meaningful_lines: 155
+      responsibilities: "Covers Linear import validation, linking, provenance, and dependency behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/application/plan_service.rs
+      meaningful_lines: 170
+      responsibilities: "Coordinates durable plan-proposal storage, replacement, and confirmation."
+      decision: kept cohesive
+    - path: src-tauri/src/application/review_check_request.rs
+      meaningful_lines: 8
+      responsibilities: "Defines the typed request for recording an implementation quality check."
+      decision: kept cohesive
+    - path: src-tauri/src/application/review_decision_request.rs
+      meaningful_lines: 9
+      responsibilities: "Defines the typed request for a human review decision."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_policy.rs
+      meaningful_lines: 59
+      responsibilities: "Bridges desktop execution start requests to durable policy authorization."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_control.rs
+      meaningful_lines: 66
+      responsibilities: "Implements desktop commands that inspect, cancel, and recover executions."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/dependency_graph/error.rs
+      meaningful_lines: 85
+      responsibilities: "Defines domain errors returned by dependency-graph validation and scheduling."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/dependency_graph/graph.rs
+      meaningful_lines: 297
+      responsibilities: "Implements dependency graph validation, blocker analysis, critical paths, and parallel stages."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/dependency_graph/mod.rs
+      meaningful_lines: 10
+      responsibilities: "Composes and re-exports the dependency-graph domain boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/dependency_graph/tests.rs
+      meaningful_lines: 239
+      responsibilities: "Covers dependency graph cycle, blocker, critical-path, and parallel-stage behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/dependency_graph/types.rs
+      meaningful_lines: 40
+      responsibilities: "Defines dependency eligibility, blocker, and work-progress result types."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/events.rs
+      meaningful_lines: 58
+      responsibilities: "Defines append-only work-item event facts and transition commands."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/external_link.rs
+      meaningful_lines: 27
+      responsibilities: "Defines external-link provenance, connection mode, and persisted link facts."
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/work_item.rs
+      meaningful_lines: 97
+      responsibilities: "Defines work-item lifecycle, budgets, and typed dependency model facts."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/credential_store.rs
+      meaningful_lines: 63
+      responsibilities: "Implements the native credential-store boundary for Linear OAuth tokens."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/loopback_callback.rs
+      meaningful_lines: 198
+      responsibilities: "Runs the bounded local OAuth callback listener and validates callback requests."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/oauth/tests/callback.rs
+      meaningful_lines: 44
+      responsibilities: "Covers OAuth callback parsing, state validation, and error responses."
+      decision: kept cohesive
+    - path: src-tauri/src/linear/token_client.rs
+      meaningful_lines: 197
+      responsibilities: "Implements Linear OAuth token exchange and refresh requests behind a client boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/agent_profile_store.rs
+      meaningful_lines: 81
+      responsibilities: "Persists and retrieves validated agent-profile records in SQLite."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_store_error.rs
+      meaningful_lines: 165
+      responsibilities: "Maps SQLite failures into contextual board-store errors."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_policy.rs
+      meaningful_lines: 55
+      responsibilities: "Persists and reads policy decisions alongside work-item events."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_queries.rs
+      meaningful_lines: 163
+      responsibilities: "Queries durable work-item event state and materialized board data."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_recovery.rs
+      meaningful_lines: 57
+      responsibilities: "Performs durable event-store restart reconciliation and recovery updates."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_support.rs
+      meaningful_lines: 66
+      responsibilities: "Provides shared event-store row mapping and SQLite transaction helpers."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/external_link_store.rs
+      meaningful_lines: 86
+      responsibilities: "Persists and retrieves immutable external issue links."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/plan_store.rs
+      meaningful_lines: 242
+      responsibilities: "Defines and operates durable plan-proposal and confirmation storage."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_policy_tests.rs
+      meaningful_lines: 205
+      responsibilities: "Covers persisted policy-decision behavior in the SQLite event store."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/error.rs
+      meaningful_lines: 187
+      responsibilities: "Defines contextual workspace and Git-command errors."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/error_tests.rs
+      meaningful_lines: 120
+      responsibilities: "Covers workspace error classification and user-facing diagnostics."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/mod.rs
+      meaningful_lines: 259
+      responsibilities: "Defines workspace provisioning, verification, review artifacts, and cleanup behavior."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/path.rs
+      meaningful_lines: 156
+      responsibilities: "Validates workspace paths and controls permitted filesystem access."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/review_artifact_tests.rs
+      meaningful_lines: 36
+      responsibilities: "Covers extraction of bounded review artifacts from a task workspace."
+      decision: kept cohesive
+    - path: src/App.test.tsx
+      meaningful_lines: 13
+      responsibilities: "Verifies the application root delegates rendering to the board workspace."
+      decision: kept cohesive
+    - path: src/App.tsx
+      meaningful_lines: 31
+      responsibilities: "Composes product metadata with the board workspace at the React root."
+      decision: kept cohesive
+    - path: src/board/AgentProfileForm.tsx
+      meaningful_lines: 116
+      responsibilities: "Renders and validates agent-profile configuration before persistence."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 145
+      responsibilities: "Renders project and board creation or reopening controls."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 69
+      responsibilities: "Covers Linear-related board workspace interactions."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 23
+      responsibilities: "Provides focused board-workspace test setup helpers."
+      decision: kept cohesive
+    - path: src/board/DependencyForm.tsx
+      meaningful_lines: 143
+      responsibilities: "Renders and validates typed dependency creation controls."
+      decision: kept cohesive
+    - path: src/board/ExecutionControl.tsx
+      meaningful_lines: 32
+      responsibilities: "Renders the focused control for starting a selected agent execution."
+      decision: kept cohesive
+    - path: src/board/ExternalLinks.test.tsx
+      meaningful_lines: 28
+      responsibilities: "Covers rendering of immutable external issue links."
+      decision: kept cohesive
+    - path: src/board/ExternalLinks.tsx
+      meaningful_lines: 22
+      responsibilities: "Renders safe external issue links for a work item."
+      decision: kept cohesive
+    - path: src/board/LinearImportForm.test.tsx
+      meaningful_lines: 103
+      responsibilities: "Covers import-form validation and Linear issue selection behavior."
+      decision: kept cohesive
+    - path: src/board/LinearImportForm.tsx
+      meaningful_lines: 190
+      responsibilities: "Renders and validates manual and authenticated Linear issue import controls."
+      decision: kept cohesive
+    - path: src/board/RecoveryActions.tsx
+      meaningful_lines: 87
+      responsibilities: "Renders recovery and cancellation actions for interrupted task executions."
+      decision: kept cohesive
+    - path: src/board/ReviewDecisionForm.tsx
+      meaningful_lines: 67
+      responsibilities: "Renders the human review-decision form and its validation feedback."
+      decision: kept cohesive
+    - path: src/board/TaskForm.tsx
+      meaningful_lines: 159
+      responsibilities: "Renders and validates task creation with criteria, budget, and review settings."
+      decision: kept cohesive
+    - path: src/board/presentation.test.ts
+      meaningful_lines: 160
+      responsibilities: "Covers pure board presentation selectors and state-label derivation."
+      decision: kept cohesive
+    - path: src/board/presentation.ts
+      meaningful_lines: 157
+      responsibilities: "Derives display-ready board columns, blockers, evidence, and transition choices."
+      decision: kept cohesive
+    - path: src/lib/productMetadata.test.ts
+      meaningful_lines: 9
+      responsibilities: "Covers product metadata formatting."
+      decision: kept cohesive
+    - path: src/lib/productMetadata.ts
+      meaningful_lines: 11
+      responsibilities: "Defines static product metadata and its foundation status message."
+      decision: kept cohesive
+    - path: src/test/setup.ts
+      meaningful_lines: 4
+      responsibilities: "Initializes browser-like assertions for frontend tests."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-09T09:00:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The initial foundation was submitted as one broad pull request, so its receipts did not collectively inventory every changed source file."
+        resolution: implemented
+        rationale: "Reviewed the 64 omitted files, recorded their exact current meaningful-line counts and focused responsibilities, and preserved the validator's full PR-diff requirement rather than weakening it. Future work will use independent ticket-sized PRs."
+        decision_reference: QUAL-006 and ADR-0014
+      - finding: "Nightly coverage artifacts are expensive and are not safe to share with stable Cargo test and Clippy jobs."
+        resolution: implemented
+        rationale: "The workflow caches only stable Cargo dependency and target inputs, isolates nightly coverage output, and retains the full nightly coverage gate."
+        decision_reference: ADR-0019
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Review-receipt policy ran after the expensive quality suite, delaying feedback for a missing source inventory."
+    change: "Added a lightweight policy job and made both the platform matrix and full quality suite depend on it."
+  - finding: "Hosted runners rebuilt stable Cargo dependencies and the coverage executable on each run."
+    change: "Added safe compiler- and dependency-keyed Cargo caching and installed the pinned coverage executable from its verified release installer."
+  - finding: "The initial PR lacked structural review evidence for 64 source files."
+    change: "Added the complete reviewed-file inventory with verified line counts and responsibility decisions."
+verification:
+  commands:
+    - command: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/quality.yml")'
+      result: passed
+    - command: node scripts/verify-quality-receipt.mjs --base-ref origin/main
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.64
+        statements: 86.10
+        functions: 80.85
+        branches: 85.30
+      - package_or_crate: src-tauri-rust
+        lines: 83.90
+        statements: 80.04
+        functions: 83.87
+        branches: 80.35
+    threshold_met: true
+exceptions: []

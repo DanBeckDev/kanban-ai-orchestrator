@@ -1,0 +1,66 @@
+work_item: EXEC-003
+scope:
+  - src-tauri/src/agent/profile.rs
+  - src-tauri/src/agent/process_adapter.rs
+  - src-tauri/src/agent/process_event_reader.rs
+  - src-tauri/src/agent/provider_event_decoder.rs
+  - src-tauri/src/agent/provider_adapter.rs
+  - src-tauri/src/agent/conformance_tests.rs
+  - src-tauri/src/agent/provider_adapter_tests.rs
+  - src-tauri/src/desktop_execution_runtime.rs
+  - src/board/agentProfilePresentation.ts
+  - src/board/AgentProfileForm.tsx
+  - src/board/AgentLaunchForm.tsx
+  - src/board/WorkItemCard.tsx
+  - src/board/BoardWorkspace.test.tsx
+  - docs/decisions/0013-structured-process-agent-adapter.md
+  - docs/architecture/overview.md
+  - docs/planning/backlog.yaml
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T22:08:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: WorkerAgentAdapter has one kind switch at the profile-to-adapter composition boundary.
+        resolution: accepted
+        rationale: This is the single concrete factory permitted by the adapter boundary. The scheduler and execution-event controller only depend on AgentAdapter, so adding a provider is isolated to the edge rather than scattering provider conditionals through policy or task-state code.
+        decision_reference: ADR-0013
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Native provider JSON could leak raw tool, message, or result text into durable board data.
+    change: Added bounded Codex and Claude event decoders that retain only fixed lifecycle summaries, usage, and normalized failure reasons; tests include secret-looking source fields.
+  - finding: A user profile could replace adapter-owned protocol, sandbox, permission, resume, or unsafe-bypass flags.
+    change: Added typed profile kinds and validation that rejects reserved Codex and Claude arguments before persistence or launch.
+  - finding: A task starter could not tell that feedback, session resume, and safe process-tree interruption are unavailable.
+    change: Added provider-aware profile and launch views that disclose the selected profile's structured-event capability and unavailable operations before Start agent is available.
+  - finding: WorkItemCard exceeded the repository's 400-meaningful-line limit after capability disclosure was added.
+    change: Extracted AgentLaunchForm so the card remains responsible for work-item presentation and the launch component owns profile selection, briefing, and pre-start capability disclosure.
+  - finding: Rust branch coverage fell below the mandatory 80 percent threshold during the provider change.
+    change: Added native progress, failure, unknown-event, and incomplete-usage decoder scenarios until the whole-crate branch threshold passed without lowering it.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml agent:: --lib --no-fail-fast
+      result: passed (22 tests)
+    - command: npm test -- --run src/board/BoardWorkspace.test.tsx
+      result: passed (11 tests)
+    - command: npm run structure:verify
+      result: passed (155 repository paths; no exceptions)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    frontend:
+      lines: 90.25
+      statements: 90.09
+      functions: 85.12
+      branches: 88.52
+    rust_core:
+      lines: 86.01
+      statements: 82.00
+      functions: 84.69
+      branches: 80.00
+    threshold_met: true
+exceptions: []

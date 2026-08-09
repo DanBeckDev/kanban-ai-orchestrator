@@ -11,7 +11,7 @@ A task that changes executable code, runtime/build configuration, tests, or CI i
 3. Every actionable finding has been fixed in the same task: all `Must Fix`, `Should Fix`, and concrete correctness, security, reliability, data-integrity, or build findings outside the book rubric.
 4. Each `Consider` is explicitly resolved as `accepted`, `implemented`, or `not-applicable` in the quality-review receipt. An accepted trade-off needs a reason and, when enduring, an ADR.
 5. Lint, format, source-structure, static/security analysis, type checks, tests, and coverage commands all pass with no ignored errors or warnings.
-6. A quality-review receipt records the scope, reviewer, findings, changes made, verification commands, and coverage result.
+6. A quality-review receipt records the scope, reviewer, findings, changes made, verification commands, and coverage result. For every changed source file, it must also record the exact meaningful-line count, its cohesive responsibility, and the review decision. The receipt validator compares each recorded count with the current source; a source file cannot be omitted from the review evidence.
 
 The Clean Code skill remains deliberately non-dogmatic: it distinguishes defects from genuine trade-offs. This policy makes **actionable** defects blocking; it does not pretend every design consideration has one objectively correct answer.
 
@@ -37,9 +37,7 @@ Rules:
 
 ## Source structure policy
 
-Every changed production and test source file must stay within the repository's 400-meaningful-line limit. The gate applies to Rust, TypeScript/TSX, JavaScript/MJS, and quality scripts under the product source roots. It is intentionally stricter than a subjective review because a long file hides unrelated responsibilities and makes review ineffective.
-
-An exception is only a time-bounded migration record for a pre-existing oversized file. It must identify an owner work item, expiry date, and fixed maximum meaningful-line count in `docs/quality/code-structure-exceptions.json`; no new exception is allowed without product-owner approval and an ADR. Once the ledger exists, its owner, expiry, and ceiling may not be relaxed. See [source-structure gate](code-structure.md).
+Every production and test source file must stay within the repository's 400-meaningful-line limit. The gate applies to Rust, TypeScript/TSX, JavaScript/MJS, and quality scripts under the product source roots. It is intentionally stricter than a subjective review because a long file hides unrelated responsibilities and makes review ineffective. Source-structure exceptions are prohibited: a non-empty `docs/quality/code-structure-exceptions.json` fails the quality gate. See [source-structure gate](code-structure.md).
 
 ## Required verification layers
 
@@ -49,11 +47,16 @@ The implementing agent performs a Clean Code review and remediation pass before 
 
 ### 2. Local Git hook
 
-The repository will provide an installable pre-commit hook after the technology stack is selected. It runs the fast changed-code quality command and rejects code changes when required checks or a review receipt are missing. It is early feedback, not the authority: Git hooks can be bypassed.
+The repository provides an installable pre-commit hook. It runs the local quality command and rejects code changes when required checks or a review receipt are missing. Its source-structure check scans the whole repository, including untracked files, so legacy or newly added oversized files cannot hide outside the staged diff. It is early feedback, not the authority: Git hooks can be bypassed.
 
 ### 3. Required CI status check
 
 CI is the non-bypassable merge/release authority. The `quality:verify` job must run the full quality suite and publish coverage. Branch protection must require its successful status before merge. A green build is required even when a local hook was bypassed.
+
+CI runs changed-source structure and review-receipt policy before expensive platform and coverage
+work. Stable Cargo dependency/build artifacts may be cached only with keys that include the
+platform, compiler identity, and Cargo dependency inputs; credentials and nightly coverage artifacts
+are never cache inputs. See [ADR 0019](../decisions/0019-fast-fail-quality-ci-and-safe-rust-caching.md).
 
 ## Receipt and exceptions
 
@@ -65,7 +68,7 @@ The only permitted exception is an explicit product-owner decision for a real tr
 
 The first technology-stack task must add these commands and wire them into the hook and CI:
 
-- `quality:changed` — fast checks for a local commit;
+- `quality:changed` — local commit checks, including a whole-repository source-structure scan;
 - `quality:verify` — full format, lint, static/security analysis, type checks, tests, and coverage thresholds;
 - `structure:check` — source-structure validation for the current working-tree change;
 - `test:coverage` — machine-readable per-package coverage report.

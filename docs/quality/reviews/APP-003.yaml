@@ -1,0 +1,73 @@
+work_item: APP-003
+scope:
+  - docs/architecture/overview.md
+  - docs/planning/backlog.yaml
+  - src-tauri/src/agent/process_adapter_tests.rs
+  - src-tauri/src/application/board_plan.rs
+  - src-tauri/src/application/board_service.rs
+  - src-tauri/src/application/board_service_error.rs
+  - src-tauri/src/application/board_service_tests.rs
+  - src-tauri/src/application/board_service_tests/plan.rs
+  - src-tauri/src/application/mod.rs
+  - src-tauri/src/application/plan_requests.rs
+  - src-tauri/src/application/plan_service.rs
+  - src-tauri/src/desktop.rs
+  - src-tauri/src/lib.rs
+  - src-tauri/src/persistence/board_repository.rs
+  - src-tauri/src/persistence/board_store_error.rs
+  - src-tauri/src/persistence/mod.rs
+  - src-tauri/src/persistence/plan_store.rs
+  - src-tauri/src/persistence/sqlite_event_store.rs
+  - src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+  - src-tauri/src/persistence/sqlite_event_store_tests.rs
+  - src/board/BoardView.tsx
+  - src/board/BoardWorkspace.plan.test.tsx
+  - src/board/BoardWorkspace.test.fixtures.ts
+  - src/board/BoardWorkspace.test.helpers.tsx
+  - src/board/BoardWorkspace.test.tsx
+  - src/board/BoardWorkspace.tsx
+  - src/board/PlanProposalPanel.tsx
+  - src/board/gateway.ts
+  - src/board/types.ts
+  - src/styles.css
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-08T20:42:37Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: The plan form and its matching preview live in one UI component.
+        resolution: accepted
+        rationale: They are one bounded user workflow and share draft/edit state; splitting them would pass state and formatting helpers across a component boundary without clarifying authority. The component remains below the structural limit, while validation, scheduling, and persistence stay in dedicated daemon modules.
+        decision_reference: APP-003
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: A pure in-memory scheduler preview could not survive a desktop restart or guarantee safe materialization.
+    change: Added a dedicated proposal store and SQLite migration. A confirmation validates the stored exact proposal, checks all target collisions, writes task events and dependencies, records confirmation, and commits as one transaction.
+  - finding: An AI-facing proposal could have supplied board ownership, lifecycle state, schema metadata, or dependency provenance.
+    change: Reduced the desktop request to task specifications and dependency facts; the application boundary derives all authoritative fields from the stored board and forces Inbox/orchestrator values.
+  - finding: The board service and its general UI test module exceeded the 400-meaningful-line rule during this work.
+    change: Moved the error boundary and plan-specific test scenario into focused modules, then reran the whole-repository structure gate with no exception.
+  - finding: Full-suite process-adapter tests used a fixed half-second polling window and intermittently timed out under coverage instrumentation.
+    change: Replaced fixed retry counts with five-second monotonic deadlines and shared process-exit polling helpers, preserving bounded deterministic tests.
+  - finding: Pending plans could be previewed but not genuinely revised before confirmation.
+    change: Added replacement of a persisted unconfirmed proposal, a desktop revise/cancel flow, rejection feedback that leaves the draft editable, and tests for both the UI and no-materialization semantics.
+verification:
+  commands:
+    - command: cargo test --manifest-path src-tauri/Cargo.toml application::board_service_tests::plan -- --nocapture
+      result: passed (11 tests)
+    - command: npm test -- --run src/board/BoardWorkspace.plan.test.tsx
+      result: passed (5 tests)
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: minimum across React frontend and Rust core
+    lines: 85.11
+    statements: 81.18
+    functions: 83.62
+    branches: 80.27
+    threshold_met: true
+exceptions: []

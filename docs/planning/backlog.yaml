@@ -213,26 +213,26 @@ tasks:
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [FDN-002, CORE-001]
     acceptance_criteria:
       - OAuth/PKCE callback design, scopes, token refresh, and keychain storage are verified against Linear's current API.
       - The local-first refresh approach respects Linear rate-limit guidance.
       - The public-webhook relay remains optional and is not required for core use.
-    notes: The desktop OAuth/PKCE foundation is implemented and tested against Linear's current documented authorization, token, refresh, and rate-limit contract: an explicit loopback callback, state validation, S256 challenge, system-browser launch, native credential storage, bounded refresh, and read-only scope. A live end-to-end verification needs a user-created Linear OAuth app configured with the declared callback URI; no client secret or API token will be requested in this repository.
+    notes: Completed on 2026-08-09. The desktop OAuth/PKCE foundation is implemented and tested against Linear's current authorization, token, refresh, and rate-limit contract: an explicit loopback callback, state validation, S256 challenge, system-browser launch, native credential storage, bounded refresh, and read-only scope. Linear's documented April 2026 refresh-token migration was audited: current and legacy scope responses parse, and a replacement credential is stored only after success. A live end-to-end verification needs a user-created Linear OAuth app configured with the declared callback URI; no client secret or API token will be requested in this repository.
 
   - id: LIN-002
     epic: LIN
     title: Implement Linear issue/project links and provenance-aware import
-    status: in_progress
+    status: done
     priority: P0
     depends_on: [CORE-001, CORE-002, LIN-001]
     acceptance_criteria:
       - Links use immutable Linear IDs and retain source/provenance.
       - Linear blockers import into the typed dependency graph without bypassing cycle validation.
       - Read-only and linked-execution connection modes work independently.
-    notes: The locally durable import foundation and authenticated assigned-issue retrieval were implemented on 2026-08-08. Links retain immutable Linear UUIDs, explicit provenance and connection mode, safe HTTPS Linear URLs, and imported blockers all pass through typed-cycle validation. Once the user connects through LIN-001 OAuth, an explicit UI action queries at most 50 assigned issues by recent update and pre-fills the same validated local-import flow; it neither polls nor writes remotely. Live project selection and all remote write/sync behavior remain incomplete in LIN-003; the board must not imply that those capabilities exist.
+    notes: Completed on 2026-08-09. The durable import foundation and authenticated assigned-issue retrieval retain immutable Linear UUIDs, explicit provenance and connection mode, safe HTTPS Linear URLs, and typed-cycle validation for imported blockers. Once the user connects through LIN-001 OAuth, an explicit UI action queries at most 50 assigned issues by recent update and pre-fills the same validated local-import flow; it neither polls nor writes remotely. Live project selection and all remote write/sync behavior remain incomplete in LIN-003; the board must not imply that those capabilities exist.
 
   - id: LIN-003
     epic: LIN

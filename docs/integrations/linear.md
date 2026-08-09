@@ -28,6 +28,10 @@ Access and refresh tokens, together with the public connection metadata needed t
 
 The desktop currently requests the least-privileged `read` scope. Linked execution may be selected for an imported task, but remote writes, app-actor installation, comments, status mapping, outbox processing, and webhooks are still separate, opt-in work; choosing the mode must not grant those powers early. See Linear's [OAuth documentation](https://linear.app/developers/oauth-2-0-authentication) and [rate-limit guidance](https://linear.app/developers/rate-limiting).
 
+## Current API verification
+
+Verified against Linear's developer documentation on 2026-08-09: Linear completed its OAuth refresh-token migration on 2026-04-01. The connector accepts both the current string and legacy array scope shapes, requires a replacement refresh token, and replaces the credential-store value only after validating the complete response. The connector deliberately makes no timer-driven requests: it refreshes only for an explicit authenticated action when the access token is within one minute of expiry. This follows Linear's guidance to avoid polling, request only the fields needed, order by `updatedAt`, and use bounded pagination.
+
 ## Authenticated issue retrieval
 
 After the connection status is explicitly `connected`, the user may press **Load my assigned Linear issues**. That one user action sends a read-only GraphQL `viewer.assignedIssues` query, ordered by `updatedAt` and bounded to 50 issue summaries (`id`, `identifier`, `title`, and `url`). It never creates, changes, comments on, or transitions a Linear issue, and it does not poll. Choosing a returned summary merely pre-fills the existing local import form; the daemon still validates the immutable ID and Linear HTTPS URL before it creates a durable link.

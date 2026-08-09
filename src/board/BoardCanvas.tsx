@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/empty";
 
 import { CompactWorkItemCard } from "./CompactWorkItemCard";
+import { BoardHome } from "./BoardHome";
 import { boardColumns, workItemsForColumn } from "./presentation";
 import type { BoardSnapshot } from "./types";
 
@@ -58,38 +59,41 @@ export function BoardCanvas({
   }
 
   return (
-    <section aria-label="Kanban board" className="kanban-board">
-      {boardColumns.map((column) => {
-        const cards = workItemsForColumn(snapshot, column);
-        return (
-          <section
-            aria-labelledby={`${column.id}-column`}
-            className="board-column"
-            key={column.id}
-          >
-            <div className="board-column-heading">
-              <h3 id={`${column.id}-column`}>{column.label}</h3>
-              <span>
-                {cards.length} {cards.length === 1 ? "task" : "tasks"}
-              </span>
-            </div>
-            <div className="card-stack">
-              {cards.map((workItem) => (
-                <CompactWorkItemCard
-                  key={workItem.id}
-                  snapshot={snapshot}
-                  workItemTitles={workItemTitles}
-                  workItem={workItem}
-                  onOpen={onOpenTask}
-                />
-              ))}
-            </div>
-            {cards.length === 0 && (
-              <p className="empty-column-copy">Nothing here</p>
-            )}
-          </section>
-        );
-      })}
-    </section>
+    <>
+      <BoardHome snapshot={snapshot} onOpenTask={onOpenTask} />
+      <section aria-label="Kanban board" className="kanban-board">
+        {boardColumns.map((column) => {
+          const cards = workItemsForColumn(snapshot, column);
+          return (
+            <section
+              aria-labelledby={`${column.id}-column`}
+              className="board-column"
+              key={column.id}
+            >
+              <div className="board-column-heading">
+                <h3 id={`${column.id}-column`}>{column.label}</h3>
+                <span>
+                  {cards.length} {cards.length === 1 ? "task" : "tasks"}
+                </span>
+              </div>
+              <div className="card-stack">
+                {cards.map((workItem) => (
+                  <CompactWorkItemCard
+                    key={workItem.id}
+                    snapshot={snapshot}
+                    workItemTitles={workItemTitles}
+                    workItem={workItem}
+                    onOpen={onOpenTask}
+                  />
+                ))}
+              </div>
+              {cards.length === 0 && (
+                <p className="empty-column-copy">No work here yet</p>
+              )}
+            </section>
+          );
+        })}
+      </section>
+    </>
   );
 }

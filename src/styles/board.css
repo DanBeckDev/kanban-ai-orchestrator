@@ -147,6 +147,125 @@
   line-height: 1.45;
 }
 
+.board-home {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-block: 1px solid var(--border);
+}
+
+.board-home-header,
+.board-home-section-heading,
+.board-home-task-list li,
+.delivery-picture-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.board-home-header > div {
+  max-width: 44rem;
+}
+
+.board-home-header h3,
+.board-home-header p,
+.board-home-section-heading h4,
+.delivery-picture-heading h4 {
+  margin-bottom: 0;
+}
+
+.board-home-focus {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.board-home-focus > section {
+  min-width: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.board-home-section-heading {
+  justify-content: flex-start;
+}
+
+.board-home-section-heading svg,
+.delivery-picture-heading svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--primary);
+}
+
+.board-home-section-heading [data-slot="badge"] {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-home-empty {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.board-home-task-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-home-task-list li {
+  align-items: flex-start;
+}
+
+.board-home-task-list li > div {
+  min-width: 0;
+}
+
+.board-home-task-list strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-home-task-list p {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+}
+
+.delivery-picture {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.delivery-picture-heading {
+  justify-content: flex-start;
+}
+
+.delivery-picture dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+  margin: 0;
+}
+
+.delivery-picture dl > div {
+  min-width: 0;
+}
+
+.delivery-picture dd {
+  margin-top: 0.25rem;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .board-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -513,6 +632,10 @@
   }
 
   .board-library-list {
+    grid-template-columns: 1fr;
+  }
+
+  .board-home-focus {
     grid-template-columns: 1fr;
   }
 }

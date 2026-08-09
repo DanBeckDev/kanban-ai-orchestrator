@@ -553,6 +553,32 @@ tasks:
       arbitrary executable probing, or a visual-only dependency graph without
       an accessible explanation.
 
+  - id: UX-012
+    epic: UX
+    title: Make the current board's next action and delivery state glanceable
+    status: done
+    priority: P0
+    depends_on: [UX-011, ORCH-005]
+    acceptance_criteria:
+      - A non-empty board leads with a plain-language board-home summary before its state columns, showing Needs attention, Work in motion, and Delivery picture from the authoritative snapshot.
+      - Attention includes Review, Awaiting input, Blocked, Failed, and Interrupted work in a stable urgency order; each entry explains the next decision and opens that task with a keyboard-accessible action.
+      - Work in motion identifies the task and selected worker without showing raw activity, command arguments, credentials, workspace paths, or UI-owned execution state.
+      - Delivery picture visibly distinguishes planned, ready, review, completed, and recovery work through labels and counts rather than colour alone.
+      - Existing board columns, daemon authority, manual default, review/evidence requirements, and task-detail behavior remain unchanged; component tests cover the empty-attention, attention, active-work, and delivery-summary paths.
+    notes: >-
+      Added on 2026-08-09 from direct product-owner feedback and an audit of the
+      current board against Cline Kanban's focused work surface. This is a narrow
+      implementation slice that makes existing authoritative state understandable;
+      it does not claim the broader UX-004 board-home redesign or UX-005 visual
+      dependency graph, both of which remain subject to UX-008's participant
+      walkthrough gate. BookCtx — AI Product Management, Aman Khan, "AI Product
+      Management" (chunk 1), supports short intent-led feedback loops; the
+      inference here is a low-risk orientation improvement, not substitute user
+      research. Implemented on 2026-08-09 with an authoritative board-home
+      summary, attention and active-work links to task detail, delivery counts,
+      responsive layout, and component coverage. It intentionally leaves UX-004,
+      UX-005, ORCH-006, and ORCH-007 as separate future work.
+
   - id: LIN-004
     epic: LIN
     title: Productize the Linear connection entry experience

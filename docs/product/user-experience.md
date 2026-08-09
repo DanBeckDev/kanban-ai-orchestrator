@@ -153,10 +153,31 @@ It contains:
 ### Board and dependency views
 
 The Board view uses visible state labels and colour as redundant reinforcement.
-Cards lead with task title, state, owner/agent, and the one most important next
-fact; opaque task IDs move to copyable details. Dense evidence, raw configuration,
-and long history are contained in a work-detail drawer rather than repeated on
-every card.
+It is a focused delivery surface: columns, compact cards, a concise delivery
+summary, and actions to plan work, add a task, open a task, or change Settings.
+It never persistently displays provider, planner, raw command, dependency-editor,
+or Linear configuration forms. Cards lead with task title, state, assigned agent
+when one exists, and the one most important next fact; opaque task IDs move to
+copyable details. Dense evidence, raw configuration, and long history are
+contained in a deliberately opened work-detail view rather than repeated on every
+card.
+
+### Agent settings
+
+Settings is where a person configures the product, not where they supervise a
+board. Its first section answers one simple question: **Which installed agent
+should work on new tasks?** It detects Codex CLI, Claude Code, and Cline CLI from
+the local machine without starting them. Each installed option is selectable in
+one action and shows the selected default. A missing option is marked **Not
+installed** and links to that provider's official installation guidance; Kanban
+does not install software or authenticate an account on the person's behalf.
+
+The normal path contains no provider arguments, credentials, permission-bypass
+flags, worktree paths, or event-protocol terminology. An intentionally separate
+advanced section retains manual custom bridges and planner profiles for an
+experienced team that needs them. Linear and board support/project details use
+their own settings sections, so they cannot distract from choosing an agent or
+moving work.
 
 The Dependencies view is a navigable graph plus a companion list. Selecting a
 task highlights upstream blockers, downstream impact, critical-path membership,

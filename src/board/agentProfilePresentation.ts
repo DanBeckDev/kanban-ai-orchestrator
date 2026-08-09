@@ -1,4 +1,4 @@
-import type { AgentProfileKind } from "./types";
+import type { AgentProfile, AgentProfileKind } from "./types";
 
 export type AgentProfilePresentation = Readonly<{
   kind: AgentProfileKind;
@@ -52,6 +52,33 @@ export function agentProfilePresentation(
   kind: AgentProfileKind,
 ): AgentProfilePresentation {
   return presentationByKind[kind];
+}
+
+export function defaultNativeAgentProfile(
+  kind: Exclude<AgentProfileKind, "structured_process">,
+): AgentProfile {
+  const presentation = agentProfilePresentation(kind);
+  return {
+    name: `Default ${presentation.label}`,
+    kind,
+    program: presentation.defaultProgram,
+    arguments: [],
+  };
+}
+
+export function installationGuideFor(
+  kind: AgentProfileKind,
+): string | undefined {
+  switch (kind) {
+    case "codex_cli":
+      return "https://developers.openai.com/codex/cli/";
+    case "claude_code":
+      return "https://code.claude.com/docs/en/overview";
+    case "cline_pass_cli":
+      return "https://docs.cline.bot/cli";
+    case "structured_process":
+      return undefined;
+  }
 }
 
 export { noninteractiveCapabilitySummary };

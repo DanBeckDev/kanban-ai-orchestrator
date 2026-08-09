@@ -37,6 +37,7 @@ import type {
 type WorkItemCardProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
+  defaultAgentProfileName?: string;
   snapshot: BoardSnapshot;
   workItem: WorkItem;
   onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
@@ -64,6 +65,7 @@ const emptyEvidence: CompletionEvidence = {
 export function WorkItemCard({
   busy,
   agentProfiles,
+  defaultAgentProfileName,
   snapshot,
   workItem,
   onTransition,
@@ -150,6 +152,7 @@ export function WorkItemCard({
       {workItem.state === "ready" && (
         <AgentLaunchForm
           busy={busy}
+          defaultProfileName={defaultAgentProfileName}
           profiles={agentProfiles}
           workItem={workItem}
           onStart={onStartExecution}
@@ -172,6 +175,7 @@ export function WorkItemCard({
               <AgentLaunchForm
                 busy={busy}
                 buttonLabel="Start independent reviewer"
+                defaultProfileName={defaultAgentProfileName}
                 executionRole="independent_review"
                 formLabel={`Start independent reviewer for ${workItem.title}`}
                 profiles={agentProfiles}

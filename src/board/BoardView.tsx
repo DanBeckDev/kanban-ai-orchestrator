@@ -1,21 +1,17 @@
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { ListPlusIcon, Settings2Icon, SparklesIcon } from "lucide-react";
 
-import { AgentProfileForm } from "./AgentProfileForm";
-import { BoardSupportDetails } from "./BoardSupportDetails";
-import { boardColumns, workItemsForColumn } from "./presentation";
-import { DependencyForm } from "./DependencyForm";
-import { LinearConnectionPanel } from "./LinearConnectionPanel";
-import { LinearImportForm } from "./LinearImportForm";
-import { LinearSyncPanel } from "./LinearSyncPanel";
+import { Button } from "@/components/ui/button";
+
+import { BoardCanvas } from "./BoardCanvas";
+import { BoardManagement, SurfaceHeader } from "./BoardManagement";
+import { BoardSettings } from "./BoardSettings";
 import { PlanProposalPanel } from "./PlanProposalPanel";
-import { PlannerProfileForm } from "./PlannerProfileForm";
-import { TaskForm } from "./TaskForm";
 import { WorkItemCard } from "./WorkItemCard";
 import type {
   AddDependencyRequest,
   AgentProfile,
+  AgentProviderAvailability,
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
@@ -27,19 +23,30 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
-  QueueLinearCommentRequest,
-  ProposePlanRequest,
   PlannerProfile,
+  ProposePlanRequest,
+  QueueLinearCommentRequest,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
+  WorkItem,
 } from "./types";
+
+type BoardSurface =
+  | "board"
+  | "plan"
+  | "new-task"
+  | "dependencies"
+  | "settings"
+  | "task-detail";
 
 type BoardViewProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
+  defaultAgentProfileName?: string;
+  providerAvailability: readonly AgentProviderAvailability[];
   plannerProfiles: readonly PlannerProfile[];
   boardPlan?: BoardPlan;
   snapshot: BoardSnapshot;
@@ -58,7 +65,8 @@ type BoardViewProps = Readonly<{
   onRefreshLinearSharedFields: (externalLinkId: string) => Promise<void>;
   onLoadLinearIssues: () => Promise<void>;
   onProposePlan: (request: ProposePlanRequest) => Promise<void>;
-  onSaveAgentProfile: (profile: AgentProfile) => Promise<void>;
+  onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
+  onSelectDefaultAgentProfile: (profileName: string) => void;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
@@ -79,6 +87,8 @@ type BoardViewProps = Readonly<{
 export function BoardView({
   busy,
   agentProfiles,
+  defaultAgentProfileName,
+  providerAvailability,
   plannerProfiles,
   boardPlan,
   snapshot,
@@ -98,6 +108,7 @@ export function BoardView({
   onLoadLinearIssues,
   onProposePlan,
   onSaveAgentProfile,
+  onSelectDefaultAgentProfile,
   onSavePlannerProfile,
   onStartExecution,
   onStopExecution,
@@ -107,125 +118,226 @@ export function BoardView({
   onRecordCleanCodeReview,
   onTransition,
 }: BoardViewProps) {
+  const [surface, setSurface] = useState<BoardSurface>("board");
+  const [selectedWorkItemId, setSelectedWorkItemId] = useState<string>();
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
+  const selectedWorkItem = workItems.find(
+    ({ id }) => id === selectedWorkItemId,
+  );
+  const returnToBoard = () => setSurface("board");
+  const openTask = (workItemId: string) => {
+    setSelectedWorkItemId(workItemId);
+    setSurface("task-detail");
+  };
 
   return (
     <section aria-labelledby="board-title" className="board-workspace">
-      <header className="board-header">
-        <div>
-          <h2 id="board-title">{snapshot.board.name}</h2>
-          <p>
-            {workItems.length} tasks · {snapshot.dependencies.length}{" "}
-            dependencies
-          </p>
-        </div>
-        <div>
-          <Badge variant="secondary">Board ready</Badge>
-          <BoardSupportDetails board={snapshot.board} />
-        </div>
-      </header>
-      <div className="board-layout">
-        <section aria-label="Kanban board" className="kanban-board">
-          {boardColumns.map((column) => (
-            <section
-              aria-labelledby={`${column.id}-column`}
-              className="board-column"
-              key={column.id}
-            >
-              <h3 id={`${column.id}-column`}>{column.label}</h3>
-              <div className="card-stack">
-                {workItemsForColumn(snapshot, column).map((workItem) => (
-                  <WorkItemCard
-                    busy={busy}
-                    key={workItem.id}
-                    snapshot={snapshot}
-                    workItem={workItem}
-                    onTransition={onTransition}
-                    agentProfiles={agentProfiles}
-                    onStartExecution={onStartExecution}
-                    onStopExecution={onStopExecution}
-                    onLoadExecutionActivity={onLoadExecutionActivity}
-                    onRecordReviewCheck={onRecordReviewCheck}
-                    onRecordReviewDecision={onRecordReviewDecision}
-                    onRecordCleanCodeReview={onRecordCleanCodeReview}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+      <BoardHeader
+        boardName={snapshot.board.name}
+        snapshot={snapshot}
+        onCreateTask={() => setSurface("new-task")}
+        onOpenSettings={() => setSurface("settings")}
+        onPlanWork={() => setSurface("plan")}
+      />
+      {surface === "board" && (
+        <BoardCanvas
+          snapshot={snapshot}
+          onCreateTask={() => setSurface("new-task")}
+          onOpenTask={openTask}
+          onPlanWork={() => setSurface("plan")}
+        />
+      )}
+      {surface === "plan" && (
+        <section aria-label="Plan work" className="workspace-surface">
+          <SurfaceHeader
+            description="Describe the outcome, inspect the proposal, then confirm the work you want to create."
+            onBack={returnToBoard}
+            title="Plan work"
+          />
+          <PlanProposalPanel
+            boardId={snapshot.board.id}
+            busy={busy}
+            plan={boardPlan}
+            onConfirm={onConfirmPlan}
+            onGenerate={onGeneratePlan}
+            onPropose={onProposePlan}
+            plannerProfiles={plannerProfiles}
+          />
         </section>
-        <aside className="board-actions" aria-label="Board controls">
-          <Tabs defaultValue="plan">
-            <TabsList aria-label="Board controls" variant="line">
-              <TabsTrigger value="plan">Plan</TabsTrigger>
-              <TabsTrigger value="organise">Organise</TabsTrigger>
-              <TabsTrigger value="connections">Connections</TabsTrigger>
-            </TabsList>
-            <TabsContent value="plan">
-              <PlanProposalPanel
-                boardId={snapshot.board.id}
-                busy={busy}
-                plan={boardPlan}
-                onConfirm={onConfirmPlan}
-                onGenerate={onGeneratePlan}
-                onPropose={onProposePlan}
-                plannerProfiles={plannerProfiles}
-              />
-              <Separator />
-              <PlannerProfileForm
-                busy={busy}
-                onSave={onSavePlannerProfile}
-                profiles={plannerProfiles}
-              />
-            </TabsContent>
-            <TabsContent value="organise">
-              <TaskForm
-                boardId={snapshot.board.id}
-                busy={busy}
-                onCreate={onCreateWorkItem}
-              />
-              <Separator />
-              <DependencyForm
-                busy={busy}
-                onCreate={onAddDependency}
-                workItems={workItems}
-              />
-              <Separator />
-              <AgentProfileForm
-                busy={busy}
-                profiles={agentProfiles}
-                onSave={onSaveAgentProfile}
-              />
-            </TabsContent>
-            <TabsContent value="connections">
-              <LinearConnectionPanel
-                busy={busy}
-                status={linearConnectionStatus}
-                onConnect={onConnectLinear}
-                onEnableCommentAccess={onEnableLinearCommentAccess}
-              />
-              <Separator />
-              <LinearImportForm
-                busy={busy}
-                connectionStatus={linearConnectionStatus}
-                issues={linearIssues}
-                workItems={workItems}
-                onImportBlocker={onImportLinearBlocker}
-                onImportIssue={onImportLinearIssue}
-                onLoadIssues={onLoadLinearIssues}
-              />
-              <Separator />
-              <LinearSyncPanel
-                busy={busy}
-                snapshot={snapshot}
-                onDeliver={onDeliverLinearComment}
-                onQueue={onQueueLinearComment}
-                onRefresh={onRefreshLinearSharedFields}
-              />
-            </TabsContent>
-          </Tabs>
-        </aside>
-      </div>
+      )}
+      {(surface === "new-task" || surface === "dependencies") && (
+        <BoardManagement
+          boardId={snapshot.board.id}
+          busy={busy}
+          defaultTab={surface === "new-task" ? "task" : "dependencies"}
+          workItems={workItems}
+          onAddDependency={onAddDependency}
+          onBack={returnToBoard}
+          onCreateWorkItem={onCreateWorkItem}
+        />
+      )}
+      {surface === "settings" && (
+        <BoardSettings
+          agentProfiles={agentProfiles}
+          busy={busy}
+          defaultAgentProfileName={defaultAgentProfileName}
+          linearConnectionStatus={linearConnectionStatus}
+          linearIssues={linearIssues}
+          plannerProfiles={plannerProfiles}
+          providerAvailability={providerAvailability}
+          snapshot={snapshot}
+          onBack={returnToBoard}
+          onConnectLinear={onConnectLinear}
+          onDeliverLinearComment={onDeliverLinearComment}
+          onEnableLinearCommentAccess={onEnableLinearCommentAccess}
+          onImportLinearBlocker={onImportLinearBlocker}
+          onImportLinearIssue={onImportLinearIssue}
+          onLoadLinearIssues={onLoadLinearIssues}
+          onQueueLinearComment={onQueueLinearComment}
+          onRefreshLinearSharedFields={onRefreshLinearSharedFields}
+          onSaveAgentProfile={onSaveAgentProfile}
+          onSavePlannerProfile={onSavePlannerProfile}
+          onSelectDefaultAgentProfile={onSelectDefaultAgentProfile}
+        />
+      )}
+      {surface === "task-detail" && selectedWorkItem !== undefined && (
+        <TaskDetail
+          agentProfiles={agentProfiles}
+          busy={busy}
+          defaultAgentProfileName={defaultAgentProfileName}
+          snapshot={snapshot}
+          workItem={selectedWorkItem}
+          onBack={returnToBoard}
+          onLoadExecutionActivity={onLoadExecutionActivity}
+          onRecordCleanCodeReview={onRecordCleanCodeReview}
+          onRecordReviewCheck={onRecordReviewCheck}
+          onRecordReviewDecision={onRecordReviewDecision}
+          onStartExecution={onStartExecution}
+          onStopExecution={onStopExecution}
+          onTransition={onTransition}
+        />
+      )}
     </section>
   );
+}
+
+function BoardHeader({
+  boardName,
+  snapshot,
+  onCreateTask,
+  onOpenSettings,
+  onPlanWork,
+}: Readonly<{
+  boardName: string;
+  snapshot: BoardSnapshot;
+  onCreateTask: () => void;
+  onOpenSettings: () => void;
+  onPlanWork: () => void;
+}>) {
+  const summary = boardSummary(snapshot);
+  return (
+    <header className="board-header">
+      <div>
+        <p className="eyebrow">Your board</p>
+        <h2 id="board-title">{boardName}</h2>
+        <p>{summary}</p>
+      </div>
+      <div className="board-toolbar">
+        <Button onClick={onPlanWork} type="button">
+          <SparklesIcon data-icon="inline-start" />
+          Plan work
+        </Button>
+        <Button onClick={onCreateTask} type="button" variant="outline">
+          <ListPlusIcon data-icon="inline-start" />
+          New task
+        </Button>
+        <Button onClick={onOpenSettings} type="button" variant="ghost">
+          <Settings2Icon data-icon="inline-start" />
+          Settings
+        </Button>
+      </div>
+    </header>
+  );
+}
+
+function TaskDetail({
+  agentProfiles,
+  busy,
+  defaultAgentProfileName,
+  snapshot,
+  workItem,
+  onBack,
+  onLoadExecutionActivity,
+  onRecordCleanCodeReview,
+  onRecordReviewCheck,
+  onRecordReviewDecision,
+  onStartExecution,
+  onStopExecution,
+  onTransition,
+}: Readonly<{
+  agentProfiles: readonly AgentProfile[];
+  busy: boolean;
+  defaultAgentProfileName?: string;
+  snapshot: BoardSnapshot;
+  workItem: WorkItem;
+  onBack: () => void;
+  onLoadExecutionActivity: (
+    executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
+  onRecordCleanCodeReview: (
+    request: RecordCleanCodeReviewRequest,
+  ) => Promise<void>;
+  onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
+  onRecordReviewDecision: (
+    request: RecordReviewDecisionRequest,
+  ) => Promise<void>;
+  onStartExecution: (request: StartExecutionRequest) => Promise<void>;
+  onStopExecution: (executionId: string) => Promise<void>;
+  onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
+}>) {
+  return (
+    <section
+      aria-label={`Task details for ${workItem.title}`}
+      className="workspace-surface"
+    >
+      <SurfaceHeader
+        description="Review the task's current decision, then act with the right context."
+        onBack={onBack}
+        title={workItem.title}
+      />
+      <WorkItemCard
+        agentProfiles={agentProfiles}
+        busy={busy}
+        defaultAgentProfileName={defaultAgentProfileName}
+        snapshot={snapshot}
+        workItem={workItem}
+        onLoadExecutionActivity={onLoadExecutionActivity}
+        onRecordCleanCodeReview={onRecordCleanCodeReview}
+        onRecordReviewCheck={onRecordReviewCheck}
+        onRecordReviewDecision={onRecordReviewDecision}
+        onStartExecution={onStartExecution}
+        onStopExecution={onStopExecution}
+        onTransition={onTransition}
+      />
+    </section>
+  );
+}
+
+function boardSummary(snapshot: BoardSnapshot): string {
+  const workItems = snapshot.workItems.map(({ workItem }) => workItem);
+  const activeCount = workItems.filter(
+    ({ state }) => state === "running",
+  ).length;
+  const attentionCount = workItems.filter(({ state }) =>
+    ["awaiting_input", "review", "blocked", "failed", "interrupted"].includes(
+      state,
+    ),
+  ).length;
+  if (attentionCount > 0) {
+    return `${activeCount} active · ${attentionCount} need your attention`;
+  }
+  return activeCount > 0
+    ? `${activeCount} active · everything else is moving normally`
+    : `${workItems.length} tasks · nothing needs your attention`;
 }

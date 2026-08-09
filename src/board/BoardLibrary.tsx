@@ -85,7 +85,7 @@ export function BoardLibrary({
             <li key={board.boardId}>
               <Card>
                 <CardHeader>
-                  <CardTitle>{board.name}</CardTitle>
+                  <CardTitle as="h3">{board.name}</CardTitle>
                   <CardDescription>{board.repositoryName}</CardDescription>
                   <CardAction>
                     <Badge

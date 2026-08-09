@@ -16,7 +16,10 @@ import {
 } from "./BoardWorkspace.test.fixtures";
 import {
   createBoard,
-  selectBoardControlTab,
+  openDependencies,
+  openNewTask,
+  openSettings,
+  openTask,
 } from "./BoardWorkspace.test.helpers";
 
 describe("board workspace", () => {
@@ -39,10 +42,7 @@ describe("board workspace", () => {
   it("adds a task and a typed dependency, then renders its reason and owner", async () => {
     const boardGateway = gateway(snapshot([workItem("api")]));
     await createBoard(boardGateway);
-    selectBoardControlTab("Organise");
-    fireEvent.change(screen.getByLabelText("Task ID"), {
-      target: { value: "ui" },
-    });
+    openNewTask();
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "UI" },
     });
@@ -55,14 +55,21 @@ describe("board workspace", () => {
     fireEvent.change(screen.getByLabelText("Max agent turns"), {
       target: { value: "24" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add task" }));
-    await screen.findByRole("heading", { name: "UI" });
-    expect(screen.getByText("Max turns: 24")).toBeVisible();
-    fireEvent.change(screen.getByLabelText("Upstream task"), {
+    fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+    await waitFor(() =>
+      expect(boardGateway.createWorkItem).toHaveBeenCalledOnce(),
+    );
+    const createdWorkItemId = vi.mocked(boardGateway.createWorkItem).mock
+      .calls[0][0].workItemId;
+
+    openDependencies();
+    const upstreamTask = screen.getByLabelText("Upstream task");
+    const downstreamTask = screen.getByLabelText("Downstream task");
+    fireEvent.change(upstreamTask, {
       target: { value: "api" },
     });
-    fireEvent.change(screen.getByLabelText("Downstream task"), {
-      target: { value: "ui" },
+    fireEvent.change(downstreamTask, {
+      target: { value: createdWorkItemId },
     });
     const dependencyForm = screen.getByRole("form", {
       name: "Add dependency",
@@ -78,8 +85,11 @@ describe("board workspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Add dependency" }));
 
-    await screen.findByText(/UI needs the API/);
     expect(boardGateway.addDependency).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    expect(await screen.findByText("Waiting on Task api")).toBeVisible();
+    openTask("UI");
+    await screen.findByText(/UI needs the API/);
     expect(screen.getByText(/Owner: platform/)).toBeInTheDocument();
   });
 
@@ -103,6 +113,7 @@ describe("board workspace", () => {
       ),
     );
     await createBoard(boardGateway);
+    openTask("Task review-task");
     fireEvent.click(screen.getByText("Recent decision history (1)"));
     expect(
       screen.getByText(
@@ -154,6 +165,7 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
 
     await createBoard(boardGateway);
+    openTask("Task review-task");
     const form = screen.getByRole("form", {
       name: "Record quality gate for Task review-task",
     });
@@ -180,6 +192,7 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("review-task", "review")]));
 
     await createBoard(boardGateway);
+    openTask("Task review-task");
     const form = screen.getByRole("form", {
       name: "Record review decision for Task review-task",
     });
@@ -227,6 +240,7 @@ describe("board workspace", () => {
     );
 
     await createBoard(boardGateway);
+    openTask("Task interrupted-task");
     const actions = screen.getByRole("region", {
       name: "Recovery actions for Task interrupted-task",
     });
@@ -270,6 +284,7 @@ describe("board workspace", () => {
     );
 
     await createBoard(boardGateway);
+    openTask("Task active-task");
     const transition = screen.getByRole("form", {
       name: "Transition Task active-task",
     });
@@ -314,6 +329,7 @@ describe("board workspace", () => {
     );
 
     await createBoard(boardGateway);
+    openTask("Task review-task");
     fireEvent.click(screen.getByText("Recent agent attempts (1)"));
     fireEvent.click(screen.getByText("Recent review evidence (1)"));
 
@@ -326,10 +342,9 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
-    selectBoardControlTab("Organise");
-    const profileForm = screen.getByRole("form", {
-      name: "Save agent profile",
-    });
+    openSettings("Agent");
+    fireEvent.click(screen.getByText("Set up a custom agent"));
+    const profileForm = screen.getByRole("form", { name: /save agent/i });
     fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
       target: { value: "structured-worker" },
     });
@@ -354,6 +369,9 @@ describe("board workspace", () => {
       program: "agent-worker",
       arguments: ["--jsonl"],
     });
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    openTask("Task ready-task");
 
     const launchForm = screen.getByRole("form", {
       name: "Start agent for Task ready-task",
@@ -380,10 +398,9 @@ describe("board workspace", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
-    selectBoardControlTab("Organise");
-    const profileForm = screen.getByRole("form", {
-      name: "Save agent profile",
-    });
+    openSettings("Agent");
+    fireEvent.click(screen.getByText("Set up a custom agent"));
+    const profileForm = screen.getByRole("form", { name: /save agent/i });
     fireEvent.change(within(profileForm).getByLabelText("Profile name"), {
       target: { value: "cline-pass-worker" },
     });
@@ -397,6 +414,9 @@ describe("board workspace", () => {
     fireEvent.click(
       within(profileForm).getByRole("button", { name: "Save profile" }),
     );
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    openTask("Task ready-task");
 
     const launchForm = await screen.findByRole("form", {
       name: "Start agent for Task ready-task",

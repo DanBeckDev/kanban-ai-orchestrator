@@ -24,9 +24,33 @@ export async function createBoard(boardGateway: BoardGateway) {
   await screen.findByRole("heading", { name: "MVP" });
 }
 
-export function selectBoardControlTab(name: string) {
-  fireEvent.mouseDown(screen.getByRole("tab", { name }), {
-    button: 0,
-    ctrlKey: false,
-  });
+export function openPlan() {
+  fireEvent.click(screen.getByRole("button", { name: "Plan work" }));
+}
+
+export function openNewTask() {
+  fireEvent.click(screen.getByRole("button", { name: "New task" }));
+}
+
+export function openDependencies() {
+  openNewTask();
+  selectTab("Dependencies");
+}
+
+export function openSettings(
+  section?: "Agent" | "Planning" | "Linear" | "Project",
+) {
+  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  if (section !== undefined) {
+    selectTab(section);
+  }
+}
+
+export function openTask(title: string) {
+  fireEvent.click(screen.getByRole("button", { name: `Open task ${title}` }));
+}
+
+function selectTab(name: string) {
+  // Radix Tabs selects on a primary pointer press, rather than a synthetic click.
+  fireEvent.mouseDown(screen.getByRole("tab", { name }), { button: 0 });
 }

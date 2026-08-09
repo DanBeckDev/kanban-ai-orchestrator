@@ -1,0 +1,185 @@
+work_item: UX-011
+scope:
+  - "Focused Kanban board with compact, dependency-aware task cards and contextual task detail."
+  - "Separate planning, task management, and settings surfaces."
+  - "Safe local discovery and one-click selection of Codex, Claude Code, and Cline."
+  - "Meaningful task creation without user-authored identifiers."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 24
+      responsibilities: "Exposes cohesive agent profile and native-provider discovery modules."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_discovery.rs
+      meaningful_lines: 107
+      responsibilities: "Safely resolves trusted local agent executable availability without running providers."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 398
+      responsibilities: "Owns Tauri command boundaries, including the provider-availability command."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 84
+      responsibilities: "Registers desktop command boundaries and application modules."
+      decision: kept cohesive
+    - path: src/board/AgentLaunchForm.tsx
+      meaningful_lines: 110
+      responsibilities: "Starts one selected task agent with a validated default selection."
+      decision: kept cohesive
+    - path: src/board/AgentProfileForm.tsx
+      meaningful_lines: 117
+      responsibilities: "Keeps custom advanced-profile editing and failed-save preservation together."
+      decision: kept cohesive
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 89
+      responsibilities: "Renders the focused column canvas, empty state, and shared task-title index."
+      decision: kept cohesive
+    - path: src/board/BoardLibrary.tsx
+      meaningful_lines: 155
+      responsibilities: "Presents saved boards with semantic card-title outline levels."
+      decision: kept cohesive
+    - path: src/board/BoardManagement.tsx
+      meaningful_lines: 81
+      responsibilities: "Separates task creation and dependency editing into an explicit management surface."
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 273
+      responsibilities: "Owns settings sections and safe installed-agent selection."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 199
+      responsibilities: "Keeps board-creation details semantically nested beneath the setup journey."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 334
+      responsibilities: "Coordinates active-board surface selection and delegates each surface to a focused component."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 72
+      responsibilities: "Covers Linear configuration after it moved to Settings."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 318
+      responsibilities: "Covers plan generation and confirmation after planning moved off the board canvas."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 97
+      responsibilities: "Covers progressive disclosure, provider discovery, safe defaults, Cline guidance, and failed persistence."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 390
+      responsibilities: "Provides deterministic gateway and provider fixtures for board-workspace journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 47
+      responsibilities: "Encapsulates accessible board-surface navigation for workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 400
+      responsibilities: "Covers the remaining primary board, task, review, and dependency workflows."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 394
+      responsibilities: "Coordinates gateway state, persisted agent preference, and workspace-level recovery."
+      decision: kept cohesive
+    - path: src/board/CompactWorkItemCard.tsx
+      meaningful_lines: 85
+      responsibilities: "Presents one compact task's state, named hard blocker, latest work signal, and open action."
+      decision: kept cohesive
+    - path: src/board/TaskForm.tsx
+      meaningful_lines: 194
+      responsibilities: "Creates an accessible task from human inputs while deriving its internal identifier."
+      decision: kept cohesive
+    - path: src/board/WorkItemCard.tsx
+      meaningful_lines: 393
+      responsibilities: "Presents detailed task execution, review, recovery, evidence, and history only after opening a task."
+      decision: kept cohesive
+    - path: src/board/agentPreferences.ts
+      meaningful_lines: 28
+      responsibilities: "Owns the resilient local default-agent preference and its React state hook."
+      decision: kept cohesive
+    - path: src/board/agentProfilePresentation.ts
+      meaningful_lines: 76
+      responsibilities: "Defines user-facing provider metadata, safe native defaults, and official install links."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 86
+      responsibilities: "Defines typed frontend gateway operations, including provider availability."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 157
+      responsibilities: "Maps the typed gateway contract to narrow Tauri commands."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 381
+      responsibilities: "Defines shared board and agent-provider value contracts."
+      decision: kept cohesive
+    - path: src/board/useBoardSnapshotRefresh.ts
+      meaningful_lines: 34
+      responsibilities: "Owns periodic non-authoritative snapshot refresh and optional Linear-status refresh."
+      decision: kept cohesive
+    - path: src/components/ui/card.tsx
+      meaningful_lines: 98
+      responsibilities: "Provides source-owned card composition with an explicit semantic-title element choice."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T13:27:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "A full visual dependency graph remains planned rather than included in this focused-board slice."
+        resolution: accepted
+        rationale: "Named hard blockers on compact cards and full keyboard-accessible dependency detail are implemented now; ADR 0024 and UX-005 retain the graph as a separate accessible outcome."
+        decision_reference: ADR-0024-and-UX-005
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The old board mixed planning, provider, Linear, dependency, and execution controls with every task column."
+    change: "Split it into BoardCanvas, BoardManagement, BoardSettings, Plan work, and Task detail surfaces."
+  - finding: "A person had to enter an opaque task ID and card blockers did not name their upstream work."
+    change: "Task creation now derives an internal ID from title and timestamp; compact cards name the first upstream hard blocker."
+  - finding: "Choosing a provider could select it even if profile persistence failed."
+    change: "Profile persistence returns an explicit success result; the default changes only after success, with a focused regression test."
+  - finding: "Executable existence alone could mark a non-executable file as an installed local agent on Unix."
+    change: "Provider discovery checks the executable bit, with a native regression test, while never launching a provider."
+  - finding: "Changed cards used generic div titles in the document outline."
+    change: "The source-owned card primitive now permits explicit h3 or h4 titles; board, setup, library, and task card uses choose their correct level."
+verification:
+  commands:
+    - command: npm run format:check
+      result: passed
+    - command: npm run lint
+      result: passed
+    - command: npm run typecheck
+      result: passed
+    - command: npm run structure:verify
+      result: passed
+    - command: npm run test:platform
+      result: passed
+    - command: npm run test:coverage
+      result: passed
+    - command: npm run rust:format
+      result: passed
+    - command: npm run rust:lint
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 87.37
+        statements: 86.63
+        functions: 82.92
+        branches: 84.52
+      - package_or_crate: src-tauri-rust
+        lines: 84.06
+        statements: 80.32
+        functions: 83.89
+        branches: 80.56
+    threshold_met: true
+exceptions: []

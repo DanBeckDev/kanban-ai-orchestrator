@@ -5,6 +5,7 @@ mod process_adapter;
 mod process_event_reader;
 mod profile;
 mod provider_adapter;
+mod provider_discovery;
 mod provider_event_decoder;
 
 pub use contract::{
@@ -16,6 +17,7 @@ pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
 pub use profile::{AgentProfile, AgentProfileError, AgentProfileKind};
 pub use provider_adapter::{NativeProcessAdapter, WorkerAgentAdapter};
+pub use provider_discovery::{AgentProviderAvailability, discover_native_agent_providers};
 
 #[cfg(test)]
 mod tests;

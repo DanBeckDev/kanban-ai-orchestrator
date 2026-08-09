@@ -239,6 +239,26 @@ export function gateway(
         return profile;
       }),
     agentProfiles: vi.fn().mockImplementation(async () => profiles),
+    agentProviderAvailability: vi.fn().mockResolvedValue([
+      {
+        kind: "codex_cli",
+        label: "Codex",
+        program: "codex",
+        installed: true,
+      },
+      {
+        kind: "claude_code",
+        label: "Claude Code",
+        program: "claude",
+        installed: true,
+      },
+      {
+        kind: "cline_pass_cli",
+        label: "Cline",
+        program: "cline",
+        installed: false,
+      },
+    ]),
     savePlannerProfile: vi
       .fn()
       .mockImplementation(async (profile: PlannerProfile) => {

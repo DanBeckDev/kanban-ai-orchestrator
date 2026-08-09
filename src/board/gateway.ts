@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   AddDependencyRequest,
   AgentProfile,
+  AgentProviderAvailability,
   BoardLibraryEntry,
   BoardGateway,
   BoardPlan,
@@ -75,6 +76,9 @@ export const tauriBoardGateway: BoardGateway = {
   },
   agentProfiles(): Promise<readonly AgentProfile[]> {
     return invoke("agent_profiles");
+  },
+  agentProviderAvailability(): Promise<readonly AgentProviderAvailability[]> {
+    return invoke("agent_provider_availability");
   },
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile> {
     return invoke("save_planner_profile", { profile });

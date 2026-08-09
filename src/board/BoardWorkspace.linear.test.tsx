@@ -7,14 +7,14 @@ import {
   gateway,
   snapshot,
 } from "./BoardWorkspace.test.fixtures";
-import { selectBoardControlTab } from "./BoardWorkspace.test.helpers";
+import { openSettings } from "./BoardWorkspace.test.helpers";
 import type { BoardGateway } from "./types";
 
 async function openBoard(boardGateway: BoardGateway) {
   render(<App gateway={boardGateway} />);
   fireEvent.click(await screen.findByRole("button", { name: "Open MVP" }));
   await screen.findByRole("heading", { name: "MVP" });
-  selectBoardControlTab("Connections");
+  openSettings("Linear");
 }
 
 describe("Linear connection in the board workspace", () => {

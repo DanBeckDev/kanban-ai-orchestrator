@@ -92,7 +92,7 @@ export function BoardSetup({
       </div>
       <Card className="board-setup-card" size="sm">
         <CardHeader>
-          <CardTitle>Board details</CardTitle>
+          <CardTitle as="h3">Board details</CardTitle>
         </CardHeader>
         <CardContent>
           <form

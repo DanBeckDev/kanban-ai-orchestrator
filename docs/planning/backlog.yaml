@@ -481,6 +481,30 @@ tasks:
       representative walkthroughs and finding dispositions; no production source
       code is changed in this task.
 
+  - id: UX-011
+    epic: UX
+    title: Focus the Kanban board and simplify installed-agent setup
+    status: done
+    priority: P0
+    depends_on: [UX-001, EXEC-004]
+    acceptance_criteria:
+      - The default board surface contains only delivery-relevant columns, concise task cards, dependency/attention signals, and clear actions to plan work, add a task, or open settings. It does not embed planner, provider, dependency-editor, or Linear configuration forms.
+      - Opening a task reveals the decision, permitted action, blockers, evidence, activity, review, and recovery controls for that one task. The board cards retain only the title, explicit state, most relevant next fact, and a compact dependency signal.
+      - Settings provides an obvious Agent section that detects the locally installed Codex CLI, Claude Code, and Cline CLI without executing them. A person can choose any installed provider in one action; the product saves a safe native profile and uses that choice as the default for new task runs.
+      - Missing providers are truthfully marked as not installed and provide an official installation path. The app never silently installs software, exposes credentials, or exposes adapter-owned protocol, worktree, provider, or permission flags on the normal path.
+      - Planning, Linear, project/support, and manual/custom profile configuration are separately navigable settings or task-management surfaces. Advanced controls use plain language and cannot obstruct planning or board supervision.
+      - Component, gateway, and Rust tests cover provider discovery, one-click safe-profile selection, compact-card/task-detail progressive disclosure, keyboard navigation, missing-provider guidance, and the existing policy/plan/review gates. All executable coverage metrics remain at least 80%.
+    notes: >-
+      Completed on 2026-08-09 as one focused implementation goal. The board
+      now separates compact delivery cards from task detail, management, plan,
+      and settings surfaces. Provider discovery checks only trusted executable
+      paths; choosing Codex, Claude Code, or Cline creates a safe native default
+      profile only after it has persisted. Missing Cline stays visible with its
+      official install guide. Cards name their upstream hard blocker where one
+      exists. This intentionally does not add unattended installation,
+      arbitrary executable probing, or a visual-only dependency graph without
+      an accessible explanation.
+
   - id: LIN-004
     epic: LIN
     title: Productize the Linear connection entry experience

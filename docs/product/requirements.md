@@ -85,6 +85,29 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   make the required human decision and consequence clear. None may resemble a
   successful completion or silently send external data.
 
+## Agent choice and focused-workspace requirements
+
+- The default Kanban surface is a work surface, not a configuration form. It
+  shows state columns, concise task cards, dependency/attention signals, and
+  clear paths to plan work, create a task, open a task, or open Settings.
+  Provider, planner, dependency-editor, and Linear configuration controls must
+  not be permanently rendered beside the board.
+- The desktop detects the known local CLI executables for Codex, Claude Code,
+  and Cline by resolving trusted program names on `PATH`; discovery must not
+  launch a provider, submit credentials, or inspect a provider's private data.
+  The settings UI clearly differentiates Installed from Not installed.
+- A person can choose an installed provider with one explicit action. The app
+  creates or reuses its safe, adapter-owned default profile and applies it as
+  the default worker choice. The normal UI never asks for raw command arguments,
+  credentials, approval bypasses, worktree paths, or protocol flags.
+- Installing a missing provider is always a deliberate external user action.
+  The product may link to the provider's official installation guidance, but
+  must not install software, change an account, or weaken permissions by itself.
+- Task detail is opened deliberately from a card and leads with current state,
+  the next permitted action, and blocker/evidence context. Criteria, activity,
+  review evidence, worktree details, and recovery history use progressive
+  disclosure. A selected task must remain fully operable by keyboard.
+
 ## Linear entry requirements
 
 - A user can choose a local-only board or an optional Linear-connected route

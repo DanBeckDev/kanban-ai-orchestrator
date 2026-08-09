@@ -30,13 +30,13 @@ the flow has already been validated.
 │ Pick up where you left off. Everything is stored on this device.      │
 │                                                                       │
 │ ┌─────────────────────────────────────────────────────────────────┐ │
-│ │ Website reliability                              Continue        │ │
+│ │ Website reliability                              Open board      │ │
 │ │ kanban-ai-orchestrator · opened today                            │ │
 │ │ Needs your attention: 2 decisions · 1 agent working              │ │
 │ └─────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │ ┌─────────────────────────────────────────────────────────────────┐ │
-│ │ Linear migration                                Continue          │ │
+│ │ Linear migration                                Try again         │ │
 │ │ api-platform · opened 6 days ago                                │ │
 │ │ Repository unavailable. [Locate repository] [Try again]          │ │
 │ └─────────────────────────────────────────────────────────────────┘ │
@@ -59,7 +59,7 @@ the flow has already been validated.
 **Participant prompts**
 
 - “You want to resume the Website reliability work. What would you do?”
-- “What do you expect after choosing Continue on the unavailable board?”
+- “What do you expect after choosing Try again on the unavailable board?”
 - “Where would you create a board for a different repository?”
 
 **Design decisions being tested**
@@ -77,21 +77,16 @@ the flow has already been validated.
 ┌───────────────────────────────────────────────────────────────────────┐
 │ ‹ Your boards                                                        │
 │ Create a board                                                       │
-│ Choose the local Git repository whose work you want to coordinate.   │
-│ Nothing is created until you confirm.                                │
+│ Choose a project folder and give your board a name.                  │
 │                                                                       │
-│ Repository                                                          │
-│ [Choose repository…]  /Work/kanban-ai-orchestrator        ✓ Git root │
+│ Project folder                                                       │
+│ [Choose project folder…]  /Work/kanban-ai-orchestrator               │
 │                                                                       │
 │ Board name                                                           │
 │ [Kanban AI Orchestrator                                        ]     │
-│ Suggested from the repository folder.                                │
 │                                                                       │
-│ Safe defaults                                                        │
-│ Base branch: detected branch (main here) · Policy: Standard           │
-│                                                                       │
-│ ▸ Advanced setup                                                     │
-│   Change base branch, policy, or self-managed integrations.          │
+│ Kanban will prepare a separate workspace for each task.              │
+│ ▸ Use a different starting point                                     │
 │                                                                       │
 │ [Cancel]                                      [Create board]         │
 └───────────────────────────────────────────────────────────────────────┘
@@ -100,41 +95,40 @@ the flow has already been validated.
 ### Validation and cancellation variants
 
 ```text
-Repository chooser cancelled
-  No repository selected. [Choose repository…]
+Project chooser cancelled
+  No project folder selected. [Choose project folder…]
   No project or board has been created.
 
-Selected folder is not a Git repository root
-  This folder is not the root of a Git repository.
-  [Choose another folder]  [Cancel]
+Selected folder is not ready to use as a project
+  Choose the top-level folder for your project, not a folder inside it.
+  [Choose another project folder]  [Back to your boards]
   No project or board has been created.
 
-Advanced setup expanded
-  Base branch [main                 ]
-  Policy      [Standard          ▾ ]
-  “Changing the policy changes which local actions need approval.”
-  Self-managed integrations are optional and do not send repository data
-  until the person explicitly connects them.
+Use a different starting point expanded
+  Start new work from [release              ]
+  “Kanban normally uses your project's main line of work. Change this only
+   if your team asked you to.”
 ```
 
 **Participant prompts**
 
 - “Create a board for the selected repository. Tell us what you believe will
   happen when you select Create board.”
-- “You need a different base branch. Where would you look, and what do you
-  expect this change to affect?”
+- “Your team uses a release line for this work. Where would you change the
+  starting point, and what do you expect this to affect?”
 - “Cancel the repository chooser. What state do you expect the app to be in?”
 
 **Design decisions being tested**
 
-- The native picker replaces typed paths. The selected folder and Git-root
-  validation make the chosen context inspectable.
+- The native picker replaces typed paths. The selected folder is validated as a
+  project without making Git terminology a normal-user prerequisite.
 - Board name is editable and defaults from the folder name. Project and board
   identifiers are generated locally and are only exposed in support details,
   never requested in this flow.
-- The checked-out branch (shown as `main` here) and Standard policy are proposed,
-  visible defaults—not invisible assumptions. Advanced options are available but
-  closed because they are not required to create the ordinary local board.
+- Kanban automatically resolves the project's main line of work and applies its
+  standard safety rules. Neither is a normal-user decision. The intentional
+  starting-point override is closed because it is not required to create the
+  ordinary local board.
 - `Create board` is an explicit commit point. The confirmation is for durable
   local setup, not consent to start agents, sync Linear, or execute work.
 

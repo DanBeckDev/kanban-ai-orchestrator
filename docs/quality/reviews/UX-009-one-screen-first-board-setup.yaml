@@ -1,0 +1,72 @@
+work_item: UX-009
+scope:
+  - "A compact first-board setup path that does not require Git or policy knowledge."
+  - "Safe primary starting-point resolution that avoids presenting a feature checkout as the project default."
+  - "Focused accessibility, regression, fallback, and coverage evidence for the revised setup journey."
+source_structure:
+  reviewed_files:
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 199
+      responsibilities: "Presents the compact project-folder-first board-creation journey and its intentional starting-point override."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.test.tsx
+      meaningful_lines: 114
+      responsibilities: "Covers cancellation, normal creation, the hidden standard policy, the intentional override, and actionable selection failure."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 29
+      responsibilities: "Provides the reusable accessible setup interaction for board-workspace tests."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/git_cli.rs
+      meaningful_lines: 333
+      responsibilities: "Provides the sanitised generic Git command boundary used by workspace operations."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/mod.rs
+      meaningful_lines: 305
+      responsibilities: "Coordinates repository validation and workspace management without taking ownership of branch-resolution mechanics."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/repository_branch.rs
+      meaningful_lines: 96
+      responsibilities: "Resolves a safe repository starting point from locally known remotes, conventional primary branches, and a final checked-out-branch fallback."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/repository_setup_tests.rs
+      meaningful_lines: 100
+      responsibilities: "Covers repository inspection, explicit override validation, primary-branch resolution, and safe fallback behavior."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T12:22:36+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The normal setup card made a person scroll through branch and policy controls, including unexplained internal terminology."
+    change: "Reduced the normal path to project folder, board name, and meaningful outcome copy; the policy is now an internal standard default and the only optional control is a closed plain-language starting-point override."
+  - finding: "Repository inspection used the checked-out branch, so a feature worktree could be shown as the recommended base."
+    change: "Added a focused resolver that uses a locally known remote default first, then conventional primary branches, and only then the checked-out branch; tests cover each safe fallback stage."
+  - finding: "The initial resolver extension made the generic Git command module exceed the 400 meaningful-line limit."
+    change: "Moved the independent resolver to repository_branch.rs, retained narrowly scoped module visibility for generic command helpers, and kept every changed source file below the zero-exception limit."
+  - finding: "The new resolver initially left overall Rust branch coverage at 79.98%."
+    change: "Added meaningful remote-primary and checked-out-branch fallback cases; Rust branch coverage is now above the required threshold."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.13
+        statements: 85.64
+        functions: 81.18
+        branches: 83.61
+      - package_or_crate: src-tauri-rust
+        lines: 83.97
+        statements: 80.15
+        functions: 83.76
+        branches: 80.34
+    threshold_met: true
+exceptions: []

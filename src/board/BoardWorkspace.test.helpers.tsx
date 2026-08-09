@@ -13,8 +13,10 @@ export async function createBoard(boardGateway: BoardGateway) {
   fireEvent.click(
     await screen.findByRole("button", { name: "Create a board" }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Choose repository" }));
-  await screen.findByText("Git root");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Choose project folder" }),
+  );
+  await screen.findByText("Selected project");
   fireEvent.change(screen.getByLabelText("Board name"), {
     target: { value: "MVP" },
   });

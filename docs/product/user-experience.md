@@ -38,9 +38,9 @@ The next phase makes the desktop app feel like a trustworthy work space:
    describe the result wanted; creating an individual task manually remains an
    explicit secondary path.
 3. **Progressive disclosure, not hidden consequences.** Keep required setup
-   short, use safe defaults, and reveal advanced repository/policy options only
-   when needed. Before a protected action or plan confirmation, show the effect
-   and require the existing approval.
+   short, use safe defaults, and reveal advanced repository options only when
+   needed. Before a protected action or plan confirmation, show the effect and
+   require the existing approval.
 4. **Explain the state in the place it matters.** A blocked card names the
    upstream task, dependency type, reason, owner, and next action. A waiting
    approval tells the person exactly what decision is needed.
@@ -55,7 +55,7 @@ The next phase makes the desktop app feel like a trustworthy work space:
 
 | Place | Primary question answered | Primary action |
 | --- | --- | --- |
-| **Your boards** | “What was I working on, and what needs attention?” | Continue a board or create one |
+| **Your boards** | “What was I working on, and what needs attention?” | Open a board or create one |
 | **Create a board** | “Which repository and outcome am I coordinating?” | Select repository and create |
 | **Board home** | “What is the safest next move?” | Describe an outcome, resolve attention, or review |
 | **Board** | “What work exists and what is its state?” | Inspect, create, or transition work |
@@ -94,12 +94,14 @@ and keeps the first release focused on the minimal coherent user outcome.
 ### Returning person
 
 1. Launch opens **Your boards**, not an ID field.
-2. The most recently opened board is the first, clearly labelled **Continue**.
+2. The most recently opened board is the first, clearly labelled **Open board**.
 3. Each board row shows its name, repository folder name, last opened time, and a
    compact attention summary such as “2 need your decision” or “3 agents active”.
 4. Choosing a board loads its durable snapshot. If its repository is unavailable,
    the row explains the problem and offers **Locate repository**; it never opens a
    misleading empty board.
+5. A board without a saved plan opens to **Describe the outcome**. An unexpected
+   workspace failure gives a clear retry state and never leaves a blank screen.
 
 ### First visit or creating a board
 
@@ -107,13 +109,14 @@ and keeps the first release focused on the minimal coherent user outcome.
 2. The concise form asks for a board name and a repository through a native folder
    picker. The proposed board name defaults to the repository folder name and is
    editable.
-3. The app validates that the selected folder is a Git repository and displays the
-   detected default base branch before creation. It generates project/board IDs,
-   selects the safe standard policy, and persists nothing until the person confirms
-   creation.
-4. An **Advanced setup** disclosure contains the base-ref override, policy choice,
-   and self-managed integration configuration. It is closed by default and each
-   change describes its effect.
+3. The app validates that the selected folder is a Git repository, resolves the
+   project's primary starting point, generates project/board IDs, selects the
+   safe standard policy, and persists nothing until the person confirms creation.
+   None of those implementation details obstruct ordinary setup.
+4. A closed **Use a different starting point** control is available only for a
+   team that needs a different line of work. It uses plain language and explains
+   its effect; policy and self-managed integrations belong in later settings,
+   not the first-board form.
 5. The new board opens to **Describe the outcome**. Manual task creation is
    available, but is deliberately secondary to a reviewed plan.
 

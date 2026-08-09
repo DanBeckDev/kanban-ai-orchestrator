@@ -5,6 +5,7 @@ import { ThemeToggle } from "./theme/ThemeToggle";
 
 import { BoardWorkspace } from "./board/BoardWorkspace";
 import type { RepositoryPicker } from "./board/BoardSetup";
+import { WorkspaceErrorBoundary } from "./board/WorkspaceErrorBoundary";
 import type { BoardGateway } from "./board/types";
 
 type AppProps = Readonly<{
@@ -29,10 +30,12 @@ export function App({ gateway, repositoryPicker }: AppProps) {
               <ThemeToggle />
             </header>
             <main id="board-content" tabIndex={-1}>
-              <BoardWorkspace
-                gateway={gateway}
-                repositoryPicker={repositoryPicker}
-              />
+              <WorkspaceErrorBoundary>
+                <BoardWorkspace
+                  gateway={gateway}
+                  repositoryPicker={repositoryPicker}
+                />
+              </WorkspaceErrorBoundary>
             </main>
           </div>
         </div>

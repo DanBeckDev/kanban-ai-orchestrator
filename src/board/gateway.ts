@@ -58,8 +58,9 @@ export const tauriBoardGateway: BoardGateway = {
   proposePlan(request: ProposePlanRequest): Promise<BoardPlan> {
     return invoke("propose_plan", { request });
   },
-  boardPlan(boardId: string): Promise<BoardPlan | undefined> {
-    return invoke("board_plan", { boardId });
+  async boardPlan(boardId: string): Promise<BoardPlan | undefined> {
+    const plan = await invoke<BoardPlan | null>("board_plan", { boardId });
+    return plan ?? undefined;
   },
   confirmPlan(request: ConfirmPlanRequest): Promise<BoardSnapshot> {
     return invoke("confirm_plan", { request });

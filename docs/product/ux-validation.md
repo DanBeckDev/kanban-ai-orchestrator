@@ -18,7 +18,7 @@ contradict the assumptions rather than inherit them as facts.
 | Activity | Current path | Observed pain / likely question | Workaround or consequence | Evidence |
 | --- | --- | --- | --- | --- |
 | Find work | Enter an existing board ID in `Open an existing board` | “Which ID is mine, and where do I find it?” | Store or obtain an opaque ID outside the app | `src/board/BoardSetup.tsx` |
-| Set up safely | Type project ID, project name, repository path, base ref, policy-set ID, board ID, and board name | “Which values are names I choose versus daemon keys or security settings?” | Guess, copy values from documentation, or abandon setup | `src/board/BoardSetup.tsx` |
+| Set up safely | Choose a project folder, accept a feature branch as the suggested starting point, then scan technical setup details | “Why is that branch recommended, and what does the policy setting mean?” | Override a value without context, or scroll around a form that should be simple | `src/board/BoardSetup.tsx` |
 | Describe an outcome | Open a board, then find the proposal panel among many side-panel forms | “Do I need to configure an agent, Linear, a task, and a dependency before I can plan?” | Interpret a dense configuration surface as the onboarding path | `src/board/BoardView.tsx` |
 | Decide the order | Read cards and dependency form in the board workspace | “What is blocked, why, and what can safely run together?” | Infer from task data and dependency notation | `src/board/BoardView.tsx` |
 | Supervise work | Use cards and execution controls after profiles are configured | “What needs my attention right now?” | Scan board columns and configuration panels | `src/board/BoardView.tsx` |
@@ -31,7 +31,7 @@ contradict the assumptions rather than inherit them as facts.
 | A named recent-board library lets returning developers resume without external notes. | People may instead use repository context, branch, issue tracker, or team cues. | Participant finds the intended board and explains why they selected it. |
 | A native repository chooser feels safer and clearer than a typed path. | The chooser may make repository-root status or cancellation less understandable. | Participant selects a valid repository, recovers from cancellation or invalid selection, and explains persistence state. |
 | Outcome-first planning makes the next action obvious. | People may need task-level control or profile context earlier. | Participant finds proposal creation and correctly predicts that no worker has started. |
-| Closed advanced setup lowers cognitive load without hiding a consequential choice. | A default may not be safe for a participant’s repository or policy. | Participant can locate an override, state its effect, and identify when confirmation is required. |
+| An automatic primary starting point removes a normal-user decision while retaining a deliberate plain-language override. | A fallback could select the wrong line for an unusual repository. | Participant creates a board without Git vocabulary, then finds and explains the override when given a team-specific scenario. |
 
 ## Moderated walkthrough protocol
 
@@ -68,26 +68,30 @@ follow-ups such as “What are you looking for?”, “What do you expect next?�
 repository. It has two decisions waiting and one active agent. Today the folder
 for a different board is no longer where the app expects it.”
 
-**Tasks:** Open Website reliability; describe why you chose it; then explain
-what you would do with the unavailable board.
+**Tasks:** Open Website reliability; describe why you chose it and what the
+empty outcome-planning state means; then explain what you would do with the
+unavailable board.
 
 **Success without moderator assistance:** Select the intended board from visible
-recognition cues, identify the attention summary, and choose or describe the
-Locate/Retry recovery path without requesting or inventing an ID.
+recognition cues, identify the attention summary and first outcome action, and
+choose or describe the Locate/Retry recovery path without requesting or
+inventing an ID. If the application encounters an unexpected rendering failure,
+the participant sees a clear Try again state rather than an empty window.
 
 ### Scenario B — create safely
 
-**Set-up:** “You want to coordinate work in a sample Git repository. Use the
-repository chooser, name the board, and create it. Then imagine you selected a
-folder that is not the Git root.”
+**Set-up:** “You want to coordinate work in a sample project. Use the project
+chooser, name the board, and create it. Then imagine you selected a folder
+inside the project rather than the project folder itself.”
 
-**Tasks:** Create the board; find the base-branch/policy overrides; explain what
-is created and what has not started; recover from invalid selection or chooser
-cancellation.
+**Tasks:** Create the board; explain what is created and what has not started;
+recover from invalid selection or chooser cancellation. Then imagine the team
+asks for a different starting point and find the optional control.
 
 **Success without moderator assistance:** Uses the picker rather than seeking a
-path field, identifies the editable board name and safe defaults, finds Advanced
-setup when needed, and states that no partial board or AI work exists before the
+path field, identifies the editable board name and the immediate result of
+creation without needing Git or policy knowledge, finds the intentional override
+when needed, and states that no partial board or AI work exists before the
 explicit create step.
 
 ### Scenario C — make the first plan
@@ -115,11 +119,11 @@ tool configuration beyond what the participant volunteers as relevant.
 | Category | Prototype decision | Rationale to test |
 | --- | --- | --- |
 | Safe local default | Suggested board name from repository folder | Easy to edit; does not change execution behaviour. |
-| Safe local default | Detected default base branch and Standard policy | Visible starting point; overrides are discoverable and explain effects. |
+| Safe local default | Resolved project starting point and standard safety policy | Removes a normal-user decision; the narrowly scoped override is discoverable only when needed. |
 | Generated implementation detail | Project and board identifiers | Required by the system, but not a normal-user decision. Retain only in support details. |
 | Explicit confirmation | Create board | Creates durable local records; before confirmation the app persists nothing. |
 | Explicit confirmation | Confirm plan | Materialises the inspected local tasks/dependencies exactly once; it does not itself start a worker. |
-| Intentional advanced control | Base ref, policy, self-managed integration configuration | Needed in some contexts, but distracting in ordinary local setup. Reveal with effect text. |
+| Intentional advanced control | Different starting point | Needed by some teams, but distracting in ordinary local setup. Reveal with effect text. |
 | Intentional deferral | Linear connection and graph visualisation | Useful later, but neither is required to form a valid local board or understand the first plan. |
 
 If testing shows a proposed default can cause a surprising repository, policy, or

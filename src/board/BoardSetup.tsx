@@ -32,7 +32,7 @@ type BoardSetupProps = Readonly<{
   onBack: () => void;
 }>;
 
-const standardPolicySetId = "standard";
+const STANDARD_POLICY_SET_ID = "standard";
 
 export function BoardSetup({
   busy,
@@ -44,7 +44,7 @@ export function BoardSetup({
   const [repository, setRepository] = useState<RepositorySetup>();
   const [boardName, setBoardName] = useState("");
   const [baseRef, setBaseRef] = useState("");
-  const [policySetId, setPolicySetId] = useState(standardPolicySetId);
+  const policySetId = STANDARD_POLICY_SET_ID;
   const [chooserMessage, setChooserMessage] = useState<string>();
   const [choosing, setChoosing] = useState(false);
 
@@ -54,7 +54,9 @@ export function BoardSetup({
     try {
       const selectedPath = await repositoryPicker();
       if (selectedPath === null) {
-        setChooserMessage("No repository selected. No board has been created.");
+        setChooserMessage(
+          "No project folder selected. No board has been created.",
+        );
         return;
       }
       const inspectedRepository = await onInspectRepository(selectedPath);
@@ -63,7 +65,7 @@ export function BoardSetup({
       setBaseRef(inspectedRepository.baseRef);
     } catch (error) {
       setRepository(undefined);
-      setChooserMessage(errorMessage(error));
+      setChooserMessage(repositoryErrorMessage(error));
     } finally {
       setChoosing(false);
     }
@@ -86,14 +88,11 @@ export function BoardSetup({
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
         <h2 id="board-setup-title">Create a board</h2>
-        <p>
-          Choose the local Git repository whose work you want to coordinate.
-          Nothing is created until you confirm.
-        </p>
+        <p>Choose a project folder and give your board a name.</p>
       </div>
-      <Card className="board-setup-card">
+      <Card className="board-setup-card" size="sm">
         <CardHeader>
-          <CardTitle>Choose a repository</CardTitle>
+          <CardTitle>Board details</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -103,25 +102,26 @@ export function BoardSetup({
           >
             <FieldGroup>
               <Field>
-                <FieldTitle id="repository-label">Repository</FieldTitle>
+                <FieldTitle id="project-folder-label">
+                  Project folder
+                </FieldTitle>
                 <Button
-                  aria-describedby="repository-label"
                   disabled={disabled}
                   onClick={() => void chooseRepository()}
                   type="button"
                   variant="outline"
                 >
                   <FolderOpenIcon data-icon="inline-start" />
-                  Choose repository
+                  Choose project folder
                 </Button>
                 <FieldDescription>
-                  Select the Git repository that this board coordinates.
+                  Select the folder for the project you want to coordinate.
                 </FieldDescription>
               </Field>
               {repository !== undefined && (
                 <Alert className="repository-selection">
                   <FolderRootIcon aria-hidden="true" />
-                  <AlertTitle>Git root</AlertTitle>
+                  <AlertTitle>Selected project</AlertTitle>
                   <AlertDescription>
                     {repository.repositoryPath}
                   </AlertDescription>
@@ -130,61 +130,53 @@ export function BoardSetup({
               {chooserMessage !== undefined && (
                 <Alert className="setup-message">
                   <InfoIcon aria-hidden="true" />
-                  <AlertTitle>Repository selection</AlertTitle>
+                  <AlertTitle>Choose a project folder</AlertTitle>
                   <AlertDescription>{chooserMessage}</AlertDescription>
                 </Alert>
               )}
               <Field>
                 <FieldLabel htmlFor="board-name">Board name</FieldLabel>
                 <Input
+                  autoComplete="off"
                   disabled={disabled || repository === undefined}
                   id="board-name"
+                  name="board-name"
                   onChange={(event) => setBoardName(event.target.value)}
                   required
                   value={boardName}
                 />
-                <FieldDescription>
-                  Suggested from the repository folder.
-                </FieldDescription>
               </Field>
             </FieldGroup>
-            <Separator />
-            <section aria-label="Safe defaults" className="safe-defaults">
-              <p className="eyebrow">Safe defaults</p>
-              <p>
-                Base branch: {repository?.baseRef ?? "—"} · Policy: Standard
-              </p>
-            </section>
-            <details className="advanced-disclosure">
-              <summary>Advanced setup</summary>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="base-ref">Base branch</FieldLabel>
-                  <Input
-                    disabled={disabled || repository === undefined}
-                    id="base-ref"
-                    onChange={(event) => setBaseRef(event.target.value)}
-                    value={baseRef}
-                  />
-                  <FieldDescription>
-                    Changing the base branch changes where task worktrees start.
-                  </FieldDescription>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="policy-set">Policy</FieldLabel>
-                  <Input
-                    disabled={disabled || repository === undefined}
-                    id="policy-set"
-                    onChange={(event) => setPolicySetId(event.target.value)}
-                    value={policySetId}
-                  />
-                  <FieldDescription>
-                    Changing the policy changes which local actions need
-                    approval.
-                  </FieldDescription>
-                </Field>
-              </FieldGroup>
-            </details>
+            {repository !== undefined && (
+              <>
+                <Separator />
+                <p className="setup-reassurance">
+                  Kanban will prepare a separate workspace for each task.
+                </p>
+                <details className="advanced-disclosure">
+                  <summary>Use a different starting point</summary>
+                  <FieldGroup>
+                    <Field>
+                      <FieldLabel htmlFor="base-ref">
+                        Start new work from
+                      </FieldLabel>
+                      <Input
+                        autoComplete="off"
+                        disabled={disabled}
+                        id="base-ref"
+                        name="base-ref"
+                        onChange={(event) => setBaseRef(event.target.value)}
+                        value={baseRef}
+                      />
+                      <FieldDescription>
+                        Kanban normally uses your project&apos;s main line of
+                        work. Change this only if your team asked you to.
+                      </FieldDescription>
+                    </Field>
+                  </FieldGroup>
+                </details>
+              </>
+            )}
           </form>
         </CardContent>
         <CardFooter className="form-actions">
@@ -209,6 +201,10 @@ export function BoardSetup({
   );
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+function repositoryErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("repository root")) {
+    return "Choose the top-level folder for your project, not a folder inside it.";
+  }
+  return "Kanban couldn't use that folder as a project. Choose another project folder and try again.";
 }

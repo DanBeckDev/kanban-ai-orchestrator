@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -13,6 +13,10 @@ const boardSnapshot = {
 };
 
 describe("tauri board gateway", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+  });
+
   it("maps each board operation to its typed local daemon command", async () => {
     invoke.mockResolvedValue(boardSnapshot);
     const project = {
@@ -84,5 +88,14 @@ describe("tauri board gateway", () => {
       ["execution_activity", { executionId: "execution-1", afterSequence: 2 }],
       ["board_snapshot", { boardId: "board-1" }],
     ]);
+  });
+
+  it("normalises Tauri's null response for a board without a saved plan", async () => {
+    invoke.mockResolvedValue(null);
+
+    await expect(
+      tauriBoardGateway.boardPlan("board-1"),
+    ).resolves.toBeUndefined();
+    expect(invoke).toHaveBeenCalledWith("board_plan", { boardId: "board-1" });
   });
 });

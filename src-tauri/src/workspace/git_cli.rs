@@ -100,14 +100,6 @@ impl GitCli {
         self.reference_commit(directory, revision).map(|_| ())
     }
 
-    pub fn current_branch(&self, directory: &Path) -> Result<String, GitError> {
-        self.successful_text(
-            directory,
-            "resolve the repository base branch",
-            &["rev-parse".into(), "--abbrev-ref".into(), "HEAD".into()],
-        )
-    }
-
     pub fn create_worktree(
         &self,
         directory: &Path,
@@ -213,7 +205,7 @@ impl GitCli {
         })
     }
 
-    fn successful_text(
+    pub(super) fn successful_text(
         &self,
         directory: &Path,
         operation: &'static str,
@@ -242,7 +234,11 @@ impl GitCli {
         )
     }
 
-    fn output(&self, directory: &Path, arguments: &[OsString]) -> Result<Output, GitError> {
+    pub(super) fn output(
+        &self,
+        directory: &Path,
+        arguments: &[OsString],
+    ) -> Result<Output, GitError> {
         self.command(directory, arguments)
             .output()
             .map_err(GitError::CommandIo)
@@ -327,7 +323,7 @@ pub enum GitError {
 }
 
 impl GitError {
-    fn command_failed(operation: &'static str, output: Output) -> Self {
+    pub(super) fn command_failed(operation: &'static str, output: Output) -> Self {
         Self::CommandFailed {
             operation,
             exit_code: output.status.code(),

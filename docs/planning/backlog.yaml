@@ -288,6 +288,49 @@ tasks:
       replacement. UX-008's representative-walkthrough completion gate remains
       unchanged.
 
+  - id: UX-009
+    epic: UX
+    title: Make first-board setup one-screen and jargon-free
+    status: done
+    priority: P0
+    depends_on: [UX-003]
+    acceptance_criteria:
+      - With a project selected, the ordinary desktop setup path presents the project folder, editable board name, Back, and Create board actions without vertical page scrolling at a 720px-tall desktop viewport.
+      - The ordinary path never asks the person to understand or choose a base branch, base ref, policy, Standard policy, Git root, or an internal identifier. It explains only the immediate outcome of creating the board.
+      - Repository inspection chooses the configured remote's locally known primary branch when available; otherwise it safely prefers an existing conventional primary branch (main, master, or trunk) before falling back to the checked-out branch. Creation revalidates the resolved reference before any durable state changes.
+      - A deliberately opened Use a different starting point control is the only initial override. It uses plain language, explains that it is normally unnecessary, and preserves the existing typed base-reference validation. Policy remains daemon-owned and defaults to standard without appearing in this flow.
+      - The existing native picker, generated identifiers, atomic creation, no-agent-start guarantee, semantic labels, keyboard access, and all required coverage remain intact. Focused frontend and Rust tests cover the compact default path, intentional override, and primary-branch resolution.
+    notes: >-
+      Completed on 2026-08-09 in a focused pull request. BookCtx — The
+      Product-Minded Engineer, "Turn Unknown Unknowns into Known Unknowns" and
+      "Interaction Design" supported removing implementation vocabulary from
+      the green path, providing a safe predictable default, and making the less
+      common override intentional. ADR 0023 supersedes the setup-default
+      portions of ADR 0020. The full quality gate passed with every frontend and
+      Rust coverage metric above 80%; the review receipt is
+      docs/quality/reviews/UX-009-one-screen-first-board-setup.yaml.
+
+  - id: UX-010
+    epic: UX
+    title: Keep board opening recoverable when optional local state is absent
+    status: done
+    priority: P0
+    depends_on: [UX-002, UX-009]
+    acceptance_criteria:
+      - Opening a saved board with no stored plan shows its normal outcome-planning entry state; it never renders a blank screen.
+      - The Tauri adapter normalises an absent optional plan from its JSON null representation to the frontend's explicit absent state.
+      - An unexpected workspace render failure presents a semantic recovery message and Try again action, stating that durable board data was not changed.
+      - Focused adapter and recovery-boundary tests reproduce the null-response case and prove visible recovery. The full quality gate and every coverage metric remain at or above 80%.
+    notes: >-
+      Completed on 2026-08-09 from live usability testing. Selecting a saved
+      project and continuing exposed a JSON-null optional plan at the typed
+      command boundary; the unnormalised value caused the PlanPreview component
+      to throw and React removed the workspace. The Tauri adapter now normalises
+      that absence and a tested workspace error boundary presents recovery rather
+      than a blank screen. The full quality gate passed with every coverage
+      metric above 80%; the review receipt is
+      docs/quality/reviews/UX-010-no-blank-board-opening.yaml.
+
   - id: UI-001
     epic: UI
     title: Establish a polished shadcn visual system across the desktop board

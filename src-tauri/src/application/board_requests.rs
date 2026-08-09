@@ -25,6 +25,17 @@ pub struct CreateBoardRequest {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CreateLocalBoardRequest {
+    pub name: String,
+    pub repository_path: String,
+    #[serde(default)]
+    pub base_ref: Option<String>,
+    #[serde(default)]
+    pub policy_set_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateWorkItemRequest {
     pub event_id: String,
     pub work_item_id: String,

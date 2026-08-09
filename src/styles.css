@@ -159,6 +159,71 @@ dd {
   grid-template-columns: minmax(0, 36rem);
 }
 
+.board-setup .form-panel {
+  max-width: 42rem;
+}
+
+.repository-selection,
+.safe-defaults,
+.setup-message,
+.board-support-details {
+  padding: 0.75rem;
+  border: 1px solid #314057;
+  border-radius: 0.65rem;
+  background: #111a27;
+}
+
+.repository-selection {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.repository-selection strong {
+  color: #a9e7c0;
+  white-space: nowrap;
+}
+
+.safe-defaults h3,
+.safe-defaults p,
+.form-hint,
+.setup-message {
+  margin: 0;
+}
+
+.form-hint {
+  color: #aebbd0;
+  font-size: 0.84rem;
+}
+
+.form-panel details {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.form-panel summary,
+.board-support-details summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.board-support-details {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.board-support-details dl {
+  margin-top: 0.75rem;
+}
+
 .board-library-heading,
 .board-library-entry {
   display: flex;

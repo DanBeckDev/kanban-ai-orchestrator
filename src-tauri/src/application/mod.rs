@@ -17,6 +17,7 @@ mod linear_import_request;
 mod linear_import_service;
 mod linear_sync_request;
 mod linear_sync_service;
+mod local_board_service;
 mod plan_requests;
 mod plan_service;
 mod planner_profile_service;
@@ -31,9 +32,9 @@ pub use board_library::{
 };
 pub use board_plan::{BoardPlan, StoredPlan};
 pub use board_requests::{
-    AddDependencyRequest, CreateBoardRequest, CreateProjectRequest, CreateWorkItemRequest,
-    RecordEvidenceRequest, RecordExecutionRequest, TransitionWorkItemRequest,
-    UpdateExecutionRequest,
+    AddDependencyRequest, CreateBoardRequest, CreateLocalBoardRequest, CreateProjectRequest,
+    CreateWorkItemRequest, RecordEvidenceRequest, RecordExecutionRequest,
+    TransitionWorkItemRequest, UpdateExecutionRequest,
 };
 pub use board_service::{BoardRepository, BoardService};
 pub use board_service_error::BoardServiceError;

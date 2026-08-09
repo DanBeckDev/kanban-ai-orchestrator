@@ -8,6 +8,7 @@ import type {
   BoardSnapshot,
   ConfirmPlanRequest,
   CreateBoardRequest,
+  CreateLocalBoardRequest,
   CreateProjectRequest,
   CreateWorkItemRequest,
   ExecutionActivityPage,
@@ -23,6 +24,7 @@ import type {
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
+  RepositorySetup,
   QueueLinearCommentRequest,
   StartExecutionRequest,
   TransitionWorkItemRequest,
@@ -34,6 +36,12 @@ export const tauriBoardGateway: BoardGateway = {
   },
   createBoard(request: CreateBoardRequest): Promise<BoardSnapshot> {
     return invoke("create_board", { request });
+  },
+  inspectRepository(repositoryPath: string): Promise<RepositorySetup> {
+    return invoke("inspect_repository", { repositoryPath });
+  },
+  createLocalBoard(request: CreateLocalBoardRequest): Promise<BoardSnapshot> {
+    return invoke("create_local_board", { request });
   },
   boardLibrary(): Promise<readonly BoardLibraryEntry[]> {
     return invoke("board_library");

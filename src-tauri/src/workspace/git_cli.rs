@@ -100,6 +100,14 @@ impl GitCli {
         self.reference_commit(directory, revision).map(|_| ())
     }
 
+    pub fn current_branch(&self, directory: &Path) -> Result<String, GitError> {
+        self.successful_text(
+            directory,
+            "resolve the repository base branch",
+            &["rev-parse".into(), "--abbrev-ref".into(), "HEAD".into()],
+        )
+    }
+
     pub fn create_worktree(
         &self,
         directory: &Path,

@@ -17,22 +17,19 @@ import {
 import { createBoard } from "./BoardWorkspace.test.helpers";
 
 describe("board workspace", () => {
-  it("creates a local project and board through the injected daemon gateway", async () => {
+  it("creates a local board through the injected daemon gateway", async () => {
     const boardGateway = gateway();
 
     await createBoard(boardGateway);
 
-    expect(boardGateway.createProject).toHaveBeenCalledWith({
-      projectId: "project-1",
-      name: "Project",
+    expect(boardGateway.inspectRepository).toHaveBeenCalledWith(
+      "/projects/project",
+    );
+    expect(boardGateway.createLocalBoard).toHaveBeenCalledWith({
+      name: "MVP",
       repositoryPath: "/projects/project",
       baseRef: "main",
       policySetId: "standard",
-    });
-    expect(boardGateway.createBoard).toHaveBeenCalledWith({
-      boardId: "board-1",
-      projectId: "project-1",
-      name: "MVP",
     });
   });
 

@@ -191,6 +191,70 @@ fn rejects_duplicate_project_and_board_ids() {
 }
 
 #[test]
+fn creates_a_local_board_and_its_recent_entry_as_one_transaction() {
+    let mut store = SqliteEventStore::in_memory().expect("event store should open");
+
+    store
+        .create_local_board(
+            project("project-1"),
+            board("board-1", "project-1"),
+            "2026-08-09T08:00:00Z".to_owned(),
+        )
+        .expect("local board should persist atomically");
+
+    assert!(
+        store
+            .project(&ProjectId::from("project-1"))
+            .expect("project should load")
+            .is_some()
+    );
+    assert!(
+        store
+            .board(&BoardId::from("board-1"))
+            .expect("board should load")
+            .is_some()
+    );
+    assert_eq!(
+        store
+            .board_library_records()
+            .expect("board library should load")[0]
+            .last_opened_at,
+        Some("2026-08-09T08:00:00Z".to_owned())
+    );
+}
+
+#[test]
+fn rolls_back_local_board_creation_when_its_recent_entry_cannot_persist() {
+    let mut store = SqliteEventStore::in_memory().expect("event store should open");
+    store
+        .connection
+        .execute_batch("DROP TABLE board_access")
+        .expect("test should remove the recency table");
+
+    assert!(
+        store
+            .create_local_board(
+                project("project-1"),
+                board("board-1", "project-1"),
+                "2026-08-09T08:00:00Z".to_owned(),
+            )
+            .is_err()
+    );
+    assert!(
+        store
+            .project(&ProjectId::from("project-1"))
+            .expect("project lookup should work")
+            .is_none()
+    );
+    assert!(
+        store
+            .board(&BoardId::from("board-1"))
+            .expect("board lookup should work")
+            .is_none()
+    );
+}
+
+#[test]
 fn requires_a_persisted_board_before_creating_a_work_item() {
     let mut store = SqliteEventStore::in_memory().expect("event store should open");
 

@@ -24,6 +24,12 @@ pub trait BoardRepository {
     fn create_project(&mut self, project: Project) -> Result<Project, Self::Error>;
     fn project(&self, project_id: &ProjectId) -> Result<Option<Project>, Self::Error>;
     fn create_board(&mut self, board: Board) -> Result<Board, Self::Error>;
+    fn create_local_board(
+        &mut self,
+        project: Project,
+        board: Board,
+        opened_at: String,
+    ) -> Result<(), Self::Error>;
     fn board(&self, board_id: &BoardId) -> Result<Option<Board>, Self::Error>;
     fn board_library_records(&self) -> Result<Vec<BoardLibraryRecord>, Self::Error>;
     fn record_board_opened(

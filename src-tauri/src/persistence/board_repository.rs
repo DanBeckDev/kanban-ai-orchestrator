@@ -29,6 +29,15 @@ impl BoardRepository for SqliteEventStore {
         SqliteEventStore::create_board(self, board)
     }
 
+    fn create_local_board(
+        &mut self,
+        project: Project,
+        board: Board,
+        opened_at: String,
+    ) -> Result<(), Self::Error> {
+        SqliteEventStore::create_local_board(self, project, board, opened_at)
+    }
+
     fn board(&self, board_id: &BoardId) -> Result<Option<Board>, Self::Error> {
         SqliteEventStore::board(self, board_id)
     }

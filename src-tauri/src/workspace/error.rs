@@ -12,6 +12,14 @@ pub enum WorkspaceError {
         declared_path: PathBuf,
         detected_path: PathBuf,
     },
+    InvalidGitHubRepositoryUrl,
+    CloneDestinationMustBeDirectory {
+        path: PathBuf,
+    },
+    CloneDestinationOccupied {
+        path: PathBuf,
+    },
+    GitHubCloneFailed,
     WorkspaceRootOverlapsRepository {
         repository_path: PathBuf,
         workspace_path: PathBuf,
@@ -75,6 +83,24 @@ impl fmt::Display for WorkspaceError {
                 "declared project path {} must be the repository root {}, not a subdirectory",
                 declared_path.display(),
                 detected_path.display()
+            ),
+            Self::InvalidGitHubRepositoryUrl => write!(
+                formatter,
+                "enter a GitHub repository URL such as https://github.com/owner/repository"
+            ),
+            Self::CloneDestinationMustBeDirectory { path } => write!(
+                formatter,
+                "choose an existing folder for the clone destination, not {}",
+                path.display()
+            ),
+            Self::CloneDestinationOccupied { path } => write!(
+                formatter,
+                "{} already exists; choose another destination folder or rename the repository first",
+                path.display()
+            ),
+            Self::GitHubCloneFailed => write!(
+                formatter,
+                "Kanban could not clone that repository. Check the URL and your existing Git access, then try again."
             ),
             Self::WorkspaceRootOverlapsRepository {
                 repository_path,

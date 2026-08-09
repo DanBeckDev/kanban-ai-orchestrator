@@ -24,17 +24,21 @@ impl fmt::Display for PathAccess {
 
 pub(super) fn workspace_name(work_item_id: &WorkItemId) -> Result<&str, WorkspaceError> {
     let name = work_item_id.0.as_str();
-    if name.is_empty()
-        || !name
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
-        || is_reserved_windows_directory_name(name)
-    {
+    if !is_safe_directory_component(name) || name.contains('.') {
         return Err(WorkspaceError::UnsafeWorkItemId {
             work_item_id: work_item_id.clone(),
         });
     }
     Ok(name)
+}
+
+pub(super) fn is_safe_directory_component(name: &str) -> bool {
+    !name.is_empty()
+        && !matches!(name, "." | "..")
+        && name.chars().all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.')
+        })
+        && !is_reserved_windows_directory_name(name)
 }
 
 fn is_reserved_windows_directory_name(name: &str) -> bool {

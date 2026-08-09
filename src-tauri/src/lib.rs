@@ -47,6 +47,7 @@ pub fn run() {
             desktop::create_project,
             desktop::create_board,
             desktop_board_setup::inspect_repository,
+            desktop_board_setup::clone_github_repository,
             desktop_board_setup::create_local_board,
             desktop::board_library,
             desktop::open_board,

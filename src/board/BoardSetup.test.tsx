@@ -15,7 +15,9 @@ describe("BoardSetup", () => {
     render(
       <BoardSetup
         busy={false}
+        cloneDestinationPicker={async () => "/projects"}
         onBack={vi.fn()}
+        onCloneGitHubRepository={vi.fn()}
         onCreate={onCreate}
         onInspectRepository={vi.fn()}
         repositoryPicker={async () => null}
@@ -32,7 +34,9 @@ describe("BoardSetup", () => {
       ),
     ).toBeVisible();
     expect(onCreate).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Create board" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Set up workspace" }),
+    ).toBeDisabled();
   });
 
   it("keeps ordinary setup compact and creates with the automatic starting point", async () => {
@@ -40,7 +44,9 @@ describe("BoardSetup", () => {
     render(
       <BoardSetup
         busy={false}
+        cloneDestinationPicker={async () => "/projects"}
         onBack={vi.fn()}
+        onCloneGitHubRepository={vi.fn()}
         onCreate={onCreate}
         onInspectRepository={vi.fn().mockResolvedValue(repository)}
         repositoryPicker={async () => repository.repositoryPath}
@@ -59,7 +65,7 @@ describe("BoardSetup", () => {
     ).toBeVisible();
     expect(screen.queryByText("Policy: Standard")).not.toBeInTheDocument();
     expect(screen.queryByText("Base branch")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Create board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set up workspace" }));
 
     expect(onCreate).toHaveBeenCalledWith({
       name: "Reliable app",
@@ -74,7 +80,9 @@ describe("BoardSetup", () => {
     render(
       <BoardSetup
         busy={false}
+        cloneDestinationPicker={async () => "/projects"}
         onBack={vi.fn()}
+        onCloneGitHubRepository={vi.fn()}
         onCreate={onCreate}
         onInspectRepository={vi.fn().mockResolvedValue(repository)}
         repositoryPicker={async () => repository.repositoryPath}
@@ -89,7 +97,7 @@ describe("BoardSetup", () => {
     fireEvent.change(screen.getByLabelText("Start new work from"), {
       target: { value: "release/next" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set up workspace" }));
 
     expect(onCreate).toHaveBeenCalledWith({
       name: "Reliable app",
@@ -103,7 +111,9 @@ describe("BoardSetup", () => {
     render(
       <BoardSetup
         busy={false}
+        cloneDestinationPicker={async () => "/projects"}
         onBack={vi.fn()}
+        onCloneGitHubRepository={vi.fn()}
         onCreate={vi.fn()}
         onInspectRepository={vi
           .fn()
@@ -123,6 +133,76 @@ describe("BoardSetup", () => {
         "Choose the top-level folder for your project, not a folder inside it.",
       ),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Create board" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Set up workspace" }),
+    ).toBeDisabled();
+  });
+
+  it("clones a GitHub repository into the chosen destination before setup", async () => {
+    const onCloneGitHubRepository = vi.fn().mockResolvedValue(repository);
+    render(
+      <BoardSetup
+        busy={false}
+        cloneDestinationPicker={async () => "/projects"}
+        onBack={vi.fn()}
+        onCloneGitHubRepository={onCloneGitHubRepository}
+        onCreate={vi.fn()}
+        onInspectRepository={vi.fn()}
+        repositoryPicker={async () => null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Link a GitHub repository" }),
+    );
+    fireEvent.change(screen.getByLabelText("GitHub repository URL"), {
+      target: { value: "https://github.com/acme/reliable-app" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose clone destination" }),
+    );
+    await screen.findByText(
+      "Kanban will create the repository folder in /projects.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Clone repository" }));
+
+    expect(await screen.findByText("Selected project")).toBeVisible();
+    expect(onCloneGitHubRepository).toHaveBeenCalledWith({
+      repositoryUrl: "https://github.com/acme/reliable-app",
+      destinationParentPath: "/projects",
+    });
+    expect(screen.getByLabelText("Board name")).toHaveValue("Reliable app");
+  });
+
+  it("keeps a cancelled clone destination local", async () => {
+    const onCloneGitHubRepository = vi.fn();
+    render(
+      <BoardSetup
+        busy={false}
+        cloneDestinationPicker={async () => null}
+        onBack={vi.fn()}
+        onCloneGitHubRepository={onCloneGitHubRepository}
+        onCreate={vi.fn()}
+        onInspectRepository={vi.fn()}
+        repositoryPicker={async () => null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Link a GitHub repository" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose clone destination" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "No clone destination selected. No repository has been cloned.",
+      ),
+    ).toBeVisible();
+    expect(onCloneGitHubRepository).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Clone repository" }),
+    ).toBeDisabled();
   });
 });

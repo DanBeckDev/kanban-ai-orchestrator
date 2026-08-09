@@ -17,7 +17,7 @@ import { BoardView } from "./BoardView";
 import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
 import { useDefaultAgentProfileName } from "./agentPreferences";
 import { tauriBoardGateway } from "./gateway";
-import { selectRepository } from "./repositoryPicker";
+import { selectCloneDestination, selectRepository } from "./repositoryPicker";
 import type {
   AddDependencyRequest,
   AgentProfile,
@@ -374,7 +374,9 @@ export function BoardWorkspace({
       ) : snapshot === undefined && showBoardSetup ? (
         <BoardSetup
           busy={busy}
+          cloneDestinationPicker={selectCloneDestination}
           repositoryPicker={repositoryPicker}
+          onCloneGitHubRepository={gateway.cloneGitHubRepository}
           onInspectRepository={gateway.inspectRepository}
           onBack={() => {
             setShowBoardSetup(false);

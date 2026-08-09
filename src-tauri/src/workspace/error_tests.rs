@@ -70,6 +70,14 @@ fn formats_every_workspace_policy_error_for_an_actionable_user_response() {
             declared_path: PathBuf::from("/project/nested"),
             detected_path: PathBuf::from("/project"),
         },
+        WorkspaceError::InvalidGitHubRepositoryUrl,
+        WorkspaceError::CloneDestinationMustBeDirectory {
+            path: PathBuf::from("/clone-target-file"),
+        },
+        WorkspaceError::CloneDestinationOccupied {
+            path: PathBuf::from("/projects/reliable-app"),
+        },
+        WorkspaceError::GitHubCloneFailed,
         WorkspaceError::WorkspaceRootOverlapsRepository {
             repository_path: PathBuf::from("/project"),
             workspace_path: PathBuf::from("/project/workspaces"),

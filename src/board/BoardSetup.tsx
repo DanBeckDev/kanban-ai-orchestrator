@@ -1,5 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { FolderOpenIcon, FolderRootIcon, InfoIcon } from "lucide-react";
+import {
+  FolderOpenIcon,
+  FolderRootIcon,
+  GitBranchIcon,
+  InfoIcon,
+} from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,15 +24,24 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-import type { CreateLocalBoardRequest, RepositorySetup } from "./types";
+import type {
+  CloneGitHubRepositoryRequest,
+  CreateLocalBoardRequest,
+  RepositorySetup,
+} from "./types";
 
 export type RepositoryPicker = () => Promise<string | null>;
 
 type BoardSetupProps = Readonly<{
   busy: boolean;
   repositoryPicker: RepositoryPicker;
+  cloneDestinationPicker: RepositoryPicker;
   onInspectRepository: (repositoryPath: string) => Promise<RepositorySetup>;
+  onCloneGitHubRepository: (
+    input: CloneGitHubRepositoryRequest,
+  ) => Promise<RepositorySetup>;
   onCreate: (input: CreateLocalBoardRequest) => Promise<void>;
   onBack: () => void;
 }>;
@@ -37,7 +51,9 @@ const STANDARD_POLICY_SET_ID = "standard";
 export function BoardSetup({
   busy,
   repositoryPicker,
+  cloneDestinationPicker,
   onInspectRepository,
+  onCloneGitHubRepository,
   onCreate,
   onBack,
 }: BoardSetupProps) {
@@ -45,10 +61,21 @@ export function BoardSetup({
   const [boardName, setBoardName] = useState("");
   const [baseRef, setBaseRef] = useState("");
   const policySetId = STANDARD_POLICY_SET_ID;
+  const [repositorySource, setRepositorySource] = useState<"local" | "github">(
+    "local",
+  );
+  const [githubRepositoryUrl, setGithubRepositoryUrl] = useState("");
+  const [cloneDestination, setCloneDestination] = useState<string>();
   const [chooserMessage, setChooserMessage] = useState<string>();
   const [choosing, setChoosing] = useState(false);
 
-  async function chooseRepository() {
+  function applyRepositorySetup(inspectedRepository: RepositorySetup) {
+    setRepository(inspectedRepository);
+    setBoardName(inspectedRepository.suggestedBoardName);
+    setBaseRef(inspectedRepository.baseRef);
+  }
+
+  async function chooseLocalRepository() {
     setChoosing(true);
     setChooserMessage(undefined);
     try {
@@ -60,9 +87,43 @@ export function BoardSetup({
         return;
       }
       const inspectedRepository = await onInspectRepository(selectedPath);
-      setRepository(inspectedRepository);
-      setBoardName(inspectedRepository.suggestedBoardName);
-      setBaseRef(inspectedRepository.baseRef);
+      applyRepositorySetup(inspectedRepository);
+    } catch (error) {
+      setRepository(undefined);
+      setChooserMessage(repositoryErrorMessage(error));
+    } finally {
+      setChoosing(false);
+    }
+  }
+
+  async function chooseCloneDestination() {
+    setChoosing(true);
+    setChooserMessage(undefined);
+    try {
+      const selectedPath = await cloneDestinationPicker();
+      if (selectedPath === null) {
+        setChooserMessage(
+          "No clone destination selected. No repository has been cloned.",
+        );
+        return;
+      }
+      setCloneDestination(selectedPath);
+    } finally {
+      setChoosing(false);
+    }
+  }
+
+  async function cloneGitHubRepository() {
+    if (!githubRepositoryUrl.trim() || cloneDestination === undefined) return;
+    setChoosing(true);
+    setChooserMessage(undefined);
+    try {
+      applyRepositorySetup(
+        await onCloneGitHubRepository({
+          repositoryUrl: githubRepositoryUrl.trim(),
+          destinationParentPath: cloneDestination,
+        }),
+      );
     } catch (error) {
       setRepository(undefined);
       setChooserMessage(repositoryErrorMessage(error));
@@ -87,12 +148,12 @@ export function BoardSetup({
   return (
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
-        <h2 id="board-setup-title">Create a board</h2>
-        <p>Choose a project folder and give your board a name.</p>
+        <h2 id="board-setup-title">Set up workspace</h2>
+        <p>Link a GitHub repository or use one that is already on this Mac.</p>
       </div>
       <Card className="board-setup-card" size="sm">
         <CardHeader>
-          <CardTitle as="h3">Board details</CardTitle>
+          <CardTitle as="h3">Workspace details</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -102,22 +163,111 @@ export function BoardSetup({
           >
             <FieldGroup>
               <Field>
-                <FieldTitle id="project-folder-label">
-                  Project folder
+                <FieldTitle id="repository-source-label">
+                  Repository source
                 </FieldTitle>
-                <Button
-                  disabled={disabled}
-                  onClick={() => void chooseRepository()}
-                  type="button"
-                  variant="outline"
+                <ToggleGroup
+                  aria-labelledby="repository-source-label"
+                  onValueChange={(value) => {
+                    if (value === "local" || value === "github") {
+                      setRepositorySource(value);
+                      setChooserMessage(undefined);
+                    }
+                  }}
+                  type="single"
+                  value={repositorySource}
                 >
-                  <FolderOpenIcon data-icon="inline-start" />
-                  Choose project folder
-                </Button>
+                  <ToggleGroupItem value="local">
+                    <FolderOpenIcon data-icon="inline-start" />
+                    Use a local repository
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="github">
+                    <GitBranchIcon data-icon="inline-start" />
+                    Link a GitHub repository
+                  </ToggleGroupItem>
+                </ToggleGroup>
                 <FieldDescription>
-                  Select the folder for the project you want to coordinate.
+                  Both options keep the project on this device so Kanban can
+                  work safely in separate task workspaces.
                 </FieldDescription>
               </Field>
+              {repositorySource === "local" ? (
+                <Field>
+                  <FieldTitle id="project-folder-label">
+                    Project folder
+                  </FieldTitle>
+                  <Button
+                    disabled={disabled}
+                    onClick={() => void chooseLocalRepository()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <FolderOpenIcon data-icon="inline-start" />
+                    Choose project folder
+                  </Button>
+                  <FieldDescription>
+                    Select the existing repository for the project you want to
+                    coordinate.
+                  </FieldDescription>
+                </Field>
+              ) : (
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="github-repository-url">
+                      GitHub repository URL
+                    </FieldLabel>
+                    <Input
+                      autoComplete="url"
+                      disabled={disabled}
+                      id="github-repository-url"
+                      name="github-repository-url"
+                      onChange={(event) =>
+                        setGithubRepositoryUrl(event.target.value)
+                      }
+                      placeholder="https://github.com/owner/repository"
+                      type="url"
+                      value={githubRepositoryUrl}
+                    />
+                    <FieldDescription>
+                      Use a GitHub HTTPS or SSH URL. Kanban uses your existing
+                      Git sign-in or SSH setup and does not store credentials.
+                    </FieldDescription>
+                  </Field>
+                  <Field>
+                    <FieldTitle id="clone-destination-label">
+                      Clone destination
+                    </FieldTitle>
+                    <Button
+                      aria-describedby="clone-destination-description"
+                      disabled={disabled}
+                      onClick={() => void chooseCloneDestination()}
+                      type="button"
+                      variant="outline"
+                    >
+                      <FolderOpenIcon data-icon="inline-start" />
+                      Choose clone destination
+                    </Button>
+                    <FieldDescription id="clone-destination-description">
+                      {cloneDestination === undefined
+                        ? "Choose the existing folder where Kanban should create the repository folder."
+                        : `Kanban will create the repository folder in ${cloneDestination}.`}
+                    </FieldDescription>
+                  </Field>
+                  <Button
+                    disabled={
+                      disabled ||
+                      !githubRepositoryUrl.trim() ||
+                      cloneDestination === undefined
+                    }
+                    onClick={() => void cloneGitHubRepository()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <GitBranchIcon data-icon="inline-start" />
+                    Clone repository
+                  </Button>
+                </FieldGroup>
+              )}
               {repository !== undefined && (
                 <Alert className="repository-selection">
                   <FolderRootIcon aria-hidden="true" />
@@ -175,6 +325,10 @@ export function BoardSetup({
                     </Field>
                   </FieldGroup>
                 </details>
+                <p className="setup-reassurance">
+                  You&apos;ll choose project agents and their defaults in
+                  Settings after setup.
+                </p>
               </>
             )}
           </form>
@@ -193,7 +347,7 @@ export function BoardSetup({
             form="create-board-form"
             type="submit"
           >
-            Create board
+            Set up workspace
           </Button>
         </CardFooter>
       </Card>
@@ -205,6 +359,16 @@ function repositoryErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("repository root")) {
     return "Choose the top-level folder for your project, not a folder inside it.";
+  }
+  if (message.includes("could not clone")) {
+    return "Kanban couldn't clone that repository. Check the URL and your Git access, then try again.";
+  }
+  if (
+    message.includes("GitHub repository URL") ||
+    message.includes("clone destination") ||
+    message.includes("already exists")
+  ) {
+    return message;
   }
   return "Kanban couldn't use that folder as a project. Choose another project folder and try again.";
 }

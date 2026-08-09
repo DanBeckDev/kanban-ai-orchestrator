@@ -1,0 +1,114 @@
+work_item: APP-004
+scope:
+  - "Workspace setup offers clear local-repository and GitHub-clone paths."
+  - "GitHub cloning is confined to a typed, validated Git boundary that does not persist credentials."
+  - "Setup recovery, cancellation, gateway contracts, and related tests remain explicit and accessible."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/desktop_board_setup.rs
+      meaningful_lines: 34
+      responsibilities: "Exposes typed desktop commands for repository inspection, cloning, and board creation."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 86
+      responsibilities: "Composes desktop plugins and registers typed Tauri commands."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/error.rs
+      meaningful_lines: 213
+      responsibilities: "Defines actionable workspace-boundary errors without exposing Git credentials."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/error_tests.rs
+      meaningful_lines: 128
+      responsibilities: "Checks the user-facing formatting and source behavior of workspace errors."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/git_cli.rs
+      meaningful_lines: 355
+      responsibilities: "Provides typed, sanitized Git operations at the workspace boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/mod.rs
+      meaningful_lines: 307
+      responsibilities: "Composes repository inspection and workspace-management services without UI dependencies."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/path.rs
+      meaningful_lines: 159
+      responsibilities: "Centralizes path resolution and safe directory-component rules."
+      decision: kept cohesive
+    - path: src-tauri/src/workspace/repository_clone.rs
+      meaningful_lines: 212
+      responsibilities: "Validates GitHub clone requests, manages safe clone cleanup, and returns inspected repositories."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.test.tsx
+      meaningful_lines: 188
+      responsibilities: "Covers local setup, GitHub clone preparation, cancellation, and recovery states."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 360
+      responsibilities: "Presents and coordinates the accessible workspace setup flow."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.library.test.tsx
+      meaningful_lines: 98
+      responsibilities: "Covers board-library entry into workspace setup."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 396
+      responsibilities: "Provides deterministic typed gateway fixtures for workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 47
+      responsibilities: "Provides focused board-creation test helpers."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 400
+      responsibilities: "Coordinates the board library, workspace setup, and active-board state through the gateway."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 94
+      responsibilities: "Defines the typed frontend gateway contract for board operations."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 169
+      responsibilities: "Implements the frontend Tauri invocation adapter."
+      decision: kept cohesive
+    - path: src/board/repositoryPicker.ts
+      meaningful_lines: 15
+      responsibilities: "Wraps the native directory picker for local repositories and clone destinations."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 385
+      responsibilities: "Defines typed frontend data and command contracts."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-09T21:27:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Directory-name validation was duplicated between worktree and clone paths."
+    change: "Extracted one named safe-directory-component rule and reused it at both boundaries."
+  - finding: "A state helper looked like a React hook because it was named useRepository."
+    change: "Renamed it applyRepositorySetup so its imperative state-update responsibility is explicit."
+  - finding: "One library test referred to the superseded setup heading."
+    change: "Updated the expectation to the user-facing Set up workspace heading."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 87.91
+        statements: 87.23
+        functions: 84.38
+        branches: 85.07
+      - package_or_crate: src-tauri-rust
+        lines: 84.58
+        statements: 81.03
+        functions: 84.53
+        branches: 80.28
+    threshold_met: true
+exceptions: []

@@ -89,6 +89,11 @@ export function gateway(
       suggestedBoardName: "Project",
       baseRef: "main",
     }),
+    cloneGitHubRepository: vi.fn().mockResolvedValue({
+      repositoryPath: "/projects/project",
+      suggestedBoardName: "Project",
+      baseRef: "main",
+    }),
     createLocalBoard: vi.fn().mockImplementation(async () => current),
     boardLibrary: vi.fn().mockResolvedValue(initialLibrary),
     openBoard: vi.fn().mockImplementation(async () => current),

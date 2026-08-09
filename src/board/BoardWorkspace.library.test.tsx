@@ -93,7 +93,7 @@ describe("board library", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create a board" }));
 
     expect(
-      await screen.findByRole("heading", { name: "Create a board" }),
+      await screen.findByRole("heading", { name: "Set up workspace" }),
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Back to your boards" }),

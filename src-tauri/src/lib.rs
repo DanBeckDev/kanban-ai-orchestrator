@@ -12,6 +12,7 @@ pub mod policy;
 pub mod workspace;
 
 mod desktop;
+mod desktop_daemon_lock;
 mod desktop_execution_activity;
 mod desktop_execution_policy;
 mod desktop_execution_runtime;

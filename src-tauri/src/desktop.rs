@@ -16,6 +16,7 @@ use crate::{
         RecordCleanCodeReviewRequest, RecordReviewCheckRequest, RecordReviewDecisionRequest,
         StartExecutionRequest, TransitionWorkItemRequest,
     },
+    desktop_daemon_lock::DaemonLock,
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
     linear::{
@@ -32,6 +33,7 @@ type LocalLinearCommentPublisher = ReqwestLinearCommentPublisher;
 type LocalLinearIssueReader = LinearIssueReader<ReqwestLinearGraphQlTransport>;
 
 pub(crate) struct BoardDaemonState {
+    _daemon_lock: DaemonLock,
     linear_comment_publisher: LocalLinearCommentPublisher,
     linear_issue_reader: LocalLinearIssueReader,
     linear_oauth: Arc<Mutex<LocalLinearOAuthService>>,
@@ -43,11 +45,13 @@ pub(crate) struct BoardDaemonState {
 impl BoardDaemonState {
     fn open(data_directory: &Path) -> Result<Self, DesktopBootstrapError> {
         fs::create_dir_all(data_directory)?;
+        let daemon_lock = DaemonLock::acquire(data_directory)?;
         let database_path = data_directory.join("kanban-ai-orchestrator.sqlite");
         let mut store = SqliteEventStore::open(database_path)?;
         store.recover_connector_outbox_deliveries()?;
         let service = Arc::new(Mutex::new(LocalBoardService::new(store)));
         Ok(Self {
+            _daemon_lock: daemon_lock,
             linear_comment_publisher: ReqwestLinearCommentPublisher::new(),
             linear_issue_reader: LocalLinearIssueReader::new(ReqwestLinearGraphQlTransport::new()),
             linear_oauth: Arc::new(Mutex::new(LinearOAuthService::new(KeyringCredentialStore))),
@@ -354,6 +358,7 @@ fn ensure_user_owned_transition(next_state: WorkItemState) -> Result<(), String>
 pub(crate) enum DesktopBootstrapError {
     AppDataDirectory(tauri::Error),
     CreateDataDirectory(std::io::Error),
+    LockDaemon(crate::desktop_daemon_lock::DaemonLockError),
     OpenEventStore(crate::persistence::EventStoreError),
 }
 
@@ -367,6 +372,9 @@ impl fmt::Display for DesktopBootstrapError {
                 formatter,
                 "local board data directory cannot be created: {error}"
             ),
+            Self::LockDaemon(error) => {
+                write!(formatter, "local board daemon cannot start: {error}")
+            }
             Self::OpenEventStore(error) => {
                 write!(formatter, "local board database cannot be opened: {error}")
             }
@@ -379,6 +387,7 @@ impl Error for DesktopBootstrapError {
         match self {
             Self::AppDataDirectory(error) => Some(error),
             Self::CreateDataDirectory(error) => Some(error),
+            Self::LockDaemon(error) => Some(error),
             Self::OpenEventStore(error) => Some(error),
         }
     }
@@ -396,6 +405,12 @@ impl From<std::io::Error> for DesktopBootstrapError {
     }
 }
 
+impl From<crate::desktop_daemon_lock::DaemonLockError> for DesktopBootstrapError {
+    fn from(error: crate::desktop_daemon_lock::DaemonLockError) -> Self {
+        Self::LockDaemon(error)
+    }
+}
+
 impl From<crate::persistence::EventStoreError> for DesktopBootstrapError {
     fn from(error: crate::persistence::EventStoreError) -> Self {
         Self::OpenEventStore(error)
@@ -408,7 +423,7 @@ mod tests {
 
     use crate::domain::WorkItemState;
 
-    use super::{BoardDaemonState, ensure_user_owned_transition};
+    use super::{BoardDaemonState, DesktopBootstrapError, ensure_user_owned_transition};
 
     #[test]
     fn creates_a_dedicated_directory_for_local_board_state() {
@@ -422,6 +437,21 @@ mod tests {
                 .join("kanban-ai-orchestrator.sqlite")
                 .exists()
         );
+    }
+
+    #[test]
+    fn refuses_a_second_daemon_for_the_same_local_data_directory() {
+        let temporary_directory = TempDir::new().expect("temporary directory should be created");
+        let data_directory = temporary_directory.path().join("local-board");
+        let daemon =
+            BoardDaemonState::open(&data_directory).expect("first local board daemon should open");
+
+        assert!(matches!(
+            BoardDaemonState::open(&data_directory),
+            Err(DesktopBootstrapError::LockDaemon(_))
+        ));
+
+        drop(daemon);
     }
 
     #[test]

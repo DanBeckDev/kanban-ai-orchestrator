@@ -273,12 +273,13 @@ tasks:
   - id: REL-003
     epic: REL
     title: Automate reliability release-gate scenarios
-    status: ready
+    status: done
     priority: P1
     depends_on: [CORE-002, CORE-003, EXEC-003, ORCH-003, LIN-003, REL-001, REL-002]
     acceptance_criteria:
       - Restart, cancellation, dependency, worktree-race, connector-conflict, and scope-escape scenarios are automated where practical.
       - Remaining manual release checks are documented with owner and evidence.
+    notes: Completed on 2026-08-09. The named reliability command runs nine Unix scenarios (eight on Windows, where direct-process cancellation is deliberately not claimed), including durable restart recovery, dependency blocking/cycle rejection, cross-process daemon locking and worktree recovery, Linear conflict/ambiguous-delivery protection, and scope escape. It is included in the three-platform core command. The platform release document records accountable owners and required evidence for the remaining target-native checks.
 
   - id: QUAL-001
     epic: QUAL

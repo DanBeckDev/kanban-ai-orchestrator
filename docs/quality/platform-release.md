@@ -20,3 +20,14 @@ The Linux-only `quality` job retains the full coverage, lint, formatting, source
 ## Release decision
 
 No release may claim a provider capability or platform package that lacks the corresponding evidence above. A failing cross-platform core job must be resolved before merge; repository branch protection should require all three `core` checks before a release branch can merge. A missing release-specific manual check blocks distribution of that platform artifact, not the portable core.
+
+## Manual evidence register
+
+The **release lead** owns this register for every distributable platform artifact. Evidence belongs in the release PR or its linked release record, must be dated, and must exclude credentials, provider transcripts, and project source.
+
+| Check | Accountable owner | Required evidence | Distribution effect if absent |
+| --- | --- | --- | --- |
+| Representative long provider brief | Release lead | Selected profile, platform, outcome, and CI/release-record link. | Do not distribute that platform/provider profile. |
+| Linear credential lifecycle | Release lead with the test Linear-app owner | Connect/disconnect result confirming no credential appears in SQLite, diagnostics, or logs. | Do not distribute Linear connectivity on that platform. |
+| Provider lifecycle and cancellation | Provider-profile owner | Documented capability matrix plus a target-platform start/stop observation. | Do not claim unsupported resume, feedback, or process-tree cancellation. |
+| Package installation and signing | Platform release owner | Installed bundle version, package format, signing/notarization identity status, and install result. | Do not distribute that platform artifact. |

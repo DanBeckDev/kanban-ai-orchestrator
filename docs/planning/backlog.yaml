@@ -16,6 +16,8 @@ epics:
     title: Safe Git workspaces and agent execution
   - id: ORCH
     title: Orchestration, policy, and review
+  - id: UX
+    title: Usable desktop experience and design validation
   - id: APP
     title: Local desktop board experience
   - id: LIN
@@ -120,7 +122,19 @@ tasks:
       - Three adapters pass the common conformance suite.
       - Unsupported capabilities are visible before task start.
       - Per-agent session recovery and process-tree cancellation behavior is documented and tested.
-    notes: Completed on 2026-08-08 with three provider-neutral execution profiles: a generic structured JSONL bridge, a native Codex CLI wrapper, and a native Claude Code wrapper. Each runs without a production shell, receives the brief through stdin, converts bounded structured output to safe normalized events, and passes one shared non-interactive conformance suite. The desktop profile and launch UI show the selected provider and its unavailable feedback, session-recovery, and safe process-tree cancellation capabilities before start. Codex protocol/sandbox controls and Claude protocol/permission controls are adapter-owned and profile validation rejects attempts to override them. Resume, interactive feedback, and process-tree cancellation remain explicitly unsupported until future provider/platform adapters prove them.
+    notes: >-
+      Completed on 2026-08-08 with three provider-neutral execution profiles: a
+      generic structured JSONL bridge, a native Codex CLI wrapper, and a native
+      Claude Code wrapper. Each runs without a production shell, receives the
+      brief through stdin, converts bounded structured output to safe normalized
+      events, and passes one shared non-interactive conformance suite. The desktop
+      profile and launch UI show the selected provider and its unavailable
+      feedback, session-recovery, and safe process-tree cancellation capabilities
+      before start. Codex protocol/sandbox controls and Claude protocol/permission
+      controls are adapter-owned and profile validation rejects attempts to
+      override them. Resume, interactive feedback, and process-tree cancellation
+      remain explicitly unsupported until future provider/platform adapters prove
+      them.
 
   - id: EXEC-004
     epic: EXEC
@@ -222,6 +236,126 @@ tasks:
       - The desktop clearly distinguishes an unconfirmed preview from a confirmed plan and sends only typed commands to the local daemon.
     notes: Completed on 2026-08-08 with typed desktop commands, a durable SQLite proposal/confirmation record, exact daemon-generated previews, and one atomic materialization transaction. The UI can inspect, revise, cancel, reject, or confirm an unconfirmed proposal; confirmation records identity and time, survives reopening, and is idempotent on retry. Tests cover no partial mutation for mismatched, cross-board, duplicate, collision, and already-confirmed requests. A future provider-neutral orchestrator adapter will generate this same safe proposal contract.
 
+  - id: UX-001
+    epic: UX
+    title: Define the outcome-first desktop experience and acceptance scenarios
+    status: done
+    priority: P0
+    depends_on: [APP-003, ORCH-003, ORCH-004, LIN-003]
+    acceptance_criteria:
+      - A product UX strategy defines the board library, first-board, returning-user, planning, dependency, recovery, Linear, accessibility, and cross-platform interaction model.
+      - It identifies current internal-ID and dense-setup failures, measurable acceptance scenarios, non-goals, and research evidence.
+      - Requirements and the roadmap explicitly make recognition-based re-entry, generated IDs, native repository selection, outcome-first planning, and dependency explanation mandatory.
+    notes: Completed on 2026-08-09 in docs/product/user-experience.md after repository audit, current Apple/Tauri/Linear documentation research, and targeted BookCtx evidence from User Story Mapping, The Product-Minded Engineer, and Inclusive Design for Accessibility. BookCtx is a globally configured local MCP library, not a project-local dependency.
+
+  - id: UX-002
+    epic: UX
+    title: Build a durable board library and recognition-based re-entry
+    status: ready
+    priority: P0
+    depends_on: [UX-001, UX-008, APP-001]
+    acceptance_criteria:
+      - The daemon exposes a typed, local board-library query that contains only the metadata required to recognise and safely open a board: display name, repository context, availability, last-opened time, and derived attention summary.
+      - The initial desktop screen lists saved boards in deterministic recent-first order and offers a clear Continue action; opening a board never requires a board or project ID.
+      - An empty library provides a single clear Create a board action. An unavailable repository is diagnosed with a locate/retry path before a board snapshot is loaded.
+      - Last-opened state survives restart, stays local, and does not leak repository metadata to providers or Linear. Rust and frontend tests cover empty, recent, unavailable, and reopened-board paths.
+    notes: Keep this as the first implementation PR. Do not combine it with the new-board form, graph, or visual refresh; it establishes the small authoritative directory contract needed by every later UX slice.
+
+  - id: UX-003
+    epic: UX
+    title: Replace ID-driven board setup with a guided repository-first flow
+    status: ready
+    priority: P0
+    depends_on: [UX-001, UX-008, UX-002, APP-002]
+    acceptance_criteria:
+      - The primary create flow asks only for an editable board name and a repository chosen with Tauri's native directory picker; it proposes the repository folder name and validates that the chosen folder is the Git repository root.
+      - Project and board IDs are generated by the local command boundary, never typed by a normal user, and are available only in advanced support details.
+      - The default base ref and standard policy are displayed as safe defaults. Their overrides are in a collapsed Advanced setup section with clear effect text.
+      - Cancelling or failing validation does not persist a partial project/board. A successful creation opens the board home and preserves all existing project-boundary protections.
+      - Tests exercise picker cancellation, invalid/non-root repository selection, generated identifiers, default/advanced configuration, and successful creation at the required coverage threshold.
+    notes: This is intentionally a separate PR from UX-002 because it adds a Tauri capability, migration-safe command changes, and a user-facing form replacement.
+
+  - id: UX-004
+    epic: UX
+    title: Make the board home outcome-first and action-oriented
+    status: ready
+    priority: P0
+    depends_on: [UX-001, UX-008, UX-003, ORCH-004]
+    acceptance_criteria:
+      - A new or empty board leads with Describe the outcome, selected planner profile, and a short explanation that the proposed plan must be reviewed before work starts.
+      - The board home derives Needs your attention, Work in motion, and Delivery picture sections from the daemon snapshot; each item links to its specific task/decision and carries no UI-owned scheduling logic.
+      - Manual task creation is an explicit secondary action, while the exact existing plan-preview, assumptions, dependency, budget, rejection, and confirmation semantics remain intact.
+      - Review, blocked, failed, interrupted, connector-conflict, and policy states are distinguishable and lead to permitted next actions.
+      - Component and command-level tests prove the primary path cannot start an agent or hide an unresolved assumption before the existing confirmation/policy gates.
+    notes: Preserve the provider-neutral planner boundary. This work improves information priority and copy; it does not change scheduling authority.
+
+  - id: UX-005
+    epic: UX
+    title: Add an explainable dependency and impact experience
+    status: ready
+    priority: P1
+    depends_on: [UX-001, UX-008, UX-002, CORE-002, ORCH-003]
+    acceptance_criteria:
+      - A named Dependencies view offers both a navigable visual graph and an equivalent accessible list based solely on the authoritative typed graph.
+      - Selecting a task shows hard upstream blockers, downstream impact, dependency type, reason, owner, next action, critical-path membership, and parallel-safe neighbours where applicable.
+      - Every card/task detail can answer why work is not ready without requiring the user to read an edge direction, infer a colour, or know an ID.
+      - Cycles, contract, review-required, and soft edges retain the existing semantic distinctions; the UI never lets visual convenience weaken validation or eligibility.
+      - Keyboard and screen-reader tests cover task selection, blocker explanation, graph-equivalent list navigation, and focus restoration.
+    notes: Keep graph rendering isolated from eligibility calculation. If a graph library cannot provide the accessible equivalent, ship the list-first view and defer the visual enhancement.
+
+  - id: UX-006
+    epic: UX
+    title: Redesign task detail, review, and recovery with progressive disclosure
+    status: ready
+    priority: P1
+    depends_on: [UX-001, UX-008, UX-004, ORCH-003, REL-001]
+    acceptance_criteria:
+      - Board cards show task title, state, principal actor, and the next relevant fact before identifiers, raw configuration, or long evidence history.
+      - Task detail leads with the current decision, state explanation, evidence status, and permitted action; expandable sections contain criteria, dependency context, activity, checks, Git references, and history.
+      - Failed, interrupted, awaiting-input, review, and done states have distinct language, visual treatment, keyboard actions, and recovery consequences.
+      - Bounded activity-stream and evidence privacy rules remain intact; no raw transcript, secret, or unbounded payload becomes part of the card or board snapshot.
+      - Tests cover progressive-disclosure state, focus management, evidence/recovery presentation, and the normal/reduced-motion responsive layouts.
+    notes: Split presentational components by responsibility before implementation; the source-structure rule applies to every new component and test file.
+
+  - id: UX-007
+    epic: UX
+    title: Validate the redesigned experience with representative developer scenarios
+    status: ready
+    priority: P1
+    depends_on: [UX-003, UX-004, UX-005, UX-006]
+    acceptance_criteria:
+      - At least five representative developers complete the documented first-board, returning-board, first-plan, blocker, and recovery scenarios on a current desktop build.
+      - Findings distinguish critical failures from usability refinements, contain no credentials, repository paths, private diffs, or raw agent transcripts, and are recorded as linked backlog items with an owner and disposition.
+      - No critical scenario failure remains open at the Phase 6 exit gate. The final accessibility pass covers keyboard-only traversal, visible focus, non-colour state communication, and graph/list equivalence.
+    notes: This is validation work, not permission to collect product telemetry. Use an opt-in local study protocol and retain only minimal anonymized notes.
+
+  - id: UX-008
+    epic: UX
+    title: Map and test the first-use and returning-user journeys before production UI work
+    status: ready
+    priority: P0
+    depends_on: [UX-001]
+    acceptance_criteria:
+      - A now map records how representative developers currently create, reopen, plan, supervise, review, and recover agent work, including pains, workarounds, questions, and the distinction between new and returning use.
+      - A later-map prototype covers the Find work, Set up safely, and Describe an outcome backbone activities and explicitly shows board-library, repository-picker, generated-ID, safe-default, and plan-confirmation behaviour.
+      - At least three representative developers, including one keyboard-first or assistive-technology user where possible, complete a moderated scenario walkthrough of the prototype. Their feedback is anonymized and produces a disposition for every critical or recurring finding.
+      - The documented prototype decisions identify which defaults are safe, which choices require explicit confirmation, and which advanced controls are intentionally deferred. No production source code is changed in this task.
+    notes: This is the first executable UX task despite its later identifier. It applies the BookCtx User Story Mapping now-map/later-map and release-slicing practice before implementation, and the Inclusive Design Needs Walkthrough before a graph or card design becomes expensive to change.
+
+  - id: LIN-004
+    epic: LIN
+    title: Productize the Linear connection entry experience
+    status: ready
+    priority: P1
+    depends_on: [UX-001, UX-008, LIN-001, LIN-002, LIN-003]
+    acceptance_criteria:
+      - The normal connection path does not ask a user to supply an OAuth client ID or redirect URI; it uses a documented product-managed configuration or is explicitly unavailable with a truthful next step.
+      - If self-managed OAuth remains supported, it is isolated behind Advanced setup with clear callback, scope, storage, refresh, and revocation guidance.
+      - Board creation and board home clearly distinguish local-only, read-only Linear, and linked-execution modes before import or externally visible comment actions.
+      - Connection errors, expired credentials, restricted scopes, conflicts, and uncertain delivery use concise recovery language and never imply that remote data was changed when it was not.
+      - Tests retain OAuth state/PKCE/credential boundaries and cover mode-specific empty, connected, error, and reconnect UI states.
+    notes: A consumer-grade Linear entry path requires an explicit owner for the OAuth application, privacy notice, app registration, and credential-lifecycle support. Do not silently substitute a shared client configuration for the existing self-managed design.
+
   - id: LIN-001
     epic: LIN
     title: Specify and spike Linear OAuth, local refresh, and token storage
@@ -232,7 +366,17 @@ tasks:
       - OAuth/PKCE callback design, scopes, token refresh, and keychain storage are verified against Linear's current API.
       - The local-first refresh approach respects Linear rate-limit guidance.
       - The public-webhook relay remains optional and is not required for core use.
-    notes: Completed on 2026-08-09. The desktop OAuth/PKCE foundation is implemented and tested against Linear's current authorization, token, refresh, and rate-limit contract: an explicit loopback callback, state validation, S256 challenge, system-browser launch, native credential storage, bounded refresh, and read-only scope. Linear's documented April 2026 refresh-token migration was audited: current and legacy scope responses parse, and a replacement credential is stored only after success. A live end-to-end verification needs a user-created Linear OAuth app configured with the declared callback URI; no client secret or API token will be requested in this repository.
+    notes: >-
+      Completed on 2026-08-09. The desktop OAuth/PKCE foundation is implemented
+      and tested against Linear's current authorization, token, refresh, and
+      rate-limit contract: an explicit loopback callback, state validation, S256
+      challenge, system-browser launch, native credential storage, bounded
+      refresh, and read-only scope. Linear's documented April 2026 refresh-token
+      migration was audited: current and legacy scope responses parse, and a
+      replacement credential is stored only after success. A live end-to-end
+      verification needs a user-created Linear OAuth app configured with the
+      declared callback URI; no client secret or API token will be requested in
+      this repository.
 
   - id: LIN-002
     epic: LIN
@@ -342,7 +486,12 @@ tasks:
       - Every file listed in docs/quality/code-structure-exceptions.json is split into cohesive production or focused test modules with no behavior change.
       - npm run structure:verify and CI reject any oversized source file and any non-empty exception ledger.
       - The exceptions list is empty when QUAL-004 is complete, and the full quality gate passes after each refactor.
-    notes: Added on 2026-08-08 after the Clean Code review process incorrectly treated file cohesion as sufficient without challenging 600+ line source files. Completed on 2026-08-08: every listed module was split into focused source and test modules, the exception ledger is empty, and the full-repository gate now rejects any future exception.
+    notes: >-
+      Added on 2026-08-08 after the Clean Code review process incorrectly treated
+      file cohesion as sufficient without challenging 600+ line source files.
+      Completed on 2026-08-08: every listed module was split into focused source
+      and test modules, the exception ledger is empty, and the full-repository
+      gate now rejects any future exception.
 
   - id: QUAL-005
     epic: QUAL

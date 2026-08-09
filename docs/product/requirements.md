@@ -44,6 +44,51 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
 - A blocker must include a concrete reason, owner, and proposed next action.
 - The orchestrator asks the user when requirements conflict, the plan contains a cycle, an agent exceeds policy, a contract changes, or recovery needs a choice.
 
+## Board entry and setup requirements
+
+- Launching the app presents a local board library. A returning user can recognise
+  and open a board by its name and repository context, with recently used boards
+  prominent; opening a board must never require typing or remembering a durable ID.
+- A user creates a local board by naming it and selecting a repository through a
+  native directory picker. The command boundary validates the repository and
+  generates project and board identifiers; IDs are implementation details,
+  available only in advanced support details.
+- Base ref and policy configuration have safe defaults and are disclosed as
+  advanced settings with their consequences. Invalid or unavailable repositories
+  provide an actionable recovery choice and cannot silently create a different
+  project/board.
+- The first empty-board experience leads with an outcome prompt and the existing
+  reviewed plan-preview/confirmation flow. Manual task creation remains available
+  but is not the primary path; no UX shortcut may start a worker before plan and
+  policy authorization.
+- The board home derives a concise, actionable attention list from authoritative
+  task, execution, review, policy, and connector state. It must not invent status
+  or scheduling decisions in the UI.
+
+## Interaction and dependency requirements
+
+- A task view explains every non-ready state in plain language. For a hard
+  dependency it names upstream work, edge type, reason, owner, and next action;
+  it also exposes downstream impact and safe parallel work where relevant.
+- The board provides both a visual dependency exploration view and an equivalent
+  keyboard-accessible list. State is communicated with text and colour, never
+  colour alone.
+- Task cards lead with a title, authoritative state, and next relevant fact.
+  Evidence, workspace metadata, identifiers, and lengthy history use progressive
+  disclosure in task detail rather than obscuring the board.
+- Recovery, review, approval, Linear conflict, and disconnected-connector states
+  make the required human decision and consequence clear. None may resemble a
+  successful completion or silently send external data.
+
+## Linear entry requirements
+
+- A user can choose a local-only board or an optional Linear-connected route
+  without treating Linear as a prerequisite for core use.
+- The normal Linear connection path must not require a user to enter OAuth client
+  configuration. If self-managed OAuth remains necessary, it is an advanced,
+  clearly explained option; connection/access mode and data boundaries remain
+  visible before import or send actions.
+
 ## Review and evidence requirements
 
 Each task retains a structured completion record:

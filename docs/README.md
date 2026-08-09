@@ -6,6 +6,7 @@ This documentation is deliberately small, versioned, and task-oriented. It is de
 | --- | --- | --- |
 | `product/vision.md` | Long-lived product intent and boundaries | The target user or product promise changes |
 | `product/requirements.md` | Testable product requirements | A user-visible behavior changes |
+| `product/user-experience.md` | Interaction model, onboarding, information architecture, and usability scenarios | Changing a user journey, navigation, or UI priority |
 | `architecture/overview.md` | System components, authority boundaries, and data model | A component or interface changes |
 | `integrations/cline-pass.md` | ClinePass worker setup, credential boundary, and supported profile options | Changing the ClinePass adapter |
 | `integrations/linear.md` | Linear connector contract and sync rules | Linear-facing behavior changes |

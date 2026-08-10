@@ -82,8 +82,8 @@ export function DependencyForm({
         <div>
           <h3 id="add-dependency-title">Add a relationship</h3>
           <p className="field-hint">
-            Explain why the work is connected so the organiser and ticket agents
-            can act on it safely.
+            Explain why the work is connected so the orchestrator and ticket
+            agents can act on it safely.
           </p>
         </div>
         <TaskSelect

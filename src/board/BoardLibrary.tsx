@@ -115,14 +115,14 @@ export function BoardLibrary({
                     aria-label={
                       board.repositoryAvailable
                         ? `Open ${board.name}`
-                        : `Retry ${board.name}`
+                        : `Check ${board.name}`
                     }
                     disabled={busy}
                     onClick={() => onOpenBoard(board.boardId)}
                     type="button"
                     variant={board.repositoryAvailable ? "default" : "outline"}
                   >
-                    {board.repositoryAvailable ? "Open board" : "Try again"}
+                    {board.repositoryAvailable ? "Open board" : "Check again"}
                     <ArrowRightIcon data-icon="inline-end" />
                   </Button>
                 </CardFooter>

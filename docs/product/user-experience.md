@@ -19,7 +19,7 @@ The next phase makes the desktop app feel like a trustworthy work space:
 
 - Returning people recognise and open a board by name and repository, with the
   most recently used board prominent.
-- New people set up a workspace by linking a GitHub repository (which clones it)
+- New people set up a workspace by cloning a GitHub repository
   or using an existing local repository, then begin planning. The app creates
   immutable identifiers and sensible safe defaults behind the scenes.
 - A board opens to the next useful action: describe an outcome, resolve an
@@ -59,7 +59,7 @@ The next phase makes the desktop app feel like a trustworthy work space:
 | Place | Primary question answered | Primary action |
 | --- | --- | --- |
 | **Your boards** | “What was I working on, and what needs attention?” | Open a board or set up a workspace |
-| **Set up workspace** | “Which repository and outcome am I coordinating?” | Link GitHub or use a local repository |
+| **Set up workspace** | “Which repository and outcome am I coordinating?” | Clone a GitHub repository or use a local repository |
 | **Board home** | “What is the safest next move?” | Describe an outcome, resolve attention, or review |
 | **Workflow** | “What work exists and what is its state?” | Prompt the organiser, create, or open work |
 | **Dependencies** | “What is blocked, what can run in parallel, and why?” | Trace an impact or resolve a blocker |
@@ -109,8 +109,8 @@ and keeps the first release focused on the minimal coherent user outcome.
 ### First visit or creating a board
 
 1. The empty library has one clear primary button: **Set up workspace**.
-2. The concise form offers **Link a GitHub repository** or **Use a local
-   repository**. GitHub linking clones into a user-selected local destination;
+2. The concise form offers **Clone a GitHub repository** or **Use an existing
+   local repository**. Cloning uses a user-selected local destination;
    local use opens a native directory picker. The proposed board name defaults
    to the repository folder name and is editable.
 3. The app validates the selected or cloned repository, derives an editable board

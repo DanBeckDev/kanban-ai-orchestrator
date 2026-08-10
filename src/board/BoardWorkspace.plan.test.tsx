@@ -61,7 +61,7 @@ describe("board plan workflow", () => {
     openPlan();
 
     const generationForm = await screen.findByRole("form", {
-      name: "Plan with AI",
+      name: "Plan work with AI",
     });
     fireEvent.change(
       within(generationForm).getByLabelText("What do you want to achieve?"),
@@ -116,18 +116,18 @@ describe("board plan workflow", () => {
     await createBoard(boardGateway);
     openSettings("AI");
     const profileForm = screen.getByRole("form", {
-      name: "Save organiser connection",
+      name: "Save orchestrator connection",
     });
     const nameInput = within(profileForm).getByLabelText("Connection name");
     fireEvent.change(nameInput, { target: { value: "local planner" } });
     fireEvent.click(
       within(profileForm).getByRole("button", {
-        name: "Save organiser connection",
+        name: "Save orchestrator connection",
       }),
     );
 
     expect(await within(profileForm).findByRole("alert")).toHaveTextContent(
-      "Planner profiles must use a declared program.",
+      "Check the connection name, program, and arguments, then try again.",
     );
     expect(nameInput).toHaveValue("local planner");
   });
@@ -141,7 +141,7 @@ describe("board plan workflow", () => {
     await configurePlanner();
     openPlan();
     const generationForm = await screen.findByRole("form", {
-      name: "Plan with AI",
+      name: "Plan work with AI",
     });
     const goalInput = within(generationForm).getByLabelText(
       "What do you want to achieve?",
@@ -154,7 +154,7 @@ describe("board plan workflow", () => {
     );
 
     expect(await within(generationForm).findByRole("alert")).toHaveTextContent(
-      "Planner response exceeds the 65536-byte limit.",
+      "Check the outcome and selected orchestrator, then try again.",
     );
     expect(goalInput).toHaveValue("Build a safe plan.");
     expect(screen.queryByRole("list", { name: "Plan tasks" })).toBeNull();
@@ -315,10 +315,8 @@ describe("board plan workflow", () => {
     );
 
     expect(
-      await screen.findAllByText(
-        "The plan has an unresolved hard-dependency cycle.",
-      ),
-    ).toHaveLength(2);
+      await screen.findAllByText("Check your changes, then try again."),
+    ).toHaveLength(1);
     expect(
       screen.getByRole("form", { name: "Paste an existing plan" }),
     ).toBeInTheDocument();

@@ -51,7 +51,7 @@ export function TaskDecisionSummary({ decision }: TaskDecisionSummaryProps) {
             <AlertTitle>Waiting on prerequisite work</AlertTitle>
             <AlertDescription>
               The dependencies section explains the owner and next action. The
-              daemon still decides whether this task can start.
+              Kanban checks whether this task can start.
             </AlertDescription>
           </Alert>
         )}
@@ -66,7 +66,7 @@ export function TaskDecisionSummary({ decision }: TaskDecisionSummaryProps) {
         )}
         <p className="task-decision-actor">
           <UserRoundIcon aria-hidden="true" />
-          State and permission decisions come from the local daemon.
+          Kanban applies the task state and permission rules for this board.
         </p>
       </CardContent>
     </Card>

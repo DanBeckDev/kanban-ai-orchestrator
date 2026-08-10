@@ -57,7 +57,7 @@ describe("ActivityStream", () => {
 
     expect(
       await screen.findByText(
-        "Activity is temporarily unavailable: daemon restarting",
+        "Activity is temporarily unavailable. Keep this task open and Kanban will try again.",
       ),
     ).toBeVisible();
   });

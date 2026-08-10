@@ -81,8 +81,8 @@ export function TaskActionPanel({
       <CardHeader>
         <CardTitle as="h3">What you can do now</CardTitle>
         <CardDescription>
-          These actions request a daemon-checked change. They do not bypass the
-          task's review or policy requirements.
+          These actions follow this board&apos;s rules. They do not bypass task
+          review or policy requirements.
         </CardDescription>
       </CardHeader>
       <CardContent className="task-action-panel-content">

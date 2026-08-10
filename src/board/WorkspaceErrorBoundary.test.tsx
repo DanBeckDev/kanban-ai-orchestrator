@@ -22,12 +22,14 @@ describe("WorkspaceErrorBoundary", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Kanban needs to try again" }),
+      screen.getByRole("heading", {
+        name: "Kanban couldn't show this workspace",
+      }),
     ).toBeVisible();
     expect(
       screen.getByText("Your saved boards and work have not been changed."),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reload workspace" }));
     expect(screen.getByRole("alert")).toBeVisible();
   });
 });

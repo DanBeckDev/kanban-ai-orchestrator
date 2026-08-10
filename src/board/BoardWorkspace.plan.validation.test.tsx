@@ -22,7 +22,9 @@ describe("plan input validation", () => {
     );
 
     expect(
-      await screen.findAllByText("Plan JSON must contain a workItems array."),
+      await screen.findAllByText(
+        "Add a workItems list to the plan JSON, then preview it again.",
+      ),
     ).toHaveLength(1);
     expect(boardGateway.proposePlan).not.toHaveBeenCalled();
   });

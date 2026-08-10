@@ -1,0 +1,174 @@
+work_item: UI-003
+scope:
+  - "Outcome-led, purpose-inventoried board copy across entry, workflow, task, dependency, agent, Linear, loading, and recovery surfaces."
+  - "Explicit GitHub cloning language, role-specific model and effort defaults, and safe user-facing error/recovery states."
+  - "Focused tests and product documentation for the approved multi-view, orchestration-first workflow."
+source_structure:
+  reviewed_files:
+    - path: src/board/ActivityStream.test.tsx
+      meaningful_lines: 53
+      responsibilities: Verifies accessible activity recovery and bounded stream rendering.
+      decision: kept cohesive
+    - path: src/board/ActivityStream.tsx
+      meaningful_lines: 128
+      responsibilities: Polls and renders bounded live task activity with a safe unavailable state.
+      decision: kept cohesive
+    - path: src/board/BoardAutomation.tsx
+      meaningful_lines: 139
+      responsibilities: Presents manual and autonomous supervision choices and their consequences.
+      decision: kept cohesive
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 132
+      responsibilities: Composes outcome planning, board home, lanes, and empty workflow state.
+      decision: kept cohesive
+    - path: src/board/BoardLibrary.tsx
+      meaningful_lines: 155
+      responsibilities: Presents recognised boards and specific local recovery actions.
+      decision: kept cohesive
+    - path: src/board/BoardManagement.tsx
+      meaningful_lines: 51
+      responsibilities: Owns the manually created task surface and its return route.
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 167
+      responsibilities: Composes project AI, Linear, and support settings views.
+      decision: kept cohesive
+    - path: src/board/BoardSetup.test.tsx
+      meaningful_lines: 188
+      responsibilities: Verifies repository inspection, cloning, cancellation, and setup language.
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 362
+      responsibilities: Guides repository selection, validated cloning, and safe workspace creation.
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 332
+      responsibilities: Coordinates board surfaces and the top-level action bar without owning task detail logic.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.library.test.tsx
+      meaningful_lines: 98
+      responsibilities: Verifies named board discovery, re-entry, and local-library recovery.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 76
+      responsibilities: Verifies board-level Linear connection, failure, and issue-loading journeys.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 361
+      responsibilities: Verifies the reviewable planning journey and its user-facing recovery states.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.validation.test.tsx
+      meaningful_lines: 28
+      responsibilities: Verifies local plan JSON validation before a daemon request.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 155
+      responsibilities: Verifies installed agents and distinct project role defaults.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 91
+      responsibilities: Provides readable shared board-workspace interaction helpers.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 349
+      responsibilities: Verifies integrated board actions and generic safe error rendering.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspaceScreen.tsx
+      meaningful_lines: 105
+      responsibilities: Selects board library, setup, workspace, loading, and recovery presentation.
+      decision: kept cohesive
+    - path: src/board/DependencyForm.tsx
+      meaningful_lines: 198
+      responsibilities: Captures a typed dependency and its required explanation.
+      decision: kept cohesive
+    - path: src/board/DependencyInspector.tsx
+      meaningful_lines: 170
+      responsibilities: Explains selected task readiness, impact, and plan context.
+      decision: kept cohesive
+    - path: src/board/GoalPlanForm.tsx
+      meaningful_lines: 121
+      responsibilities: Captures an outcome and maps planning errors to safe next actions.
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.test.tsx
+      meaningful_lines: 94
+      responsibilities: Verifies Linear authorization, connected, and recovery language.
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.tsx
+      meaningful_lines: 86
+      responsibilities: Captures self-managed Linear configuration and presents safe connection state.
+      decision: kept cohesive
+    - path: src/board/PlanProposalPanel.tsx
+      meaningful_lines: 233
+      responsibilities: Coordinates plan proposal, advanced import, revision, confirmation, and recoverable errors.
+      decision: kept cohesive
+    - path: src/board/PlannerProfileForm.tsx
+      meaningful_lines: 104
+      responsibilities: Captures an advanced orchestrator connection without leaking raw errors.
+      decision: kept cohesive
+    - path: src/board/ProjectAgentDefaultsForm.tsx
+      meaningful_lines: 347
+      responsibilities: Saves separate orchestrator and ticket-worker model and effort preferences.
+      decision: kept cohesive
+    - path: src/board/TaskActionPanel.tsx
+      meaningful_lines: 210
+      responsibilities: Composes task actions while preserving state and review gates.
+      decision: kept cohesive
+    - path: src/board/TaskAiPrompt.tsx
+      meaningful_lines: 255
+      responsibilities: Presents all typed ticket-AI actions and durable decisions.
+      decision: kept cohesive
+    - path: src/board/TaskDecisionSummary.tsx
+      meaningful_lines: 79
+      responsibilities: Explains task state, evidence, and the next permitted action.
+      decision: kept cohesive
+    - path: src/board/WorkspaceErrorBoundary.test.tsx
+      meaningful_lines: 29
+      responsibilities: Verifies the workspace rendering recovery route.
+      decision: kept cohesive
+    - path: src/board/WorkspaceErrorBoundary.tsx
+      meaningful_lines: 55
+      responsibilities: Renders a safe, named recovery boundary for workspace rendering failure.
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T02:17:10Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "ProjectAgentDefaultsForm is 347 meaningful lines because the two user-facing roles share one save contract and installed-provider action."
+        resolution: accepted
+        rationale: "Splitting the role preference fields would duplicate or obscure the single project-default save boundary; the model normalization and role DTO construction remain small named helpers."
+        decision_reference: ADR-0028
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "GitHub linking, provider-default model choice, and generic retry labels did not name the user's actual action or outcome."
+    change: "Replaced them with explicit clone/local choices, separately persisted model and effort preferences for both roles, and named reload/check actions."
+  - finding: "Normal workflow states exposed raw local-service, provider, and connector error messages."
+    change: "Mapped them to safe, actionable copy while keeping precise JSON and advanced configuration guidance where the user can correct input."
+  - finding: "Several changed native form fields lacked the standard name and autocomplete metadata required for accessible, predictable form handling."
+    change: "Added meaningful names and appropriate autocomplete values, then reran the Web Interface Guidelines audit of changed UI code."
+  - finding: "The role-default save request was duplicated between form submission and installed-provider selection."
+    change: "Extracted one named saveDefaults helper so both paths persist the same role contract."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: node scripts/check-code-structure.mjs --all
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.38
+        statements: 85.35
+        functions: 83.31
+        branches: 81.82
+      - package_or_crate: src-tauri-rust
+        lines: 84.06
+        statements: 80.32
+        functions: 84.45
+        branches: 81.01
+    threshold_met: true
+exceptions: []

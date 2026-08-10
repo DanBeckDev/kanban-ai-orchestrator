@@ -33,11 +33,13 @@ describe("LinearConnectionPanel", () => {
       />,
     );
     expect(
-      screen.getByText("Waiting for Linear authorization in your browser."),
+      screen.getByText(
+        "Finish connecting Linear in your browser. Return here when it is complete.",
+      ),
     ).toBeVisible();
   });
 
-  it("shows the connected access scope without presenting a token input", () => {
+  it("explains the next connected Linear action without presenting a token input", () => {
     render(
       <LinearConnectionPanel
         busy={false}
@@ -52,7 +54,7 @@ describe("LinearConnectionPanel", () => {
 
     expect(
       screen.getByText(
-        "Connected with read access; token expires 2026-08-09T12:00:00Z.",
+        "Connected. You can now load Linear issues and choose what to share.",
       ),
     ).toBeVisible();
     expect(screen.queryByLabelText(/client secret|access token/i)).toBeNull();
@@ -92,7 +94,9 @@ describe("LinearConnectionPanel", () => {
     );
 
     expect(
-      screen.getByText("Connection failed: Authorization timed out"),
+      screen.getByText(
+        "Kanban could not connect Linear. Check the app setup, then try again.",
+      ),
     ).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Connect Linear" }),

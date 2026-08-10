@@ -52,7 +52,7 @@ describe("board library", () => {
       ),
     ).toBeVisible();
     fireEvent.click(
-      screen.getByRole("button", { name: "Retry Moved repository" }),
+      screen.getByRole("button", { name: "Check Moved repository" }),
     );
 
     await waitFor(() =>
@@ -76,7 +76,7 @@ describe("board library", () => {
     expect(
       screen.queryByText("Kanban could not complete that request."),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reload boards" }));
 
     expect(await screen.findByText("MVP")).toBeVisible();
     expect(boardGateway.boardLibrary).toHaveBeenCalledTimes(2);

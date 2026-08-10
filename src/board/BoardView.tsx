@@ -202,11 +202,11 @@ export function BoardView({
         </>
       )}
       {surface === "plan" && (
-        <section aria-label="Plan with AI" className="workspace-surface">
+        <section aria-label="Plan work with AI" className="workspace-surface">
           <SurfaceHeader
             description="Describe the outcome, review the proposed tasks, then decide what to create."
             onBack={returnToWorkflow}
-            title="Plan with AI"
+            title="Plan work with AI"
           />
           <PlanProposalPanel
             boardId={snapshot.board.id}
@@ -327,7 +327,7 @@ function BoardHeader({
         <div className="board-toolbar">
           <Button onClick={onPlanWork} type="button">
             <SparklesIcon data-icon="inline-start" />
-            Plan with AI
+            Plan work with AI
           </Button>
           <Button onClick={onCreateTask} type="button" variant="outline">
             <ListPlusIcon data-icon="inline-start" />

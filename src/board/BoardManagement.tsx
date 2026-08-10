@@ -18,7 +18,7 @@ export function BoardManagement({
   return (
     <section aria-labelledby="create-task-title" className="workspace-surface">
       <SurfaceHeader
-        description="Create one standalone task. Use Dependencies to explain or add relationships between tasks."
+        description="Create a task yourself. Use Dependencies to explain or add relationships between tasks."
         headingId="create-task-title"
         onBack={onBack}
         title="Create task"

@@ -31,3 +31,30 @@ export type SaveProjectAgentSettingsRequest = Readonly<{
   organiser?: OrganiserDefaults;
   ticketWorker?: TicketWorkerDefaults;
 }>;
+
+export type ProviderModelCatalogStatus =
+  | "disconnected"
+  | "ready"
+  | "unavailable";
+
+export type NativeAgentProviderKind =
+  | "codex_cli"
+  | "claude_code"
+  | "cline_pass_cli";
+
+export type ProviderModel = Readonly<{
+  id: string;
+  label: string;
+  efforts: readonly AgentEffort[];
+}>;
+
+export type ProviderModelCatalog = Readonly<{
+  providerKind: NativeAgentProviderKind;
+  status: ProviderModelCatalogStatus;
+  models: readonly ProviderModel[];
+}>;
+
+export type SaveProviderCatalogCredentialRequest = Readonly<{
+  providerKind: NativeAgentProviderKind;
+  apiKey: string;
+}>;

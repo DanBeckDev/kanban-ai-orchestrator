@@ -22,6 +22,7 @@ mod desktop_execution_runtime_events;
 mod desktop_execution_runtime_review;
 mod desktop_execution_runtime_support;
 mod desktop_planning;
+mod desktop_provider_catalog;
 mod foundation;
 
 pub use foundation::FoundationSummary;
@@ -59,7 +60,9 @@ pub fn run() {
             desktop::transition_work_item,
             desktop::save_agent_profile,
             desktop::agent_profiles,
-            desktop::agent_provider_availability,
+            desktop_provider_catalog::agent_provider_availability,
+            desktop_provider_catalog::provider_model_catalog,
+            desktop_provider_catalog::save_provider_catalog_credential,
             desktop_planning::save_planner_profile,
             desktop_planning::planner_profiles,
             desktop_planning::save_project_agent_settings,

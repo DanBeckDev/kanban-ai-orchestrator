@@ -318,6 +318,30 @@ tasks:
       bridges now reject preferences they cannot honour. ADR-0030 and the
       ORCH-009 quality receipt record the safety and quality evidence.
 
+  - id: ORCH-010
+    epic: ORCH
+    title: Make provider cards own roles, model catalogues, and effort settings
+    status: done
+    priority: P0
+    depends_on: [ORCH-009, UX-011]
+    acceptance_criteria:
+      - Settings shows one self-contained card for every detected provider. An installed provider can be selected independently for Plan work and Work on tickets without a duplicate generic provider form.
+      - Model and effort controls remain on the provider card for each selected role. The normal path has no free-text model field and always offers Provider default.
+      - An explicit connect or refresh action obtains model identifiers and available labels from the provider's documented API for OpenAI/Codex, Anthropic/Claude Code, and Cline. The UI renders returned values in a dropdown and never substitutes a hard-coded catalogue.
+      - Provider API credentials are stored only in the OS keychain, never in board metadata, durable front-end state, logs, worktrees, requests to agents, or normal error text. A failed or unavailable catalogue produces a recoverable explanation and retains Provider default.
+      - Provider adapters expose only effort preferences they can express. Model-level capability information narrows the choices when the provider API returns it; native execution, policy, confirmation, review, and Done authority remain unchanged.
+      - Rust and frontend tests cover disconnected, connected, malformed, failed, role-selection, role-save, dynamic-model, effort, and credential-redaction behavior; source structure and all per-package coverage metrics remain at least 80%.
+    notes: >-
+      Added 2026-08-10 from product feedback on the split provider configuration
+      surface. This supersedes ORCH-009's normal-path free-text model control,
+      while retaining provider-neutral durable settings and adapter-owned
+      invocation translation. Completed on 2026-08-10 with self-contained
+      provider cards, per-role model and effort dropdowns, explicit account
+      catalogue connection and refresh, OS-keychain credential isolation,
+      bounded Anthropic pagination, and stale-selection recovery copy.
+      ADR-0031 and the ORCH-010 quality receipt record the ownership,
+      credential, clean-code, and coverage evidence.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

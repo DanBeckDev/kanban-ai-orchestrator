@@ -20,7 +20,9 @@ import type {
   LinearConnectionStatus,
   LinearIssueSummary,
   LinearOAuthConfiguration,
+  NativeAgentProviderKind,
   PlannerProfile,
+  ProviderModelCatalog,
   ProjectAgentSettings,
   ProposePlanRequest,
   RecordCleanCodeReviewRequest,
@@ -30,6 +32,7 @@ import type {
   StartExecutionRequest,
   SupervisionDecision,
   SaveProjectAgentSettingsRequest,
+  SaveProviderCatalogCredentialRequest,
   TransitionWorkItemRequest,
 } from "./types";
 import type {
@@ -63,6 +66,12 @@ export interface BoardGateway {
   saveAgentProfile(profile: AgentProfile): Promise<AgentProfile>;
   agentProfiles(): Promise<readonly AgentProfile[]>;
   agentProviderAvailability(): Promise<readonly AgentProviderAvailability[]>;
+  providerModelCatalog(
+    providerKind: NativeAgentProviderKind,
+  ): Promise<ProviderModelCatalog>;
+  saveProviderCatalogCredential(
+    request: SaveProviderCatalogCredentialRequest,
+  ): Promise<ProviderModelCatalog>;
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile>;
   plannerProfiles(): Promise<readonly PlannerProfile[]>;
   saveProjectAgentSettings(

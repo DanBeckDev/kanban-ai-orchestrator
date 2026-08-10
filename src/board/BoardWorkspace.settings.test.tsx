@@ -6,10 +6,9 @@ import {
   createBoard,
   openSettings,
   openTask,
-  selectOption,
 } from "./BoardWorkspace.test.helpers";
 
-describe("focused board and agent settings", () => {
+describe("focused board and provider-owned AI settings", () => {
   it("keeps setup off the board until a person asks for task details or settings", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
@@ -34,28 +33,32 @@ describe("focused board and agent settings", () => {
     ).toBeVisible();
   });
 
-  it("detects installed agents and saves a project ticket-worker default", async () => {
+  it("keeps each provider's roles and configuration in one card", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
     openSettings("AI");
 
     expect(boardGateway.agentProviderAvailability).toHaveBeenCalledOnce();
-    const providerList = screen.getByRole("list", {
-      name: "Available AI providers",
-    });
-    const codexItem = listItemFor(providerList, "Codex");
-    const clineItem = listItemFor(providerList, "Cline");
-    expect(within(codexItem).getByText("Installed")).toBeVisible();
-    expect(within(clineItem).getByText("Not installed")).toBeVisible();
+    const codex = providerCard("Codex");
+    const cline = providerCard("Cline");
+    expect(within(codex).getByText("Installed")).toBeVisible();
+    expect(within(cline).getByText("Not installed")).toBeVisible();
     expect(
-      within(clineItem).getByRole("link", { name: "How to install" }),
+      within(cline).getByRole("link", { name: "How to install" }),
     ).toHaveAttribute("href", "https://docs.cline.bot/cli");
+    expect(screen.queryByLabelText("AI connection")).toBeNull();
+    expect(screen.queryByLabelText("Specific model name")).toBeNull();
 
     fireEvent.click(
-      within(codexItem).getByRole("button", { name: "Use as worker" }),
+      within(codex).getByRole("button", { name: "Work on tickets" }),
     );
 
+    await waitFor(() =>
+      expect(boardGateway.providerModelCatalog).toHaveBeenCalledWith(
+        "codex_cli",
+      ),
+    );
     await waitFor(() =>
       expect(boardGateway.saveAgentProfile).toHaveBeenCalledWith({
         name: "Default Codex CLI",
@@ -64,7 +67,7 @@ describe("focused board and agent settings", () => {
         arguments: [],
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Save AI defaults" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save AI setup" }));
     await waitFor(() =>
       expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
         boardId: "board-1",
@@ -87,6 +90,70 @@ describe("focused board and agent settings", () => {
     ).toHaveTextContent("Default Codex CLI");
   });
 
+  it("loads account models inside the selected provider and saves role-specific choices", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const codex = providerCard("Codex");
+    fireEvent.click(within(codex).getByRole("button", { name: "Plan work" }));
+    await waitFor(() =>
+      expect(boardGateway.savePlannerProfile).toHaveBeenCalledWith({
+        name: "Default Codex CLI orchestrator",
+        kind: "codex_cli",
+        program: "codex",
+        arguments: [],
+      }),
+    );
+    fireEvent.click(
+      within(codex).getByRole("button", { name: "Work on tickets" }),
+    );
+    await waitFor(() =>
+      expect(boardGateway.saveAgentProfile).toHaveBeenCalledOnce(),
+    );
+
+    fireEvent.click(within(codex).getByText("Connect provider API"));
+    fireEvent.change(within(codex).getByLabelText("Codex API key"), {
+      target: { value: "test-key" },
+    });
+    fireEvent.click(
+      within(codex).getByRole("button", { name: "Connect and load models" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.saveProviderCatalogCredential).toHaveBeenCalledWith({
+        providerKind: "codex_cli",
+        apiKey: "test-key",
+      }),
+    );
+    expect(
+      await within(codex).findByText(
+        "Model list loaded from this provider account.",
+      ),
+    ).toBeVisible();
+    await selectOption(codex, "Plan work", "Model", "GPT-5 Codex");
+    await selectOption(codex, "Plan work", "Effort", "Thorough");
+    await selectOption(codex, "Work on tickets", "Model", "GPT-5 Codex");
+    await selectOption(codex, "Work on tickets", "Effort", "Balanced");
+    fireEvent.click(screen.getByRole("button", { name: "Save AI setup" }));
+
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: {
+          plannerProfileName: "Default Codex CLI orchestrator",
+          model: { kind: "named", name: "gpt-5-codex" },
+          effort: "thorough",
+        },
+        ticketWorker: {
+          agentProfileName: "Default Codex CLI",
+          model: { kind: "named", name: "gpt-5-codex" },
+          effort: "balanced",
+        },
+      }),
+    );
+  });
+
   it("does not select an agent when its safe profile could not be saved", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
     vi.mocked(boardGateway.saveAgentProfile).mockRejectedValueOnce(
@@ -95,134 +162,39 @@ describe("focused board and agent settings", () => {
 
     await createBoard(boardGateway);
     openSettings("AI");
-    const providerList = screen.getByRole("list", {
-      name: "Available AI providers",
-    });
-    const codexItem = listItemFor(providerList, "Codex");
-
+    const codex = providerCard("Codex");
     fireEvent.click(
-      within(codexItem).getByRole("button", { name: "Use as worker" }),
+      within(codex).getByRole("button", { name: "Work on tickets" }),
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Your saved work has not changed. Check your last action, then try again.",
     );
     expect(
-      within(codexItem).getByRole("button", { name: "Use as worker" }),
-    ).toBeEnabled();
-  });
-
-  it("saves separate model and effort defaults for the orchestrator and workers", async () => {
-    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
-    await boardGateway.savePlannerProfile({
-      name: "Planning agent",
-      kind: "codex_cli",
-      program: "planner",
-      arguments: [],
-    });
-
-    await createBoard(boardGateway);
-    openSettings("AI");
-    await selectOption("AI connection", "Planning agent");
-
-    await selectPreference("Orchestrator", "Thorough");
-    await selectPreference("Ticket workers", "Balanced");
-    await selectModel("Orchestrator");
-    fireEvent.change(screen.getByLabelText("Specific model name"), {
-      target: { value: "gpt-5" },
-    });
-
-    const providerList = screen.getByRole("list", {
-      name: "Available AI providers",
-    });
-    fireEvent.click(
-      within(listItemFor(providerList, "Codex")).getByRole("button", {
-        name: "Use as worker",
-      }),
-    );
-    await screen.findByRole("button", { name: "Worker chosen" });
-    await selectModel("Ticket workers");
-    fireEvent.change(screen.getAllByLabelText("Specific model name")[1], {
-      target: { value: "gpt-5-mini" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Save AI defaults" }));
-
-    await waitFor(() =>
-      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
-        boardId: "board-1",
-        organiser: {
-          plannerProfileName: "Planning agent",
-          model: { kind: "named", name: "gpt-5" },
-          effort: "thorough",
-        },
-        ticketWorker: {
-          agentProfileName: "Default Codex CLI",
-          model: { kind: "named", name: "gpt-5-mini" },
-          effort: "balanced",
-        },
-      }),
-    );
-  });
-
-  it("sets an installed provider as the orchestrator without raw bridge setup", async () => {
-    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
-
-    await createBoard(boardGateway);
-    openSettings("AI");
-    const providerList = screen.getByRole("list", {
-      name: "Available AI providers",
-    });
-    const claudeItem = listItemFor(providerList, "Claude Code");
-    fireEvent.click(
-      within(claudeItem).getByRole("button", { name: "Use as orchestrator" }),
-    );
-
-    await waitFor(() =>
-      expect(boardGateway.savePlannerProfile).toHaveBeenCalledWith({
-        name: "Default Claude Code orchestrator",
-        kind: "claude_code",
-        program: "claude",
-        arguments: [],
-      }),
-    );
-    await waitFor(() =>
-      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
-        boardId: "board-1",
-        organiser: {
-          plannerProfileName: "Default Claude Code orchestrator",
-          model: { kind: "provider_default" },
-          effort: "provider_default",
-        },
-        ticketWorker: undefined,
-      }),
-    );
+      within(codex).getByRole("button", { name: "Work on tickets" }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 });
 
-function listItemFor(list: HTMLElement, name: string): HTMLElement {
-  const item = within(list).getByText(name).closest("li");
-  if (item === null) throw new Error(`Missing provider option: ${name}`);
-  return item;
+function providerCard(name: string): HTMLElement {
+  const card = screen
+    .getByRole("heading", { level: 4, name })
+    .closest('[data-slot="card"]');
+  if (card === null) throw new Error(`Missing ${name} provider card`);
+  return card;
 }
 
-async function selectPreference(groupName: string, optionName: string) {
-  const group = screen.getByRole("group", { name: groupName });
-  fireEvent.pointerDown(within(group).getByLabelText("Effort"), {
+async function selectOption(
+  card: HTMLElement,
+  groupName: string,
+  label: string,
+  optionName: string,
+) {
+  const group = within(card).getByRole("group", { name: groupName });
+  fireEvent.pointerDown(within(group).getByLabelText(label), {
     button: 0,
     ctrlKey: false,
     pointerType: "mouse",
   });
   fireEvent.click(await screen.findByRole("option", { name: optionName }));
-}
-
-async function selectModel(groupName: string) {
-  const group = screen.getByRole("group", { name: groupName });
-  fireEvent.pointerDown(within(group).getByLabelText("Model"), {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
-  });
-  fireEvent.click(
-    await screen.findByRole("option", { name: "Choose a specific model" }),
-  );
 }

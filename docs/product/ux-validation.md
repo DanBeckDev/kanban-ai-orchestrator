@@ -1,8 +1,8 @@
-# UX-008 journey-validation record
+# Representative developer validation study kit
 
-- Status: Product-owner wireframe handoff accepted; representative walkthroughs deferred to UX-007
-- Date: 2026-08-09
-- Scope: first use, returning use, and first plan; no production source changes
+- Status: Product-owner wireframe handoff accepted; study ready for UX-007 and UI-004; no participant results recorded
+- Date: 2026-08-10
+- Scope: first use, returning use, planning, dependencies, recovery, and visual/accessibility validation; no production source changes
 
 This file separates what the implementation currently does from what people
 actually need. The current-state audit is an implementer baseline, **not user
@@ -40,14 +40,19 @@ contradict the assumptions rather than inherit them as facts.
 
 ### Participants
 
-Recruit three developers who are plausible users of an agent-coordinated local
+Recruit five developers who are plausible users of an agent-coordinated local
 desktop tool. Seek variation rather than statistical representation:
 
 1. A developer who has coordinated multiple repository tasks or AI agents.
 2. A developer setting up a local project/workflow for the first time.
-3. A keyboard-first or assistive-technology user where possible. If that is not
-   possible in the initial three, record the limitation and schedule a dedicated
-   accessibility walkthrough before UX-005 is considered complete.
+3. A developer who often creates software through AI-assisted or low-code/vibe
+   coding workflows and may not know Git terminology.
+4. A keyboard-first or assistive-technology user where possible.
+5. A developer who regularly reviews or coordinates other contributors' work.
+
+If a keyboard-first or assistive-technology user is unavailable, record that
+limitation honestly and schedule a dedicated accessibility walkthrough. Do not
+replace it with an implementer self-review.
 
 Use a throwaway sample repository and fictitious board names. Do not ask for or
 record credentials, real repository paths, private diffs, tickets, agent
@@ -110,12 +115,70 @@ to confirm, revise, or reject the shown proposal.
 task configuration, says the proposal is not yet running work, and identifies
 tasks/dependencies/assumptions/budgets as review information before confirmation.
 
+### Scenario D — understand a blocker
+
+**Set-up:** “The sample board has a task called Publish release notes waiting
+for Design the release checklist. Another task, Update internal documentation,
+can continue safely.”
+
+**Tasks:** Use the board view menu to find why Publish release notes is waiting,
+identify what it affects, and decide what could progress while the blocker is
+unresolved. Open the related task only if it helps the decision.
+
+**Success without moderator assistance:** Finds the dedicated Dependencies view,
+uses the selected-task explanation or accessible list rather than inferring a
+line direction or colour, correctly identifies the upstream work and next
+action, and can name one parallel-safe task.
+
+### Scenario E — recover safely
+
+**Set-up:** “The sample board contains a task returned from review and a
+separate Linear comment whose delivery result is unknown. The facilitator has
+checked these are visible before the participant begins.”
+
+**Tasks:** Explain what has and has not happened, identify the next permitted
+action for each item, and say whether the app will automatically retry or send
+anything.
+
+**Success without moderator assistance:** Does not mistake either state for
+completion, finds the named recovery or inspection route, and states that a
+new public update requires an explicit person decision after checking Linear.
+
 ### Keyboard and assistive-technology additions
 
 Ask the keyboard-first/AT participant to use their normal configuration. Observe
 whether focus location, labels, state announcements, and errors are predictable.
 Do not prescribe a technique. Record functional barriers, not medical details or
 tool configuration beyond what the participant volunteers as relevant.
+
+## UI-004 visual and assistive-settings addendum
+
+Use the same current desktop build and anonymized study IDs. These checks assess
+the product as it is used; automated tests, a design review, or the moderator's
+opinion do not count as participant evidence.
+
+For at least three of the five participants, ask neutral comprehension questions
+before explaining the interface:
+
+1. “What product are you in, and what do you think this first screen is for?”
+2. “How would you change the appearance, and what do you expect to change?”
+3. “What would you do first to start or continue work?”
+
+Then have each participant visit the board library, workspace setup, Workflow,
+Dependencies, Settings, and task detail in both Dark and Light appearance.
+Record whether keyboard focus is visible, each control has a usable name, and
+task/status meaning remains understandable without colour.
+
+Run one dedicated forced-colours or operating-system high-contrast walkthrough
+on a supported desktop platform. Confirm that controls, boundaries, focus, and
+warning/success/status meaning remain visible with the authored palette
+overridden. If that environment cannot be supplied, record it as an open UI-004
+constraint; do not mark the criterion complete.
+
+For a screen-reader walkthrough, let the participant use their normal setup.
+Capture only the affected screen, control, state, and outcome—not personal
+assistive-technology settings or a transcript. A failure to reach, identify, or
+operate a required control is critical when it prevents the scenario.
 
 ### Facilitator capture sheet
 
@@ -124,7 +187,7 @@ and decisions rather than a person's identity, private project data, screen
 recording, or a verbatim transcript. A participant can omit any answer.
 
 ```text
-Study ID: P-01 / P-02 / P-03
+Study ID: P-01 / P-02 / P-03 / P-04 / P-05
 Relevant working style volunteered by participant: keyboard-first / assistive technology / neither stated
 
 Scenario A — return to work
@@ -144,6 +207,23 @@ Scenario C — make the first plan
 - First action the participant found:
 - What they believed proposal confirmation would do:
 - What they chose to inspect, revise, reject, or confirm:
+
+Scenario D — understand a blocker
+- Completed without moderator assistance: yes / partly / no
+- Upstream blocker and next action identified:
+- Parallel-safe work identified:
+
+Scenario E — recover safely
+- Completed without moderator assistance: yes / partly / no
+- What the participant believed had happened remotely:
+- Recovery action and reason:
+
+Visual and assistive settings (at least three participants)
+- Product name and first-screen purpose understood: yes / partly / no
+- Appearance control and expected effect understood: yes / partly / no
+- First next action understood: yes / partly / no
+- Dark and Light appearance result:
+- Keyboard/screen-reader or high-contrast result, if applicable:
 
 Observed confusion or barrier (one row per finding)
 - Finding:
@@ -184,6 +264,8 @@ create a linked backlog item for a product/engineering change.
 | Pending-01 | Pending | — | — | — | — | Awaiting walkthrough |
 | Pending-02 | Pending | — | — | — | — | Awaiting walkthrough |
 | Pending-03 | Pending | — | — | — | — | Awaiting walkthrough |
+| Pending-04 | Pending | — | — | — | — | Awaiting walkthrough |
+| Pending-05 | Pending | — | — | — | — | Awaiting walkthrough |
 
 Severity definitions:
 
@@ -199,9 +281,10 @@ Severity definitions:
 UX-008 is complete because the product owner provided a clear visual direction,
 clarified the material interaction decisions, and the resulting implementation
 work is represented in the backlog. It does **not** claim usability validation.
-UX-007 owns the five-person current-build walkthrough, accessibility coverage,
-finding dispositions, and release gate. Until UX-007, no document may present
-this design handoff as evidence that representative users completed a scenario.
+UX-007 owns the five-person current-build walkthrough, scenario findings, and
+release gate. UI-004 owns the theme and assistive-settings checks. Until both
+have real participant evidence and any critical findings have a disposition, no
+document may present this handoff as validated user experience.
 
 ## Research basis
 
@@ -213,3 +296,9 @@ warns that a polished prototype is not validation; it requires real people and
 explicit risky assumptions. These are the reasons this record distinguishes code
 audit from participant evidence and leaves the findings table pending rather than
 fabricating results.
+
+BookCtx — _User Story Mapping_, Jeff Patton, “Keep Talking as You Build” (chunk
+11), argues that a meaningful flow is enough for users to complete a real goal
+and give corrective feedback. Project inference: the five scenarios test whole
+decisions—not isolated labels—and feed concrete findings back to named backlog
+items with an owner and disposition.

@@ -1,11 +1,10 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-
-import { gateway } from "./BoardWorkspace.test.fixtures";
 import { planDraft } from "./BoardWorkspace.plan.fixtures";
+import { gateway } from "./BoardWorkspace.test.fixtures";
 import {
-  createBoard,
   configurePlanner,
+  createBoard,
   openPlan,
   openSettings,
 } from "./BoardWorkspace.test.helpers";
@@ -46,12 +45,25 @@ describe("board plan workflow", () => {
     expect(
       screen.getByRole("form", { name: "Confirm board plan" }),
     ).toBeVisible();
+    expect(screen.getByLabelText("Your name")).toHaveAttribute(
+      "autocomplete",
+      "name",
+    );
+    expect(screen.getByLabelText("Your name")).toHaveAttribute(
+      "name",
+      "confirmed-by",
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "Edit proposed tasks" }),
     );
     expect(
       screen.getByRole("form", { name: "Edit plan proposal" }),
     ).toBeVisible();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Require a person to approve this task before it is done",
+      }),
+    ).toHaveAttribute("name", "plan-task-1-requires-human-review");
   });
 
   it("generates a proposal from a goal and still requires explicit confirmation", async () => {

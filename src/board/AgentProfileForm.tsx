@@ -73,6 +73,8 @@ export function AgentProfileForm({
         <label>
           Profile name
           <input
+            autoComplete="off"
+            name="agent-profile-name"
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -81,6 +83,7 @@ export function AgentProfileForm({
         <label>
           Adapter
           <select
+            name="agent-profile-kind"
             value={kind}
             onChange={(event) =>
               selectKind(event.target.value as AgentProfileKind)
@@ -100,6 +103,8 @@ export function AgentProfileForm({
         <label>
           Program
           <input
+            autoComplete="off"
+            name="agent-program"
             required
             placeholder={selectedProfile.defaultProgram}
             value={program}
@@ -109,6 +114,8 @@ export function AgentProfileForm({
         <label>
           Arguments (one per line)
           <textarea
+            autoComplete="off"
+            name="agent-arguments"
             placeholder={selectedProfile.argumentHint}
             value={argumentsText}
             onChange={(event) => setArgumentsText(event.target.value)}

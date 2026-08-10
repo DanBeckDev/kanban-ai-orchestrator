@@ -351,6 +351,7 @@ function TaskEditor({
       <label className="checkbox-field">
         <input
           checked={task.requiresHumanReview}
+          name={`${fieldPrefix}-requires-human-review`}
           onChange={(event) =>
             onUpdate(task.id, { requiresHumanReview: event.target.checked })
           }

@@ -119,6 +119,17 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   allows separate enabled-provider, model, and effort defaults for the
   orchestrator and ticket workers. The normal UI never asks for raw command
   arguments, credentials, approval bypasses, worktree paths, or protocol flags.
+- **Provider default** is the recommended model setting for each role. A person
+  may deliberately enter a named model only after choosing that option; Kanban
+  does not invent a provider model catalogue. Native adapters translate the
+  saved model and effort at invocation time. A generic bridge that cannot
+  express either preference rejects it before a request starts rather than
+  silently ignoring it.
+- A native orchestrator performs bounded, read-only plan, supervision, and
+  ticket-effect assessments through an adapter-owned protocol. Its output must
+  still pass the same strict typed validation and cannot create work, start a
+  worker, relax policy, or move work to Done without the established daemon
+  gates.
 - Installing a missing provider is always a deliberate external user action.
   The product may link to the provider's official installation guidance, but
   must not install software, change an account, or weaken permissions by itself.

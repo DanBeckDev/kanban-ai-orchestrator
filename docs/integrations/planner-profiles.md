@@ -2,17 +2,19 @@
 
 ## Purpose
 
-A planner profile connects a local AI tool to the board's **Generate a proposal** action. It is provider-neutral: the board does not know whether the profile calls Codex, Claude Code, a self-hosted model, or an internal service. It accepts exactly one natural-language goal and can return only an unconfirmed proposal.
+A planner profile connects a local AI tool to the board's **Generate a proposal** action. The normal Settings path can create a safe native Codex, Claude Code, or Cline/ClinePass orchestrator profile with one action. The advanced bridge remains provider-neutral: it can call a self-hosted model or internal service. Every route can return only an unconfirmed proposal.
 
 ## Configure a profile
 
-In the desktop board, save a profile with a name, program, and one argument per line. The app starts that program directly with the selected project's repository as its working directory; it does not build or evaluate a shell command. The profile reads standard input and writes standard output.
+In the desktop board, select an installed provider for the orchestrator role to use the normal safe path. It uses the provider default model unless you deliberately choose a named model, and maps the provider-neutral effort choice inside the native adapter. It never asks for a program, arguments, credentials, or approval flags.
+
+Advanced setup saves a bridge with a name, program, and one argument per line. The app starts that program directly with the selected project's repository as its working directory; it does not build or evaluate a shell command. The bridge reads standard input and writes standard output.
 
 Treat a profile program as trusted local code. It runs with your user account's normal permissions; the generic profile mechanism is not a filesystem sandbox. Do not put API keys, access tokens, or other credentials in its arguments: the profile configuration is stored in the local board database. Configure credentials using the provider's normal local credential mechanism instead.
 
 ## Bridge contract
 
-The app writes one JSON object followed by a newline to the bridge's standard input. It has this shape:
+The app writes one JSON object followed by a newline to a bridge's standard input. It has this shape:
 
 ```json
 {
@@ -21,7 +23,7 @@ The app writes one JSON object followed by a newline to the bridge's standard in
 }
 ```
 
-The bridge must write exactly one JSON object to standard output—no Markdown fences, prose, logging, or additional fields. A valid response looks like this:
+The bridge must write exactly one JSON object to standard output—no Markdown fences, prose, logging, or additional fields. Native adapters send an equivalent constrained prompt through their documented non-interactive protocol and extract only its final JSON response. A valid response looks like this:
 
 ```json
 {

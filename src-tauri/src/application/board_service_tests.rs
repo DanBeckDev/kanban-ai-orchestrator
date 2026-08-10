@@ -160,6 +160,7 @@ fn resolves_a_saved_planner_profile_and_the_declared_project_repository() {
     service
         .save_planner_profile(PlannerProfile {
             name: "local planner".to_owned(),
+            kind: Default::default(),
             program: "planner-bridge".to_owned(),
             arguments: vec!["--strict-json".to_owned()],
         })

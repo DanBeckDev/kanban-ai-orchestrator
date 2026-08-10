@@ -2,7 +2,10 @@ use std::{collections::BTreeSet, error::Error, fmt};
 
 use serde::{Deserialize, Serialize};
 
-use crate::domain::{DependencyKind, WorkItemBudget};
+use crate::{
+    agent::AgentProfileKind,
+    domain::{DependencyKind, WorkItemBudget},
+};
 
 pub const MAX_PLANNER_GOAL_BYTES: usize = 8_000;
 pub const MAX_PLAN_WORK_ITEMS: usize = 50;
@@ -14,6 +17,8 @@ pub const MAX_PLAN_ASSUMPTIONS: usize = 50;
 #[serde(rename_all = "camelCase")]
 pub struct PlannerProfile {
     pub name: String,
+    #[serde(default)]
+    pub kind: AgentProfileKind,
     pub program: String,
     pub arguments: Vec<String>,
 }
@@ -28,6 +33,16 @@ impl PlannerProfile {
             .any(|argument| argument.contains('\0'))
         {
             return Err(PlannerProfileError::ArgumentContainsNull);
+        }
+        if let Some(argument) = self
+            .arguments
+            .iter()
+            .find(|argument| self.kind.reserves_argument(argument))
+        {
+            return Err(PlannerProfileError::ReservedArgument {
+                kind: self.kind,
+                argument: argument.clone(),
+            });
         }
         Ok(())
     }
@@ -195,9 +210,17 @@ fn validate_draft_required(value: &str, field: &'static str) -> Result<(), PlanD
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlannerProfileError {
-    MissingRequiredField { field: &'static str },
-    FieldContainsNull { field: &'static str },
+    MissingRequiredField {
+        field: &'static str,
+    },
+    FieldContainsNull {
+        field: &'static str,
+    },
     ArgumentContainsNull,
+    ReservedArgument {
+        kind: AgentProfileKind,
+        argument: String,
+    },
 }
 
 impl fmt::Display for PlannerProfileError {
@@ -210,6 +233,10 @@ impl fmt::Display for PlannerProfileError {
             Self::ArgumentContainsNull => {
                 formatter.write_str("planner arguments cannot contain a null character")
             }
+            Self::ReservedArgument { kind, argument } => write!(
+                formatter,
+                "planner argument {argument} is reserved by the {kind:?} adapter"
+            ),
         }
     }
 }

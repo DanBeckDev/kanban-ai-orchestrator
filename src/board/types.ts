@@ -290,6 +290,7 @@ export type AgentProviderAvailability = Readonly<{
 
 export type PlannerProfile = Readonly<{
   name: string;
+  kind: AgentProfileKind;
   program: string;
   arguments: readonly string[];
 }>;

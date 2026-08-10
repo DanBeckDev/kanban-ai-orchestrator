@@ -59,10 +59,12 @@ pub(crate) fn generate_plan(
     let context = lock_service(&state)?
         .planner_context(&request.board_id, &request.planner_profile_name)
         .map_err(error_message)?;
-    let draft = ProcessPlanGenerator::generate(
+    let draft = ProcessPlanGenerator::generate_with_preferences(
         &context.profile,
         Path::new(&context.repository_path),
         &request.goal,
+        &context.model,
+        context.effort,
     )
     .map_err(error_message)?;
     let proposal =

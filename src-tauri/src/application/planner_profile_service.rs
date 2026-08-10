@@ -1,7 +1,7 @@
 use std::{error::Error, fmt};
 
 use crate::{
-    domain::{BoardId, ProjectId},
+    domain::{AgentEffort, AgentModelPreference, BoardId, ProjectId},
     orchestration::{PlannerProfile, PlannerProfileError},
 };
 
@@ -11,6 +11,8 @@ use super::{BoardRepository, BoardService};
 pub struct PlannerContext {
     pub profile: PlannerProfile,
     pub repository_path: String,
+    pub model: AgentModelPreference,
+    pub effort: AgentEffort,
 }
 
 impl<Repository> BoardService<Repository>
@@ -55,7 +57,7 @@ where
             .project(&board.project_id)
             .map_err(PlannerProfileServiceError::Repository)?
             .ok_or_else(|| PlannerProfileServiceError::ProjectNotFound {
-                project_id: board.project_id,
+                project_id: board.project_id.clone(),
             })?;
         let profile = self
             .repository
@@ -64,9 +66,19 @@ where
             .ok_or_else(|| PlannerProfileServiceError::NotFound {
                 name: profile_name.to_owned(),
             })?;
+        let (model, effort) = self
+            .repository
+            .project_agent_settings(&board.project_id)
+            .map_err(PlannerProfileServiceError::Repository)?
+            .and_then(|settings| settings.organiser)
+            .filter(|organiser| organiser.planner_profile_name == profile.name)
+            .map(|organiser| (organiser.model, organiser.effort))
+            .unwrap_or_default();
         Ok(PlannerContext {
             profile,
             repository_path: project.repository_path,
+            model,
+            effort,
         })
     }
 }

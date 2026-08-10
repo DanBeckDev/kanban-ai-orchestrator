@@ -1,4 +1,5 @@
 mod bounded_process;
+mod native_profile_process;
 mod plan;
 mod planner;
 mod planner_process;

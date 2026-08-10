@@ -181,6 +181,7 @@ fn enforces_bounded_input_and_the_action_specific_proposal_vocabulary() {
     let malformed_profile = ProcessTicketEffectAdvisor::advise(
         &PlannerProfile {
             name: " ".to_owned(),
+            kind: Default::default(),
             program: "sh".to_owned(),
             arguments: Vec::new(),
         },
@@ -349,6 +350,7 @@ fn action_name(action: TicketEffectAction) -> &'static str {
 fn profile(script: &str) -> PlannerProfile {
     PlannerProfile {
         name: "test organiser".to_owned(),
+        kind: Default::default(),
         program: "sh".to_owned(),
         arguments: vec!["-c".to_owned(), script.to_owned()],
     }

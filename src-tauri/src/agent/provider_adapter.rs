@@ -4,6 +4,7 @@ use super::{
     AgentSession, NormalizedAgentEvent, ProcessAgentAdapter, ProcessAgentDefinition,
     StartAgentRequest,
 };
+use crate::domain::{AgentEffort, AgentModelPreference};
 
 pub enum WorkerAgentAdapter {
     Structured(ProcessAgentAdapter),
@@ -11,16 +12,26 @@ pub enum WorkerAgentAdapter {
 }
 
 impl WorkerAgentAdapter {
-    pub fn from_profile_for_execution(profile: AgentProfile, execution_id: &str) -> Self {
+    pub fn from_profile_for_execution(
+        profile: AgentProfile,
+        execution_id: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+    ) -> Self {
         match profile.kind {
             AgentProfileKind::StructuredProcess => Self::Structured(
                 ProcessAgentAdapter::from_structured_profile_for_execution(profile, execution_id),
             ),
             AgentProfileKind::CodexCli
             | AgentProfileKind::ClaudeCode
-            | AgentProfileKind::ClinePassCli => Self::Native(
-                NativeProcessAdapter::from_profile_for_execution(profile, execution_id),
-            ),
+            | AgentProfileKind::ClinePassCli => {
+                Self::Native(NativeProcessAdapter::from_profile_for_execution(
+                    profile,
+                    execution_id,
+                    model,
+                    effort,
+                ))
+            }
         }
     }
 
@@ -94,9 +105,14 @@ pub struct NativeProcessAdapter {
 }
 
 impl NativeProcessAdapter {
-    fn from_profile_for_execution(profile: AgentProfile, execution_id: &str) -> Self {
+    fn from_profile_for_execution(
+        profile: AgentProfile,
+        execution_id: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+    ) -> Self {
         let kind = profile.kind;
-        let definition = native_definition(profile, execution_id);
+        let definition = native_definition(profile, execution_id, model, effort);
         Self::new(definition, kind)
     }
 
@@ -161,9 +177,11 @@ impl AgentAdapter for NativeProcessAdapter {
 pub(super) fn native_definition(
     profile: AgentProfile,
     execution_id: &str,
+    model: &AgentModelPreference,
+    effort: AgentEffort,
 ) -> ProcessAgentDefinition {
     let kind = profile.kind;
-    let mut arguments = native_arguments(kind);
+    let mut arguments = native_arguments(kind, model, effort);
     arguments.extend(profile.arguments);
     if kind == AgentProfileKind::CodexCli {
         arguments.push("-".to_owned());
@@ -171,8 +189,12 @@ pub(super) fn native_definition(
     definition(profile.name, execution_id, profile.program, arguments)
 }
 
-fn native_arguments(kind: AgentProfileKind) -> Vec<String> {
-    match kind {
+pub(crate) fn native_arguments(
+    kind: AgentProfileKind,
+    model: &AgentModelPreference,
+    effort: AgentEffort,
+) -> Vec<String> {
+    let mut arguments = match kind {
         AgentProfileKind::CodexCli => vec![
             "exec".to_owned(),
             "--json".to_owned(),
@@ -195,6 +217,44 @@ fn native_arguments(kind: AgentProfileKind) -> Vec<String> {
             "true".to_owned(),
         ],
         AgentProfileKind::StructuredProcess => Vec::new(),
+    };
+    append_native_preferences(&mut arguments, kind, model, effort);
+    arguments
+}
+
+pub(crate) fn append_native_preferences(
+    arguments: &mut Vec<String>,
+    kind: AgentProfileKind,
+    model: &AgentModelPreference,
+    effort: AgentEffort,
+) {
+    if let AgentModelPreference::Named(model) = model {
+        arguments.extend(["--model".to_owned(), model.clone()]);
+    }
+    let Some(effort) = native_effort_name(effort) else {
+        return;
+    };
+    match kind {
+        AgentProfileKind::CodexCli => arguments.extend([
+            "--config".to_owned(),
+            format!("model_reasoning_effort=\"{effort}\""),
+        ]),
+        AgentProfileKind::ClaudeCode => {
+            arguments.extend(["--effort".to_owned(), effort.to_owned()])
+        }
+        AgentProfileKind::ClinePassCli => {
+            arguments.extend(["--thinking".to_owned(), effort.to_owned()])
+        }
+        AgentProfileKind::StructuredProcess => {}
+    }
+}
+
+fn native_effort_name(effort: AgentEffort) -> Option<&'static str> {
+    match effort {
+        AgentEffort::ProviderDefault => None,
+        AgentEffort::Focused => Some("low"),
+        AgentEffort::Balanced => Some("medium"),
+        AgentEffort::Thorough => Some("high"),
     }
 }
 

@@ -18,6 +18,8 @@ pub(super) struct TicketEffectContext {
     pub(super) work_item: crate::domain::MaterializedWorkItem,
     pub(super) supervision: Option<BoardSupervision>,
     pub(super) organiser_profile_name: String,
+    pub(super) organiser_model: crate::domain::AgentModelPreference,
+    pub(super) organiser_effort: crate::domain::AgentEffort,
     pub(super) profile: crate::orchestration::PlannerProfile,
     pub(super) repository_path: String,
     pub(super) evidence: Vec<crate::domain::Evidence>,
@@ -35,10 +37,12 @@ impl ExecutionRuntime {
         }
         let context = self.ticket_effect_context(&request.work_item_id)?;
         let input = ticket_effect_input(&request, &context)?;
-        let recommendation = ProcessTicketEffectAdvisor::advise(
+        let recommendation = ProcessTicketEffectAdvisor::advise_with_preferences(
             &context.profile,
             Path::new(&context.repository_path),
             &input,
+            &context.organiser_model,
+            context.organiser_effort,
         )
         .map_err(ExecutionRuntimeError::TicketEffectAdvisor)?;
         let effect = prepared_effect(&request, &context, &input, recommendation);
@@ -156,21 +160,15 @@ impl ExecutionRuntime {
         let settings = service
             .project_agent_settings_for_board(&board_id.0)
             .map_err(ExecutionRuntimeError::ProjectAgentSettings)?;
-        let organiser_profile_name = supervision
+        let organiser = supervision
             .as_ref()
-            .map(|record| record.organiser.planner_profile_name.clone())
-            .or_else(|| {
-                settings.and_then(|record| {
-                    record
-                        .organiser
-                        .map(|organiser| organiser.planner_profile_name)
-                })
-            })
+            .map(|record| record.organiser.clone())
+            .or_else(|| settings.and_then(|record| record.organiser))
             .ok_or_else(|| ExecutionRuntimeError::OrganiserNotConfigured {
                 board_id: board_id.0.clone(),
             })?;
         let planner = service
-            .planner_context(&board_id.0, &organiser_profile_name)
+            .planner_context(&board_id.0, &organiser.planner_profile_name)
             .map_err(ExecutionRuntimeError::Planner)?;
         let evidence = service
             .ticket_effect_evidence(&work_item.work_item.id)
@@ -178,7 +176,9 @@ impl ExecutionRuntime {
         Ok(TicketEffectContext {
             work_item,
             supervision,
-            organiser_profile_name,
+            organiser_profile_name: organiser.planner_profile_name,
+            organiser_model: organiser.model,
+            organiser_effort: organiser.effort,
             profile: planner.profile,
             repository_path: planner.repository_path,
             evidence,

@@ -1,0 +1,194 @@
+work_item: ORCH-009
+scope:
+  - "One-click, separate native provider selection for orchestrator and ticket-worker roles."
+  - "Effective provider-default/custom-model and effort mapping for Codex, Claude Code, and Cline/ClinePass."
+  - "Bounded native organiser protocols for plan, supervision, and ticket-AI assessment without changing daemon authority gates."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 25
+      responsibilities: "Assembles agent contracts and exposes the shared native-preference mapper only inside the crate."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/profile.rs
+      meaningful_lines: 275
+      responsibilities: "Defines typed profile kinds and blocks adapter-owned native arguments from profile configuration."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter.rs
+      meaningful_lines: 247
+      responsibilities: "Builds native worker process definitions and centralizes provider-specific model and effort mapping."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter_tests.rs
+      meaningful_lines: 190
+      responsibilities: "Verifies native worker argument ownership, preference mapping, and lifecycle conformance."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_service_tests.rs
+      meaningful_lines: 387
+      responsibilities: "Covers board service planner-context behaviour alongside existing board command cases."
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_supervision_service_tests.rs
+      meaningful_lines: 175
+      responsibilities: "Uses native role fixtures to verify durable supervision configuration."
+      decision: kept cohesive
+    - path: src-tauri/src/application/planner_profile_service.rs
+      meaningful_lines: 116
+      responsibilities: "Resolves a planner profile, repository path, and matching durable organiser preferences."
+      decision: kept cohesive
+    - path: src-tauri/src/application/project_agent_settings_service.rs
+      meaningful_lines: 244
+      responsibilities: "Validates project role defaults and refuses preferences a structured bridge cannot honour."
+      decision: kept cohesive
+    - path: src-tauri/src/application/project_agent_settings_service_tests.rs
+      meaningful_lines: 291
+      responsibilities: "Covers persistence, reopening, effective organiser defaults, and unsupported bridge preferences."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_launch.rs
+      meaningful_lines: 261
+      responsibilities: "Passes each assigned work item's model and effort to the worker adapter at launch."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_supervision.rs
+      meaningful_lines: 398
+      responsibilities: "Invokes the selected organiser with its durable preferences while preserving supervision gates."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_supervision_test_fixtures.rs
+      meaningful_lines: 279
+      responsibilities: "Provides durable supervision fixtures compatible with legacy structured organiser execution."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect.rs
+      meaningful_lines: 304
+      responsibilities: "Resolves organiser preferences for bounded ticket-AI recommendations and retains effect authority checks."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_planning.rs
+      meaningful_lines: 62
+      responsibilities: "Adapts saved organiser preferences to the typed plan-generation boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/bounded_process.rs
+      meaningful_lines: 166
+      responsibilities: "Runs one bounded process with private stdin and bounded stdout for bridge and native organiser requests."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/mod.rs
+      meaningful_lines: 40
+      responsibilities: "Registers focused orchestration modules and public contracts."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/native_profile_process.rs
+      meaningful_lines: 271
+      responsibilities: "Owns native organiser invocation, private prompt transport, response extraction, and malformed-output rejection."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner.rs
+      meaningful_lines: 253
+      responsibilities: "Defines strict planner contracts and a backwards-compatible profile kind."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process.rs
+      meaningful_lines: 207
+      responsibilities: "Generates a strict plan through either a generic bridge or native organiser adapter."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process_tests.rs
+      meaningful_lines: 114
+      responsibilities: "Covers bounded direct planner process behaviour."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor_process.rs
+      meaningful_lines: 202
+      responsibilities: "Obtains a strictly validated supervision recommendation through the selected organiser boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor_process_tests.rs
+      meaningful_lines: 246
+      responsibilities: "Covers supervision process validation, limits, safe summaries, and failure handling."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/tests/planner_tests.rs
+      meaningful_lines: 178
+      responsibilities: "Guards planner validation and legacy-profile compatibility."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect_process.rs
+      meaningful_lines: 160
+      responsibilities: "Obtains a strict ticket-effect recommendation through generic or native organiser paths."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect_process_tests.rs
+      meaningful_lines: 344
+      responsibilities: "Covers bounded ticket-effect input, strict proposals, and safe process errors."
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/planner_profile_store.rs
+      meaningful_lines: 78
+      responsibilities: "Persists and reloads backwards-compatible typed planner profiles."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 95
+      responsibilities: "Renders the provider-default/custom-model and provider-neutral effort controls for one role."
+      decision: split
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 173
+      responsibilities: "Composes AI, Linear, and project Settings without owning role form mechanics."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 201
+      responsibilities: "Exercises accessible installed-provider role selection and durable per-role preferences."
+      decision: kept cohesive
+    - path: src/board/InstalledProviderRoles.tsx
+      meaningful_lines: 96
+      responsibilities: "Displays discovered providers and emits distinct orchestrator and worker selection actions."
+      decision: split
+    - path: src/board/PlannerProfileForm.tsx
+      meaningful_lines: 105
+      responsibilities: "Keeps the optional advanced structured bridge form separate from normal provider selection."
+      decision: kept cohesive
+    - path: src/board/ProjectAgentDefaultsForm.tsx
+      meaningful_lines: 248
+      responsibilities: "Coordinates role selection persistence and one-click native profile creation without provider UI details."
+      decision: split
+    - path: src/board/agentProfilePresentation.ts
+      meaningful_lines: 87
+      responsibilities: "Provides shared user-facing provider metadata and safe default profile constructors."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 381
+      responsibilities: "Defines stable board transport types, including adapter-aware planner profiles."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T05:05:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "Provider protocol details could have been duplicated across worker and organiser paths."
+        resolution: implemented
+        rationale: "Model and effort translation is centralized in the native agent adapter; organiser code owns only the distinct read-only protocol and response extraction."
+        decision_reference: ADR-0030
+      - finding: "The project role form exceeded the 400 meaningful-line guard after adding separate role actions and preferences."
+        resolution: implemented
+        rationale: "Extracted focused preference and installed-provider components, leaving the form responsible only for durable role coordination."
+        decision_reference: docs/quality/code-structure.md
+      - finding: "A Cline organiser prompt could have appeared in process arguments."
+        resolution: implemented
+        rationale: "All native organiser prompts now use standard input, matching the existing bounded worker transport and keeping task context out of command arguments."
+        decision_reference: ADR-0030
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Stored model and effort defaults were not consistently passed to native worker or organiser commands."
+    change: "Mapped role preferences at the adapter boundary and added tests for Codex, Claude Code, and Cline/ClinePass argument translation."
+  - finding: "The installed-provider UI could select only a ticket worker and required a raw advanced bridge for an orchestrator."
+    change: "Added independent one-click provider actions and safe native planner profile creation for each role."
+  - finding: "A structured bridge could accept a preference it cannot reliably implement."
+    change: "Added role-specific save-time rejection while retaining provider-default bridge compatibility and legacy deserialization."
+verification:
+  commands:
+    - command: npm run test:coverage
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.82
+        statements: 85.68
+        functions: 83.74
+        branches: 82.29
+      - package_or_crate: src-tauri-rust
+        lines: 84.44
+        statements: 80.63
+        functions: 84.90
+        branches: 81.21
+    threshold_met: true
+exceptions: []

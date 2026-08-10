@@ -1,4 +1,4 @@
-import type { AgentProfile, AgentProfileKind } from "./types";
+import type { AgentProfile, AgentProfileKind, PlannerProfile } from "./types";
 
 export type AgentProfilePresentation = Readonly<{
   kind: AgentProfileKind;
@@ -60,6 +60,18 @@ export function defaultNativeAgentProfile(
   const presentation = agentProfilePresentation(kind);
   return {
     name: `Default ${presentation.label}`,
+    kind,
+    program: presentation.defaultProgram,
+    arguments: [],
+  };
+}
+
+export function defaultNativePlannerProfile(
+  kind: Exclude<AgentProfileKind, "structured_process">,
+): PlannerProfile {
+  const presentation = agentProfilePresentation(kind);
+  return {
+    name: `Default ${presentation.label} orchestrator`,
     kind,
     program: presentation.defaultProgram,
     arguments: [],

@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -10,7 +9,6 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -22,8 +20,13 @@ import {
 
 import {
   defaultNativeAgentProfile,
-  installationGuideFor,
+  defaultNativePlannerProfile,
 } from "./agentProfilePresentation";
+import {
+  AgentRolePreferences,
+  providerDefaultModel,
+} from "./AgentRolePreferences";
+import { InstalledProviderRoles } from "./InstalledProviderRoles";
 import type {
   AgentEffort,
   AgentModelPreference,
@@ -42,14 +45,11 @@ type ProjectAgentDefaultsFormProps = Readonly<{
   providerAvailability: readonly AgentProviderAvailability[];
   settings?: ProjectAgentSettings;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
+  onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   onSaveSettings: (request: SaveProjectAgentSettingsRequest) => Promise<void>;
 }>;
 
 const noSelection = "__none__";
-const providerDefaultModel: AgentModelPreference = {
-  kind: "provider_default",
-};
-
 export function ProjectAgentDefaultsForm({
   agentProfiles,
   boardId,
@@ -58,6 +58,7 @@ export function ProjectAgentDefaultsForm({
   providerAvailability,
   settings,
   onSaveAgentProfile,
+  onSavePlannerProfile,
   onSaveSettings,
 }: ProjectAgentDefaultsFormProps) {
   const [organiserName, setOrganiserName] = useState(noSelection);
@@ -85,11 +86,14 @@ export function ProjectAgentDefaultsForm({
     await saveDefaults(workerName);
   }
 
-  async function saveDefaults(nextWorkerName: string) {
+  async function saveDefaults(
+    nextWorkerName: string,
+    nextOrganiserName = organiserName,
+  ) {
     await onSaveSettings({
       boardId,
       organiser: organiserDefaults(
-        organiserName,
+        nextOrganiserName,
         organiserModel,
         organiserEffort,
       ),
@@ -114,6 +118,20 @@ export function ProjectAgentDefaultsForm({
     }
     setWorkerName(profile.name);
     await saveDefaults(profile.name);
+  }
+
+  async function useInstalledProviderForOrchestrator(
+    provider: AgentProviderAvailability,
+  ) {
+    if (!provider.installed) return;
+    const profile =
+      plannerProfiles.find(({ kind }) => kind === provider.kind) ??
+      defaultNativePlannerProfile(provider.kind);
+    if (!plannerProfiles.some(({ name }) => name === profile.name)) {
+      await onSavePlannerProfile(profile);
+    }
+    setOrganiserName(profile.name);
+    await saveDefaults(workerName, profile.name);
   }
 
   return (
@@ -156,7 +174,7 @@ export function ProjectAgentDefaultsForm({
               </SelectContent>
             </Select>
           </Field>
-          <RolePreferences
+          <AgentRolePreferences
             effort={organiserEffort}
             idPrefix="organiser"
             onEffortChange={setOrganiserEffort}
@@ -190,7 +208,7 @@ export function ProjectAgentDefaultsForm({
               </SelectContent>
             </Select>
           </Field>
-          <RolePreferences
+          <AgentRolePreferences
             effort={workerEffort}
             idPrefix="ticket-worker"
             onEffortChange={setWorkerEffort}
@@ -199,12 +217,15 @@ export function ProjectAgentDefaultsForm({
           />
         </FieldSet>
       </FieldGroup>
-      <InstalledProviders
+      <InstalledProviderRoles
         agentProfiles={agentProfiles}
         busy={busy}
+        plannerProfiles={plannerProfiles}
         providers={providerAvailability}
+        selectedOrganiserName={organiserName}
         selectedWorkerName={workerName}
-        onUse={useInstalledProvider}
+        onUseForOrchestrator={useInstalledProviderForOrchestrator}
+        onUseForWorker={useInstalledProvider}
       />
       <Button disabled={busy} type="submit">
         Save AI defaults
@@ -237,127 +258,4 @@ function modelPreference(model: AgentModelPreference): AgentModelPreference {
   if (model.kind === "provider_default") return model;
   const name = model.name.trim();
   return name.length === 0 ? providerDefaultModel : { kind: "named", name };
-}
-
-function RolePreferences({
-  effort,
-  idPrefix,
-  onEffortChange,
-  onModelChange,
-  model,
-}: Readonly<{
-  effort: AgentEffort;
-  idPrefix: string;
-  onEffortChange: (effort: AgentEffort) => void;
-  onModelChange: (model: AgentModelPreference) => void;
-  model: AgentModelPreference;
-}>) {
-  return (
-    <>
-      <Field>
-        <FieldLabel htmlFor={`${idPrefix}-model`}>
-          Model name (optional)
-        </FieldLabel>
-        <Input
-          autoComplete="off"
-          id={`${idPrefix}-model`}
-          name={`${idPrefix}-model`}
-          onChange={(event) =>
-            onModelChange(
-              event.target.value.trim().length === 0
-                ? providerDefaultModel
-                : { kind: "named", name: event.target.value },
-            )
-          }
-          value={model.kind === "named" ? model.name : ""}
-        />
-        <FieldDescription>
-          Leave this blank to use the provider default. Otherwise, enter a model
-          name supported by the selected AI connection.
-        </FieldDescription>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor={`${idPrefix}-effort`}>Effort</FieldLabel>
-        <Select onValueChange={onEffortChange} value={effort}>
-          <SelectTrigger id={`${idPrefix}-effort`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="provider_default">Provider default</SelectItem>
-              <SelectItem value="focused">Focused</SelectItem>
-              <SelectItem value="balanced">Balanced</SelectItem>
-              <SelectItem value="thorough">Thorough</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Field>
-    </>
-  );
-}
-
-function InstalledProviders({
-  agentProfiles,
-  busy,
-  providers,
-  selectedWorkerName,
-  onUse,
-}: Readonly<{
-  agentProfiles: readonly AgentProfile[];
-  busy: boolean;
-  providers: readonly AgentProviderAvailability[];
-  selectedWorkerName: string;
-  onUse: (provider: AgentProviderAvailability) => Promise<void>;
-}>) {
-  if (providers.length === 0) {
-    return <p className="field-hint">Checking available ticket workers…</p>;
-  }
-
-  return (
-    <section aria-labelledby="installed-workers-title">
-      <h4 id="installed-workers-title">Available on this computer</h4>
-      <ul aria-label="Available ticket workers" className="provider-list">
-        {providers.map((provider) => {
-          const selected = agentProfiles.some(
-            (profile) =>
-              profile.name === selectedWorkerName &&
-              profile.kind === provider.kind,
-          );
-          return (
-            <li key={provider.kind}>
-              <div>
-                <strong>{provider.label}</strong>
-                <p>{provider.installed ? "Ready to add" : "Install to add"}</p>
-              </div>
-              <div className="provider-actions">
-                <Badge variant={provider.installed ? "secondary" : "outline"}>
-                  {provider.installed ? "Installed" : "Not installed"}
-                </Badge>
-                {provider.installed ? (
-                  <Button
-                    disabled={busy}
-                    onClick={() => void onUse(provider)}
-                    type="button"
-                    variant={selected ? "default" : "outline"}
-                  >
-                    {selected ? "Chosen" : "Use as worker"}
-                  </Button>
-                ) : (
-                  <Button asChild variant="outline">
-                    <a
-                      href={installationGuideFor(provider.kind)}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      How to install
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
 }

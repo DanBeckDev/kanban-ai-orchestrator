@@ -12,6 +12,7 @@ use crate::orchestration::{
 fn profile(script: &str) -> PlannerProfile {
     PlannerProfile {
         name: "test planner".to_owned(),
+        kind: Default::default(),
         program: "sh".to_owned(),
         arguments: vec!["-c".to_owned(), script.to_owned()],
     }
@@ -91,6 +92,7 @@ fn rejects_invalid_goals_or_profile_process_failures_with_actionable_errors() {
     ));
     let unavailable_profile = PlannerProfile {
         name: "unavailable planner".to_owned(),
+        kind: Default::default(),
         program: "planner-command-that-does-not-exist".to_owned(),
         arguments: Vec::new(),
     };

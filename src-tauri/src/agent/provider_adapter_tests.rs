@@ -2,6 +2,7 @@ use super::{
     AgentAdapter, AgentProfile, AgentProfileKind, NativeProcessAdapter, NormalizedAgentEventKind,
     ProcessAgentDefinition, WorkerAgentAdapter, provider_adapter::native_definition,
 };
+use crate::domain::{AgentEffort, AgentModelPreference};
 
 fn profile(kind: AgentProfileKind, program: &str, arguments: Vec<&str>) -> AgentProfile {
     AgentProfile {
@@ -15,28 +16,22 @@ fn profile(kind: AgentProfileKind, program: &str, arguments: Vec<&str>) -> Agent
 #[test]
 fn native_profiles_own_their_protocol_and_safety_arguments() {
     let codex = native_definition(
-        profile(
-            AgentProfileKind::CodexCli,
-            "codex",
-            vec!["--model", "gpt-5"],
-        ),
+        profile(AgentProfileKind::CodexCli, "codex", Vec::new()),
         "execution-1",
+        &AgentModelPreference::Named("gpt-5".to_owned()),
+        AgentEffort::Thorough,
     );
     let claude = native_definition(
-        profile(
-            AgentProfileKind::ClaudeCode,
-            "claude",
-            vec!["--model", "sonnet"],
-        ),
+        profile(AgentProfileKind::ClaudeCode, "claude", Vec::new()),
         "execution-1",
+        &AgentModelPreference::Named("sonnet".to_owned()),
+        AgentEffort::Balanced,
     );
     let cline_pass = native_definition(
-        profile(
-            AgentProfileKind::ClinePassCli,
-            "cline",
-            vec!["--thinking", "high"],
-        ),
+        profile(AgentProfileKind::ClinePassCli, "cline", Vec::new()),
         "execution-1",
+        &AgentModelPreference::ProviderDefault,
+        AgentEffort::Focused,
     );
 
     assert_eq!(codex.name, "local-provider-execution-1");
@@ -49,6 +44,8 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "workspace-write",
             "--model",
             "gpt-5",
+            "--config",
+            "model_reasoning_effort=\"high\"",
             "-",
         ]
     );
@@ -64,6 +61,8 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "acceptEdits",
             "--model",
             "sonnet",
+            "--effort",
+            "medium",
         ]
     );
     assert_eq!(cline_pass.name, "local-provider-execution-1");
@@ -76,7 +75,7 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "--auto-approve",
             "true",
             "--thinking",
-            "high",
+            "low",
         ]
     );
 }
@@ -86,18 +85,26 @@ fn worker_adapter_selects_the_profile_protocol_at_the_runtime_boundary() {
     let structured = WorkerAgentAdapter::from_profile_for_execution(
         profile(AgentProfileKind::StructuredProcess, "provider", Vec::new()),
         "execution-1",
+        &AgentModelPreference::ProviderDefault,
+        AgentEffort::ProviderDefault,
     );
     let codex = WorkerAgentAdapter::from_profile_for_execution(
         profile(AgentProfileKind::CodexCli, "provider", Vec::new()),
         "execution-1",
+        &AgentModelPreference::ProviderDefault,
+        AgentEffort::ProviderDefault,
     );
     let claude = WorkerAgentAdapter::from_profile_for_execution(
         profile(AgentProfileKind::ClaudeCode, "provider", Vec::new()),
         "execution-1",
+        &AgentModelPreference::ProviderDefault,
+        AgentEffort::ProviderDefault,
     );
     let cline_pass = WorkerAgentAdapter::from_profile_for_execution(
         profile(AgentProfileKind::ClinePassCli, "provider", Vec::new()),
         "execution-1",
+        &AgentModelPreference::ProviderDefault,
+        AgentEffort::ProviderDefault,
     );
 
     assert!(matches!(structured, WorkerAgentAdapter::Structured(_)));

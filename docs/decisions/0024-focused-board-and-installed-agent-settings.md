@@ -55,6 +55,6 @@ removes configuration from the delivery surface rather than merely restyling it.
 - Provider discovery demonstrates executable presence only. It does not claim
   that an account is authenticated or that a provider is healthy; a task start
   still returns the actual actionable runtime result.
-- Native planner-provider parity and an accessible dependency graph remain
-  separate tracked work. This decision creates the clear settings and task-detail
-  boundaries those later slices need.
+- Native organiser-provider parity is recorded in ADR 0030. An accessible
+  dependency graph remains separate tracked work. This decision created the
+  clear settings and task-detail boundaries those later slices need.

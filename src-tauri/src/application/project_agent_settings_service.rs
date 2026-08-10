@@ -1,7 +1,8 @@
 use std::{error::Error, fmt};
 
 use crate::domain::{
-    AgentModelPreference, BoardId, OrganiserDefaults, ProjectAgentSettings, TicketWorkerDefaults,
+    AgentEffort, AgentModelPreference, BoardId, OrganiserDefaults, ProjectAgentSettings,
+    TicketWorkerDefaults,
 };
 
 use super::{BoardRepository, BoardService, BoardServiceError};
@@ -82,31 +83,62 @@ where
         ticket_worker: &Option<TicketWorkerDefaults>,
     ) -> Result<(), ProjectAgentSettingsError<Repository::Error>> {
         if let Some(organiser) = organiser {
-            let exists = self
+            let profile = self
                 .repository
                 .planner_profile(&organiser.planner_profile_name)
-                .map_err(ProjectAgentSettingsError::Repository)?
-                .is_some();
-            if !exists {
+                .map_err(ProjectAgentSettingsError::Repository)?;
+            let Some(profile) = profile else {
                 return Err(ProjectAgentSettingsError::OrganiserProfileNotFound {
                     profile_name: organiser.planner_profile_name.clone(),
                 });
-            }
+            };
+            ensure_profile_supports_preferences(
+                profile.kind,
+                &organiser.model,
+                organiser.effort,
+                &organiser.planner_profile_name,
+                "orchestrator",
+            )?;
         }
         if let Some(ticket_worker) = ticket_worker {
-            let exists = self
+            let profile = self
                 .repository
                 .agent_profile(&ticket_worker.agent_profile_name)
-                .map_err(ProjectAgentSettingsError::Repository)?
-                .is_some();
-            if !exists {
+                .map_err(ProjectAgentSettingsError::Repository)?;
+            let Some(profile) = profile else {
                 return Err(ProjectAgentSettingsError::TicketWorkerProfileNotFound {
                     profile_name: ticket_worker.agent_profile_name.clone(),
                 });
-            }
+            };
+            ensure_profile_supports_preferences(
+                profile.kind,
+                &ticket_worker.model,
+                ticket_worker.effort,
+                &ticket_worker.agent_profile_name,
+                "ticket worker",
+            )?;
         }
         Ok(())
     }
+}
+
+fn ensure_profile_supports_preferences<RepositoryError>(
+    kind: crate::agent::AgentProfileKind,
+    model: &AgentModelPreference,
+    effort: AgentEffort,
+    profile_name: &str,
+    role: &'static str,
+) -> Result<(), ProjectAgentSettingsError<RepositoryError>> {
+    if kind != crate::agent::AgentProfileKind::StructuredProcess
+        || matches!(model, AgentModelPreference::ProviderDefault)
+            && effort == AgentEffort::ProviderDefault
+    {
+        return Ok(());
+    }
+    Err(ProjectAgentSettingsError::PreferencesUnsupported {
+        profile_name: profile_name.to_owned(),
+        role,
+    })
 }
 
 fn validate_organiser<RepositoryError>(
@@ -158,12 +190,26 @@ fn validate_name<RepositoryError>(
 #[derive(Debug)]
 pub enum ProjectAgentSettingsError<RepositoryError> {
     Repository(RepositoryError),
-    BoardNotFound { board_id: BoardId },
-    MissingRequiredField { field: &'static str },
-    FieldContainsNull { field: &'static str },
+    BoardNotFound {
+        board_id: BoardId,
+    },
+    MissingRequiredField {
+        field: &'static str,
+    },
+    FieldContainsNull {
+        field: &'static str,
+    },
     ModelNameTooLong,
-    OrganiserProfileNotFound { profile_name: String },
-    TicketWorkerProfileNotFound { profile_name: String },
+    OrganiserProfileNotFound {
+        profile_name: String,
+    },
+    TicketWorkerProfileNotFound {
+        profile_name: String,
+    },
+    PreferencesUnsupported {
+        profile_name: String,
+        role: &'static str,
+    },
 }
 
 impl<RepositoryError> fmt::Display for ProjectAgentSettingsError<RepositoryError>
@@ -192,6 +238,10 @@ where
                     "ticket worker profile {profile_name} was not found"
                 )
             }
+            Self::PreferencesUnsupported { profile_name, role } => write!(
+                formatter,
+                "{role} profile {profile_name} cannot apply a model or effort preference; choose a native provider or use the provider defaults"
+            ),
         }
     }
 }
@@ -208,7 +258,8 @@ where
             | Self::FieldContainsNull { .. }
             | Self::ModelNameTooLong
             | Self::OrganiserProfileNotFound { .. }
-            | Self::TicketWorkerProfileNotFound { .. } => None,
+            | Self::TicketWorkerProfileNotFound { .. }
+            | Self::PreferencesUnsupported { .. } => None,
         }
     }
 }

@@ -106,6 +106,7 @@ fn rejects_invalid_profiles_unavailable_processes_and_excessive_context() {
     let repository = TempDir::new().expect("temporary repository should exist");
     let invalid_profile = PlannerProfile {
         name: " ".to_owned(),
+        kind: Default::default(),
         program: "sh".to_owned(),
         arguments: Vec::new(),
     };
@@ -115,6 +116,7 @@ fn rejects_invalid_profiles_unavailable_processes_and_excessive_context() {
     ));
     let unavailable_profile = PlannerProfile {
         name: "unavailable organiser".to_owned(),
+        kind: Default::default(),
         program: "organiser-command-that-does-not-exist".to_owned(),
         arguments: Vec::new(),
     };
@@ -249,6 +251,7 @@ fn explains_rejected_organiser_operations_without_echoing_process_output() {
 fn profile(script: &str) -> PlannerProfile {
     PlannerProfile {
         name: "test organiser".to_owned(),
+        kind: Default::default(),
         program: "sh".to_owned(),
         arguments: vec!["-c".to_owned(), script.to_owned()],
     }

@@ -52,6 +52,7 @@ mod tests {
     fn profile(name: &str, argument: &str) -> PlannerProfile {
         PlannerProfile {
             name: name.to_owned(),
+            kind: Default::default(),
             program: "planner-process".to_owned(),
             arguments: vec![argument.to_owned()],
         }

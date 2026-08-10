@@ -26,10 +26,12 @@ impl ExecutionRuntime {
     ) -> Result<crate::application::BoardSnapshot, ExecutionRuntimeError> {
         self.start_with_adapter(
             request,
-            |profile, execution_id| {
+            |profile, execution_id, model, effort| {
                 Box::new(WorkerAgentAdapter::from_profile_for_execution(
                     profile,
                     execution_id,
+                    model,
+                    effort,
                 ))
             },
             MonitorMode::Background,
@@ -42,7 +44,7 @@ impl ExecutionRuntime {
         request: StartExecutionRequest,
         adapter: LiveAgent,
     ) -> Result<crate::application::BoardSnapshot, ExecutionRuntimeError> {
-        self.start_with_adapter(request, move |_, _| adapter, MonitorMode::Synchronous)
+        self.start_with_adapter(request, move |_, _, _, _| adapter, MonitorMode::Synchronous)
     }
 
     fn start_with_adapter<F>(
@@ -52,7 +54,12 @@ impl ExecutionRuntime {
         monitor_mode: MonitorMode,
     ) -> Result<crate::application::BoardSnapshot, ExecutionRuntimeError>
     where
-        F: FnOnce(AgentProfile, &str) -> LiveAgent,
+        F: FnOnce(
+            AgentProfile,
+            &str,
+            &crate::domain::AgentModelPreference,
+            crate::domain::AgentEffort,
+        ) -> LiveAgent,
     {
         validate_start_request(&request)?;
         let _launch_gate = lock(&self.launch_gate, "execution launch gate")?;
@@ -86,7 +93,12 @@ impl ExecutionRuntime {
         .map_err(ExecutionRuntimeError::Preflight)?;
         self.record_pending_execution(&request, &assignment)?;
 
-        let mut adapter = adapter_factory(profile, &request.execution_id);
+        let mut adapter = adapter_factory(
+            profile,
+            &request.execution_id,
+            &work_item.work_item.assigned_agent_model,
+            work_item.work_item.assigned_agent_effort,
+        );
         let session = match adapter.start(preparation.request().clone()) {
             Ok(session) => session,
             Err(error) => {

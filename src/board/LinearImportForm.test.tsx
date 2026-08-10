@@ -29,7 +29,11 @@ describe("LinearImportForm", () => {
     render(
       <LinearImportForm
         busy={false}
-        connectionStatus={{ kind: "disconnected" }}
+        connectionStatus={{
+          kind: "connected",
+          expiresAt: "2026-08-10T12:00:00Z",
+          scopes: ["read", "comments:create"],
+        }}
         issues={[]}
         workItems={workItems}
         onImportBlocker={vi.fn().mockResolvedValue(undefined)}
@@ -50,9 +54,9 @@ describe("LinearImportForm", () => {
     fireEvent.change(within(form).getByLabelText("Linear issue URL"), {
       target: { value: "https://linear.app/example/issue/LIN-12" },
     });
-    fireEvent.change(within(form).getByLabelText("Connection mode"), {
-      target: { value: "linked_execution" },
-    });
+    fireEvent.click(
+      within(form).getByRole("radio", { name: "Linked execution" }),
+    );
     fireEvent.click(
       within(form).getByRole("button", { name: "Import Linear issue" }),
     );
@@ -106,5 +110,28 @@ describe("LinearImportForm", () => {
       "d290f1ee-6c54-4b01-90e6-d701748f0851",
     );
     expect(screen.queryByLabelText(/access token/i)).toBeNull();
+  });
+
+  it("keeps an unconnected import read-only and explains how to enable linked execution", () => {
+    render(
+      <LinearImportForm
+        busy={false}
+        connectionStatus={{ kind: "disconnected" }}
+        issues={[]}
+        workItems={workItems}
+        onImportBlocker={vi.fn().mockResolvedValue(undefined)}
+        onImportIssue={vi.fn().mockResolvedValue(undefined)}
+        onLoadIssues={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(
+      screen.getByRole("radio", { name: "Linked execution" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Read-only links never send data. Enable manually sent comments above to choose linked execution.",
+      ),
+    ).toBeVisible();
   });
 });

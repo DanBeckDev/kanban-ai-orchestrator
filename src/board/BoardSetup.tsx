@@ -331,6 +331,11 @@ export function BoardSetup({
                   You&apos;ll choose project agents and their defaults in
                   Settings after setup.
                 </p>
+                <p className="setup-reassurance">
+                  This board starts local-only. Later, Settings lets you choose
+                  read-only Linear links or linked execution with manually sent
+                  updates.
+                </p>
               </>
             )}
           </form>

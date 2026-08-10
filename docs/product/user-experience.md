@@ -139,6 +139,11 @@ configuration belongs under Advanced setup with an explanation of why it is
 needed. Imported issues and blockers retain provenance and still pass the same
 local cycle and dependency checks.
 
+Every board starts local-only and says so in setup and on the board home. A
+read-only Linear link can load and associate work but cannot send an update.
+Linked execution is a separate, explicit choice after narrowly scoped comment
+access has been granted; each public update still requires an explicit Send.
+
 ## Board workspace model
 
 ### Board home

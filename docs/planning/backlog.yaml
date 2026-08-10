@@ -1,6 +1,6 @@
 schema_version: 1
 project: Kanban AI Orchestrator
-last_updated: 2026-08-09
+last_updated: 2026-08-10
 
 # Status values: ready, in_progress, blocked, done.
 # A task starts only after all IDs in depends_on are done unless its notes record an
@@ -671,7 +671,7 @@ tasks:
   - id: LIN-004
     epic: LIN
     title: Productize the Linear connection entry experience
-    status: ready
+    status: done
     priority: P1
     depends_on: [UX-001, UX-008, LIN-001, LIN-002, LIN-003]
     acceptance_criteria:
@@ -680,7 +680,18 @@ tasks:
       - Board creation and board home clearly distinguish local-only, read-only Linear, and linked-execution modes before import or externally visible comment actions.
       - Connection errors, expired credentials, restricted scopes, conflicts, and uncertain delivery use concise recovery language and never imply that remote data was changed when it was not.
       - Tests retain OAuth state/PKCE/credential boundaries and cover mode-specific empty, connected, error, and reconnect UI states.
-    notes: A consumer-grade Linear entry path requires an explicit owner for the OAuth application, privacy notice, app registration, and credential-lifecycle support. Do not silently substitute a shared client configuration for the existing self-managed design.
+    notes: >-
+      Completed on 2026-08-10. A release-owned public client ID can now enable a
+      one-action, read-only Linear connection; an unconfigured build names that
+      limitation without blocking local work or pretending to own an OAuth app.
+      Self-managed OAuth is deliberately disclosed with fixed callback, scope,
+      credential-store, refresh, and revocation guidance. Durable board modes
+      now distinguish local-only, read-only, and linked execution, and narrow
+      comment permission is required before linked execution is available.
+      Async request ordering, connector failures, scope restrictions, conflicts,
+      and uncertain delivery have focused recovery tests. ADR 0029 records the
+      ownership boundary; the Clean Code receipt is
+      docs/quality/reviews/LIN-004-linear-connection-entry.yaml.
 
   - id: LIN-001
     epic: LIN

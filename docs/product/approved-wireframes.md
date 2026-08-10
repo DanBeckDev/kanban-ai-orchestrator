@@ -1,7 +1,7 @@
 # Approved wireframe specification
 
-- Status: Product-owner design direction accepted
-- Date: 2026-08-09
+- Status: Product-owner design direction accepted; interaction details confirmed
+- Date: 2026-08-10
 - Scope: setup, project agent configuration, planning, workflow, dependency, and task-detail views
 
 This specification translates the approved four-screen wireframe set and the
@@ -9,6 +9,13 @@ product-owner clarifications into implementation requirements. It is product
 direction, not usability research. Representative-build validation remains
 UX-007 because the current product is not yet sufficiently complete to test the
 intended end-to-end experience.
+
+The product owner confirmed the interaction details on 2026-08-10: GitHub
+selection means cloning locally; local selection means choosing an existing
+repository folder; role defaults include provider, model, and effort; the
+top-left menu switches board views; Manual mode permits direct task creation;
+ticket AI supports all ticket actions within existing authority; and dependency
+exploration is a dedicated view.
 
 ## Product interaction model
 

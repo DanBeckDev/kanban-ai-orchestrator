@@ -4,20 +4,74 @@ import { describe, expect, it, vi } from "vitest";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
 
 describe("LinearConnectionPanel", () => {
-  it("submits only the OAuth client configuration and explains the pending browser step", async () => {
-    const onConnect = vi.fn().mockResolvedValue(undefined);
-    const { rerender } = render(
+  it("keeps unavailable managed OAuth truthful and hides self-managed setup until requested", () => {
+    render(
       <LinearConnectionPanel
         busy={false}
+        productManagedConfiguration={undefined}
+        status={{ kind: "disconnected" }}
+        onConnect={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Managed Linear connection is not available in this build",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("OAuth client ID")).toBeNull();
+    expect(
+      screen.getByText(
+        "No Linear account is connected. Existing local links are unchanged; connect Linear to load issues or choose linked execution.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("connects with a product-managed client in one action", async () => {
+    const onConnect = vi.fn().mockResolvedValue(undefined);
+    render(
+      <LinearConnectionPanel
+        busy={false}
+        productManagedConfiguration={{
+          clientId: "linear-product-client",
+          redirectUri: "http://127.0.0.1:38471/linear/oauth/callback",
+        }}
         status={{ kind: "disconnected" }}
         onConnect={onConnect}
       />,
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Connect Linear" }));
+
+    await waitFor(() =>
+      expect(onConnect).toHaveBeenCalledWith({
+        clientId: "linear-product-client",
+        redirectUri: "http://127.0.0.1:38471/linear/oauth/callback",
+      }),
+    );
+    expect(screen.queryByLabelText("OAuth client ID")).toBeNull();
+  });
+
+  it("submits self-managed setup only after the user opens advanced setup", async () => {
+    const onConnect = vi.fn().mockResolvedValue(undefined);
+    render(
+      <LinearConnectionPanel
+        busy={false}
+        productManagedConfiguration={undefined}
+        status={{ kind: "disconnected" }}
+        onConnect={onConnect}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use a self-managed Linear app" }),
+    );
     fireEvent.change(screen.getByLabelText("OAuth client ID"), {
       target: { value: "linear-client-id" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Connect Linear" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect self-managed app" }),
+    );
 
     await waitFor(() =>
       expect(onConnect).toHaveBeenCalledWith({
@@ -25,24 +79,30 @@ describe("LinearConnectionPanel", () => {
         redirectUri: "http://127.0.0.1:38471/linear/oauth/callback",
       }),
     );
-    rerender(
-      <LinearConnectionPanel
-        busy={false}
-        status={{ kind: "awaiting_authorization" }}
-        onConnect={onConnect}
-      />,
+    expect(screen.getByLabelText("Callback URL")).toHaveValue(
+      "http://127.0.0.1:38471/linear/oauth/callback",
     );
     expect(
       screen.getByText(
-        "Finish connecting Linear in your browser. Return here when it is complete.",
+        /requests read access first, refreshes it only for an action/,
       ),
     ).toBeVisible();
+    expect(
+      screen.getByText(/revoke access in Linear at any time/),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Linear OAuth setup guide" }),
+    ).toHaveAttribute(
+      "href",
+      "https://linear.app/developers/oauth-2-0-authentication",
+    );
   });
 
-  it("explains the next connected Linear action without presenting a token input", () => {
+  it("explains the connected read-only next action without presenting a token input", () => {
     render(
       <LinearConnectionPanel
         busy={false}
+        productManagedConfiguration={undefined}
         status={{
           kind: "connected",
           expiresAt: "2026-08-09T12:00:00Z",
@@ -54,10 +114,13 @@ describe("LinearConnectionPanel", () => {
 
     expect(
       screen.getByText(
-        "Connected. You can now load Linear issues and choose what to share.",
+        "Linear is connected in read-only mode. You can load issues; Kanban will not send updates.",
       ),
     ).toBeVisible();
     expect(screen.queryByLabelText(/client secret|access token/i)).toBeNull();
+    expect(
+      screen.getByText(/Your existing connection remains available/),
+    ).toBeVisible();
   });
 
   it("offers narrowly scoped comment permission after a read-only connection", () => {
@@ -65,6 +128,7 @@ describe("LinearConnectionPanel", () => {
     render(
       <LinearConnectionPanel
         busy={false}
+        productManagedConfiguration={undefined}
         status={{
           kind: "connected",
           expiresAt: "2026-08-09T12:00:00Z",
@@ -84,10 +148,11 @@ describe("LinearConnectionPanel", () => {
     expect(onEnableCommentAccess).toHaveBeenCalledOnce();
   });
 
-  it("shows a connection failure and lets the user try again", () => {
+  it("explains how to recover from a connection failure", () => {
     render(
       <LinearConnectionPanel
         busy={false}
+        productManagedConfiguration={undefined}
         status={{ kind: "failed", message: "Authorization timed out" }}
         onConnect={vi.fn().mockResolvedValue(undefined)}
       />,
@@ -95,11 +160,8 @@ describe("LinearConnectionPanel", () => {
 
     expect(
       screen.getByText(
-        "Kanban could not connect Linear. Check the app setup, then try again.",
+        "Kanban could not connect Linear. Reopen setup, check the app details, then connect again.",
       ),
     ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "Connect Linear" }),
-    ).toBeEnabled();
   });
 });

@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { LinearSyncPanel } from "./LinearSyncPanel";
 import { snapshot, workItem } from "./BoardWorkspace.test.fixtures";
 
+const connectedWithCommentAccess = {
+  kind: "connected" as const,
+  expiresAt: "2026-08-10T12:00:00Z",
+  scopes: ["read", "comments:create"],
+};
+
 function linkedSnapshot() {
   return {
     ...snapshot([workItem("task-1")]),
@@ -28,6 +34,7 @@ describe("LinearSyncPanel", () => {
     render(
       <LinearSyncPanel
         busy={false}
+        connectionStatus={connectedWithCommentAccess}
         snapshot={linkedSnapshot()}
         onDeliver={vi.fn().mockResolvedValue(undefined)}
         onQueue={onQueue}
@@ -77,6 +84,7 @@ describe("LinearSyncPanel", () => {
     render(
       <LinearSyncPanel
         busy={false}
+        connectionStatus={connectedWithCommentAccess}
         snapshot={board}
         onDeliver={vi.fn().mockResolvedValue(undefined)}
         onQueue={vi.fn().mockResolvedValue(undefined)}
@@ -94,6 +102,11 @@ describe("LinearSyncPanel", () => {
     expect(
       within(reconciliation).getByText(/needs resolution/),
     ).toBeInTheDocument();
+    expect(
+      within(reconciliation).getByText(
+        "Choose which value to keep outside this view, then refresh shared fields again. Kanban has not overwritten either value.",
+      ),
+    ).toBeVisible();
   });
 
   it("refreshes one selected linked issue through the explicit sync command", () => {
@@ -101,6 +114,7 @@ describe("LinearSyncPanel", () => {
     render(
       <LinearSyncPanel
         busy={false}
+        connectionStatus={connectedWithCommentAccess}
         snapshot={linkedSnapshot()}
         onDeliver={vi.fn().mockResolvedValue(undefined)}
         onQueue={vi.fn().mockResolvedValue(undefined)}
@@ -143,6 +157,7 @@ describe("LinearSyncPanel", () => {
     render(
       <LinearSyncPanel
         busy={false}
+        connectionStatus={connectedWithCommentAccess}
         snapshot={board}
         onDeliver={onDeliver}
         onQueue={vi.fn().mockResolvedValue(undefined)}
@@ -154,7 +169,31 @@ describe("LinearSyncPanel", () => {
 
     expect(onDeliver).toHaveBeenCalledWith("outbox-1");
     expect(
-      screen.getByText(/will not retry automatically/),
+      screen.getByText(
+        /Check Linear before deciding whether to send a new update/,
+      ),
     ).toBeInTheDocument();
+  });
+
+  it("does not offer a comment form when comment scope is unavailable", () => {
+    render(
+      <LinearSyncPanel
+        busy={false}
+        connectionStatus={{
+          kind: "connected",
+          expiresAt: "2026-08-10T12:00:00Z",
+          scopes: ["read"],
+        }}
+        snapshot={linkedSnapshot()}
+        onDeliver={vi.fn().mockResolvedValue(undefined)}
+        onQueue={vi.fn().mockResolvedValue(undefined)}
+        onRefresh={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("form", { name: "Queue public Linear comment" }),
+    ).toBeNull();
+    expect(screen.getByText("Comments are not enabled")).toBeVisible();
   });
 });

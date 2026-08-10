@@ -63,6 +63,11 @@ describe("BoardSetup", () => {
         "Kanban will prepare a separate workspace for each task.",
       ),
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        "This board starts local-only. Later, Settings lets you choose read-only Linear links or linked execution with manually sent updates.",
+      ),
+    ).toBeVisible();
     expect(screen.queryByText("Policy: Standard")).not.toBeInTheDocument();
     expect(screen.queryByText("Base branch")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Set up workspace" }));

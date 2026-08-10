@@ -1,0 +1,116 @@
+work_item: LIN-004
+scope:
+  - "A truthful, product-managed Linear connection path with a deliberately disclosed self-managed OAuth route."
+  - "Explicit local-only, read-only, and linked-execution board modes with safe comment, conflict, and delivery recovery."
+  - "Asynchronous connector-state isolation from the board workspace, including stale-response protection."
+source_structure:
+  reviewed_files:
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 172
+      responsibilities: "Composes the scoped settings views and supplies durable board context to Linear surfaces."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.test.tsx
+      meaningful_lines: 193
+      responsibilities: "Verifies local workspace setup, cloning recovery, and initial Linear-mode expectations."
+      decision: kept cohesive
+    - path: src/board/BoardSetup.tsx
+      meaningful_lines: 367
+      responsibilities: "Guides safe repository selection or cloning and creates a local board."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 343
+      responsibilities: "Coordinates board views and concise board-header context without owning connector commands."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.linear.test.tsx
+      meaningful_lines: 114
+      responsibilities: "Exercises board-level Linear connection, issue-loading, failure, and reconnect journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 346
+      responsibilities: "Loads board context and composes presentation with typed board operations."
+      decision: kept cohesive
+    - path: src/board/LinearBoardModeNotice.tsx
+      meaningful_lines: 31
+      responsibilities: "Explains the durable board-to-Linear access mode in Settings."
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.test.tsx
+      meaningful_lines: 151
+      responsibilities: "Verifies managed availability, advanced OAuth disclosure, least privilege, and recovery copy."
+      decision: kept cohesive
+    - path: src/board/LinearConnectionPanel.tsx
+      meaningful_lines: 271
+      responsibilities: "Presents managed and self-managed connection routes plus connection-state actions."
+      decision: kept cohesive
+    - path: src/board/LinearImportForm.test.tsx
+      meaningful_lines: 128
+      responsibilities: "Verifies issue import and the comment-scope gate for linked execution."
+      decision: kept cohesive
+    - path: src/board/LinearImportForm.tsx
+      meaningful_lines: 330
+      responsibilities: "Captures issue and blocker imports while enforcing the selected connection mode."
+      decision: kept cohesive
+    - path: src/board/LinearSyncPanel.test.tsx
+      meaningful_lines: 183
+      responsibilities: "Verifies comment authorization, conflict recovery, and uncertain-delivery guidance."
+      decision: kept cohesive
+    - path: src/board/LinearSyncPanel.tsx
+      meaningful_lines: 237
+      responsibilities: "Presents deliberate comment delivery and non-destructive shared-field reconciliation."
+      decision: kept cohesive
+    - path: src/board/linearConnectionPresentation.test.ts
+      meaningful_lines: 65
+      responsibilities: "Verifies pure managed-configuration, durable-mode, and comment-scope presentation rules."
+      decision: kept cohesive
+    - path: src/board/linearConnectionPresentation.ts
+      meaningful_lines: 74
+      responsibilities: "Maps immutable connection facts into safe Linear mode and status presentation."
+      decision: kept cohesive
+    - path: src/board/useLinearBoardConnection.test.tsx
+      meaningful_lines: 112
+      responsibilities: "Verifies stale connection-status and issue-list responses cannot replace newer user intent."
+      decision: kept cohesive
+    - path: src/board/useLinearBoardConnection.ts
+      meaningful_lines: 137
+      responsibilities: "Owns asynchronous Linear UI state and delegates typed connector commands through the gateway."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T02:54:08Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The Linear hook coordinates connection status, assigned issues, and connector commands."
+        resolution: accepted
+        rationale: "These operations share one user-facing connector actor, one busy/error boundary, and request-order protection; splitting them would duplicate invalidation logic and blur the gateway boundary."
+        decision_reference: ADR-0029
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "BoardWorkspace had accumulated Linear-specific state and asynchronous command details beyond its board-composition responsibility."
+    change: "Extracted the cohesive useLinearBoardConnection hook, returning BoardWorkspace to a focused composition boundary."
+  - finding: "Older status or assigned-issue responses could overwrite a newer connection or load request."
+    change: "Added monotonic request identifiers with focused out-of-order-response tests."
+  - finding: "Disconnected copy could call a board local-only even when it retained existing local Linear links."
+    change: "Made unavailable and disconnected guidance describe only verified state, preserving existing links and naming the next action."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: node scripts/check-code-structure.mjs --all
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.72
+        statements: 85.72
+        functions: 83.84
+        branches: 82.13
+      - package_or_crate: src-tauri-rust
+        lines: 84.06
+        statements: 80.32
+        functions: 84.45
+        branches: 81.01
+    threshold_met: true
+exceptions: []

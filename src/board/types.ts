@@ -311,6 +311,57 @@ export type StartExecutionRequest = Readonly<{
   executionRole: ExecutionRole;
 }>;
 
+export type BoardSupervisionMode = "manual" | "autonomous";
+
+export type SupervisionAction =
+  | "prepare_work"
+  | "make_work_ready"
+  | "start_work"
+  | "retry_work"
+  | "return_for_correction";
+
+export type SupervisionPolicyResult = "not_required" | "allowed" | "denied";
+
+export type SupervisionDecisionOutcome =
+  | "pending"
+  | "executed"
+  | "recommended_for_approval"
+  | "denied"
+  | "stale"
+  | "paused"
+  | "recovered";
+
+export type BoardSupervision = Readonly<{
+  boardId: string;
+  mode: BoardSupervisionMode;
+  organiser: OrganiserDefaults;
+  ticketWorker: TicketWorkerDefaults;
+  limits: Readonly<{
+    maxParallelWorkItems: number;
+    maxRetriesPerWorkItem: number;
+  }>;
+  permittedActions: readonly SupervisionAction[];
+  configuredBy: string;
+  configuredAt: string;
+  pausedBy?: string;
+  pausedAt?: string;
+  revision: number;
+}>;
+
+export type SupervisionDecision = Readonly<{
+  id: string;
+  boardId: string;
+  workItemId?: string;
+  organiserProfileName: string;
+  action: SupervisionAction;
+  recommendation: string;
+  rationale: string;
+  policyResult: SupervisionPolicyResult;
+  outcome: SupervisionDecisionOutcome;
+  recordedAt: string;
+  resolvedAt?: string;
+}>;
+
 export type RecordReviewCheckRequest = Readonly<{
   evidenceId: string;
   workItemId: string;

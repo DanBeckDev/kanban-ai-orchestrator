@@ -23,7 +23,9 @@ impl ExecutionRuntime {
                 reason: reason.to_owned(),
             },
         };
-        let _ = self.record_event(execution_id, event);
+        if self.record_event(execution_id, event).is_ok() {
+            self.coordinate_after_execution(&execution.work_item_id);
+        }
     }
 
     pub(crate) fn fail_pending_execution(&self, execution_id: &str, reason: &str) {

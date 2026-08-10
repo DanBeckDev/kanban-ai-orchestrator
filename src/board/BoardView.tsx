@@ -18,6 +18,8 @@ import type {
   AgentProviderAvailability,
   BoardPlan,
   BoardSnapshot,
+  BoardSupervision,
+  BoardSupervisionMode,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
   ExecutionActivityPage,
@@ -35,6 +37,7 @@ import type {
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
+  SupervisionDecision,
   SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
   WorkItem,
@@ -46,6 +49,7 @@ type BoardViewProps = Readonly<{
   busy: boolean;
   agentProfiles: readonly AgentProfile[];
   projectAgentSettings?: ProjectAgentSettings;
+  boardSupervision?: BoardSupervision;
   providerAvailability: readonly AgentProviderAvailability[];
   plannerProfiles: readonly PlannerProfile[];
   boardPlan?: BoardPlan;
@@ -70,10 +74,9 @@ type BoardViewProps = Readonly<{
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
-  onCoordinateBoard: (
-    boardId: string,
-    agentProfileName: string,
-  ) => Promise<void>;
+  supervisionDecisions: readonly SupervisionDecision[];
+  onConfigureBoardSupervision: (mode: BoardSupervisionMode) => Promise<void>;
+  onCoordinateBoard: (boardId: string) => Promise<void>;
   onStartExecution: (request: StartExecutionRequest) => Promise<void>;
   onStopExecution: (executionId: string) => Promise<void>;
   onLoadExecutionActivity: (
@@ -94,6 +97,7 @@ export function BoardView({
   busy,
   agentProfiles,
   projectAgentSettings,
+  boardSupervision,
   providerAvailability,
   plannerProfiles,
   boardPlan,
@@ -117,6 +121,8 @@ export function BoardView({
   onSaveProjectAgentSettings,
   onSavePlannerProfile,
   onCoordinateBoard,
+  supervisionDecisions,
+  onConfigureBoardSupervision,
   onStartExecution,
   onStopExecution,
   onLoadExecutionActivity,
@@ -171,14 +177,18 @@ export function BoardView({
       {surface === "workflow" && (
         <>
           <BoardAutomation
-            defaultAgentProfileName={
-              projectAgentSettings?.ticketWorker?.agentProfileName
-            }
-            hasDefaultAgent={agentProfiles.some(
-              ({ name }) =>
-                name === projectAgentSettings?.ticketWorker?.agentProfileName,
-            )}
             snapshot={snapshot}
+            supervision={boardSupervision}
+            decisions={supervisionDecisions}
+            hasConfiguredRoles={
+              projectAgentSettings?.organiser !== undefined &&
+              projectAgentSettings.ticketWorker !== undefined &&
+              agentProfiles.some(
+                ({ name }) =>
+                  name === projectAgentSettings.ticketWorker?.agentProfileName,
+              )
+            }
+            onConfigure={onConfigureBoardSupervision}
             onCoordinate={onCoordinateBoard}
           />
           <BoardCanvas

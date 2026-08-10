@@ -1,23 +1,15 @@
-use std::{
-    error::Error,
-    fmt,
-    io::{Read, Write},
-    path::Path,
-    process::{Child, ChildStdout, Command, ExitStatus, Stdio},
-    sync::mpsc,
-    thread,
-    time::{Duration, Instant},
-};
+use std::{error::Error, fmt, path::Path, time::Duration};
 
 use serde::Serialize;
 
 use super::{
     MAX_PLANNER_GOAL_BYTES, PlanDraft, PlanDraftError, PlannerProfile, PlannerProfileError,
+    bounded_process::{
+        BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES, run_direct_json_process,
+    },
 };
 
-const MAX_PLANNER_OUTPUT_BYTES: u64 = 65_536;
 const MAX_PLANNER_RUNTIME: Duration = Duration::from_secs(45);
-const PROCESS_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 pub struct ProcessPlanGenerator;
 
@@ -42,7 +34,8 @@ impl ProcessPlanGenerator {
         validate_goal(goal)?;
         let input = serde_json::to_vec(&PlannerInput::new(goal))
             .map_err(ProcessPlanGenerationError::InputEncoding)?;
-        let output = run_planner_process(profile, repository_path, &input, max_runtime)?;
+        let output = run_direct_json_process(profile, repository_path, &input, max_runtime)
+            .map_err(map_process_error)?;
         parse_plan_draft(&output)
     }
 }
@@ -73,147 +66,6 @@ fn validate_goal(goal: &str) -> Result<(), ProcessPlanGenerationError> {
     }
 }
 
-fn run_planner_process(
-    profile: &PlannerProfile,
-    repository_path: &Path,
-    input: &[u8],
-    max_runtime: Duration,
-) -> Result<Vec<u8>, ProcessPlanGenerationError> {
-    let mut child = Command::new(&profile.program)
-        .args(&profile.arguments)
-        .current_dir(repository_path)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|_| ProcessPlanGenerationError::ProcessLaunch {
-            profile_name: profile.name.clone(),
-        })?;
-    write_input(&mut child, input)?;
-    let stdout = take_stdout(&mut child)?;
-    read_process_output(&mut child, stdout, max_runtime)
-}
-
-fn write_input(child: &mut Child, input: &[u8]) -> Result<(), ProcessPlanGenerationError> {
-    let Some(mut stdin) = child.stdin.take() else {
-        terminate(child);
-        return Err(ProcessPlanGenerationError::MissingStandardInput);
-    };
-    if stdin
-        .write_all(input)
-        .and_then(|()| stdin.write_all(b"\n"))
-        .is_err()
-    {
-        terminate(child);
-        return Err(ProcessPlanGenerationError::ProcessInput);
-    }
-    Ok(())
-}
-
-fn take_stdout(child: &mut Child) -> Result<ChildStdout, ProcessPlanGenerationError> {
-    child.stdout.take().ok_or_else(|| {
-        terminate(child);
-        ProcessPlanGenerationError::MissingStandardOutput
-    })
-}
-
-fn read_process_output(
-    child: &mut Child,
-    stdout: ChildStdout,
-    max_runtime: Duration,
-) -> Result<Vec<u8>, ProcessPlanGenerationError> {
-    let (sender, receiver) = mpsc::channel();
-    if thread::Builder::new()
-        .name("planner-output".to_owned())
-        .spawn(move || {
-            let _ = sender.send(read_bounded_output(stdout));
-        })
-        .is_err()
-    {
-        terminate(child);
-        return Err(ProcessPlanGenerationError::ProcessReader);
-    }
-    wait_for_process_output(child, receiver, max_runtime)
-}
-
-fn wait_for_process_output(
-    child: &mut Child,
-    receiver: mpsc::Receiver<Result<Vec<u8>, ProcessPlanGenerationError>>,
-    max_runtime: Duration,
-) -> Result<Vec<u8>, ProcessPlanGenerationError> {
-    let deadline = Instant::now() + max_runtime;
-    let mut output = None;
-    loop {
-        if output.is_none() {
-            match receiver.try_recv() {
-                Ok(Ok(result)) => output = Some(result),
-                Ok(Err(error)) => {
-                    terminate(child);
-                    return Err(error);
-                }
-                Err(mpsc::TryRecvError::Disconnected) => {
-                    terminate(child);
-                    return Err(ProcessPlanGenerationError::ProcessOutput);
-                }
-                Err(mpsc::TryRecvError::Empty) => {}
-            }
-        }
-        let status = match child.try_wait() {
-            Ok(status) => status,
-            Err(_) => {
-                terminate(child);
-                return Err(ProcessPlanGenerationError::ProcessWait);
-            }
-        };
-        if let Some(status) = status {
-            return completed_output(output, receiver, deadline, status);
-        }
-        if Instant::now() >= deadline {
-            terminate(child);
-            return Err(ProcessPlanGenerationError::ProcessTimedOut);
-        }
-        thread::sleep(PROCESS_POLL_INTERVAL);
-    }
-}
-
-fn completed_output(
-    output: Option<Vec<u8>>,
-    receiver: mpsc::Receiver<Result<Vec<u8>, ProcessPlanGenerationError>>,
-    deadline: Instant,
-    status: ExitStatus,
-) -> Result<Vec<u8>, ProcessPlanGenerationError> {
-    if !status.success() {
-        return Err(ProcessPlanGenerationError::ProcessExited {
-            exit_code: status.code(),
-        });
-    }
-    if let Some(output) = output {
-        return Ok(output);
-    }
-    let remaining = deadline.saturating_duration_since(Instant::now());
-    receiver
-        .recv_timeout(remaining)
-        .map_err(|_| ProcessPlanGenerationError::ProcessOutput)?
-}
-
-fn terminate(child: &mut Child) {
-    let _ = child.kill();
-    let _ = child.wait();
-}
-
-fn read_bounded_output(stdout: impl Read) -> Result<Vec<u8>, ProcessPlanGenerationError> {
-    let mut output = Vec::new();
-    stdout
-        .take(MAX_PLANNER_OUTPUT_BYTES + 1)
-        .read_to_end(&mut output)
-        .map_err(|_| ProcessPlanGenerationError::ProcessOutput)?;
-    if output.len() as u64 > MAX_PLANNER_OUTPUT_BYTES {
-        Err(ProcessPlanGenerationError::OutputTooLarge)
-    } else {
-        Ok(output)
-    }
-}
-
 fn parse_plan_draft(output: &[u8]) -> Result<PlanDraft, ProcessPlanGenerationError> {
     let draft: PlanDraft =
         serde_json::from_slice(output).map_err(|_| ProcessPlanGenerationError::InvalidOutput)?;
@@ -221,6 +73,29 @@ fn parse_plan_draft(output: &[u8]) -> Result<PlanDraft, ProcessPlanGenerationErr
         .validate()
         .map_err(ProcessPlanGenerationError::InvalidDraft)?;
     Ok(draft)
+}
+
+fn map_process_error(error: BoundedProcessError) -> ProcessPlanGenerationError {
+    match error {
+        BoundedProcessError::Launch { profile_name } => {
+            ProcessPlanGenerationError::ProcessLaunch { profile_name }
+        }
+        BoundedProcessError::MissingStandardInput => {
+            ProcessPlanGenerationError::MissingStandardInput
+        }
+        BoundedProcessError::Input => ProcessPlanGenerationError::ProcessInput,
+        BoundedProcessError::MissingStandardOutput => {
+            ProcessPlanGenerationError::MissingStandardOutput
+        }
+        BoundedProcessError::Reader => ProcessPlanGenerationError::ProcessReader,
+        BoundedProcessError::Output => ProcessPlanGenerationError::ProcessOutput,
+        BoundedProcessError::OutputTooLarge => ProcessPlanGenerationError::OutputTooLarge,
+        BoundedProcessError::Wait => ProcessPlanGenerationError::ProcessWait,
+        BoundedProcessError::TimedOut => ProcessPlanGenerationError::ProcessTimedOut,
+        BoundedProcessError::Exited { exit_code } => {
+            ProcessPlanGenerationError::ProcessExited { exit_code }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -271,7 +146,7 @@ impl fmt::Display for ProcessPlanGenerationError {
             Self::ProcessOutput => formatter.write_str("could not read the planner response"),
             Self::OutputTooLarge => write!(
                 formatter,
-                "planner response exceeds the {MAX_PLANNER_OUTPUT_BYTES}-byte limit"
+                "planner response exceeds the {MAX_DIRECT_PROCESS_OUTPUT_BYTES}-byte limit"
             ),
             Self::ProcessWait => formatter.write_str("could not wait for the planner process"),
             Self::ProcessTimedOut => {

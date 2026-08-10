@@ -1,8 +1,8 @@
 use crate::domain::{
-    Board, BoardId, ConnectorOutboxItem, ConnectorOutboxItemId, ConnectorReconciliationItem,
-    CreateWorkItemCommand, Dependency, Evidence, Execution, ExternalLink, ExternalLinkId,
-    MaterializedWorkItem, Project, ProjectAgentSettings, RecordedWorkItemEvent,
-    TransitionWorkItemCommand, WorkItemId,
+    Board, BoardId, BoardSupervision, ConnectorOutboxItem, ConnectorOutboxItemId,
+    ConnectorReconciliationItem, CreateWorkItemCommand, Dependency, Evidence, Execution,
+    ExternalLink, ExternalLinkId, MaterializedWorkItem, Project, ProjectAgentSettings,
+    RecordedWorkItemEvent, SupervisionDecision, TransitionWorkItemCommand, WorkItemId,
 };
 use crate::{
     agent::AgentProfile,
@@ -259,6 +259,43 @@ impl BoardRepository for SqliteEventStore {
         project_id: &crate::domain::ProjectId,
     ) -> Result<Option<ProjectAgentSettings>, Self::Error> {
         SqliteEventStore::project_agent_settings(self, project_id).map_err(BoardStoreError::from)
+    }
+
+    fn save_board_supervision(
+        &mut self,
+        supervision: BoardSupervision,
+    ) -> Result<BoardSupervision, Self::Error> {
+        SqliteEventStore::save_board_supervision(self, supervision).map_err(BoardStoreError::from)
+    }
+
+    fn board_supervision(
+        &self,
+        board_id: &BoardId,
+    ) -> Result<Option<BoardSupervision>, Self::Error> {
+        SqliteEventStore::board_supervision(self, board_id).map_err(BoardStoreError::from)
+    }
+
+    fn record_supervision_decision(
+        &mut self,
+        decision: SupervisionDecision,
+    ) -> Result<SupervisionDecision, Self::Error> {
+        SqliteEventStore::record_supervision_decision(self, decision).map_err(BoardStoreError::from)
+    }
+
+    fn resolve_supervision_decision(
+        &mut self,
+        decision: SupervisionDecision,
+    ) -> Result<SupervisionDecision, Self::Error> {
+        SqliteEventStore::resolve_supervision_decision(self, decision)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn supervision_decisions_for_board(
+        &self,
+        board_id: &BoardId,
+    ) -> Result<Vec<SupervisionDecision>, Self::Error> {
+        SqliteEventStore::supervision_decisions_for_board(self, board_id)
+            .map_err(BoardStoreError::from)
     }
 
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error> {

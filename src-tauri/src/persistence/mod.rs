@@ -3,6 +3,7 @@ mod board_library_store;
 mod board_repository;
 pub(crate) mod board_store;
 mod board_store_error;
+mod board_supervision_store;
 mod connector_sync_store;
 mod event_store_error;
 mod event_store_policy;
@@ -49,3 +50,6 @@ mod evidence_transition_store_tests;
 
 #[cfg(test)]
 mod connector_sync_store_tests;
+
+#[cfg(test)]
+mod board_supervision_store_tests;

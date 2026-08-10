@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef } from "react";
 import { BotIcon, CirclePauseIcon, UserRoundCheckIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -13,73 +12,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-import {
-  type CoordinationMode,
-  useCoordinationMode,
-} from "./orchestrationPreferences";
-import type { BoardSnapshot } from "./types";
+import type {
+  BoardSnapshot,
+  BoardSupervision,
+  BoardSupervisionMode,
+  SupervisionDecision,
+} from "./types";
 
 type BoardAutomationProps = Readonly<{
-  defaultAgentProfileName?: string;
-  hasDefaultAgent: boolean;
   snapshot: BoardSnapshot;
-  onCoordinate: (boardId: string, agentProfileName: string) => Promise<void>;
+  supervision?: BoardSupervision;
+  decisions: readonly SupervisionDecision[];
+  hasConfiguredRoles: boolean;
+  onConfigure: (mode: BoardSupervisionMode) => Promise<void>;
+  onCoordinate: (boardId: string) => Promise<void>;
 }>;
 
 export function BoardAutomation({
-  defaultAgentProfileName,
-  hasDefaultAgent,
   snapshot,
+  supervision,
+  decisions = [],
+  hasConfiguredRoles,
+  onConfigure,
   onCoordinate,
 }: BoardAutomationProps) {
-  const { mode, selectMode } = useCoordinationMode(snapshot.board.id);
-  const lastRequestedSignature = useRef<string>();
-  const eligibleWorkSignature = useMemo(
-    () =>
-      snapshot.workItems
-        .filter(({ workItem }) =>
-          ["inbox", "planned", "ready"].includes(workItem.state),
-        )
-        .map(({ workItem }) => `${workItem.id}:${workItem.state}`)
-        .join(","),
-    [snapshot.workItems],
-  );
-  const canCoordinate =
-    defaultAgentProfileName !== undefined && hasDefaultAgent;
-  const isAutonomous = mode === "autonomous" && canCoordinate;
+  const mode = supervision?.mode ?? "manual";
+  const isAutonomous = mode === "autonomous";
+  const latestDecision = decisions[0];
 
-  useEffect(() => {
-    if (!canCoordinate && mode === "autonomous") selectMode("manual");
-  }, [canCoordinate, mode, selectMode]);
-
-  useEffect(() => {
-    if (
-      mode !== "autonomous" ||
-      defaultAgentProfileName === undefined ||
-      !hasDefaultAgent ||
-      eligibleWorkSignature === ""
-    ) {
-      return;
+  async function chooseMode(value: string) {
+    if (isBoardSupervisionMode(value)) {
+      await onConfigure(value);
+      if (value === "autonomous") await onCoordinate(snapshot.board.id);
     }
-    const signature = `${snapshot.board.id}:${defaultAgentProfileName}:${eligibleWorkSignature}`;
-    if (lastRequestedSignature.current === signature) return;
-    lastRequestedSignature.current = signature;
-    void onCoordinate(snapshot.board.id, defaultAgentProfileName);
-  }, [
-    defaultAgentProfileName,
-    eligibleWorkSignature,
-    hasDefaultAgent,
-    mode,
-    onCoordinate,
-    snapshot.board.id,
-  ]);
-
-  useEffect(() => {
-    if (mode === "manual") lastRequestedSignature.current = undefined;
-  }, [mode]);
-
-  function chooseMode(value: string) {
-    if (isCoordinationMode(value)) selectMode(value);
   }
 
   return (
@@ -93,7 +58,7 @@ export function BoardAutomation({
       <CardContent className="board-automation-content">
         <ToggleGroup
           aria-label="How Kanban moves work"
-          onValueChange={chooseMode}
+          onValueChange={(value) => void chooseMode(value)}
           spacing={0}
           type="single"
           value={mode}
@@ -103,7 +68,7 @@ export function BoardAutomation({
             <UserRoundCheckIcon data-icon="inline-start" />
             You approve actions
           </ToggleGroupItem>
-          <ToggleGroupItem disabled={!canCoordinate} value="autonomous">
+          <ToggleGroupItem disabled={!hasConfiguredRoles} value="autonomous">
             <BotIcon data-icon="inline-start" />
             Kanban coordinates
           </ToggleGroupItem>
@@ -114,13 +79,14 @@ export function BoardAutomation({
               <BotIcon aria-hidden="true" />
               <AlertTitle>Coordination is on</AlertTitle>
               <AlertDescription>
-                Kanban prepares tasks in dependency order and starts one ready
-                task at a time with <strong>{defaultAgentProfileName}</strong>.
-                Completed work always returns to Review.
+                Kanban can prepare dependency-ready work, start one worker, and
+                retry once. It never marks work done or performs external
+                actions. <strong>Pause automation</strong> takes effect in the
+                daemon immediately.
               </AlertDescription>
             </Alert>
             <Button
-              onClick={() => selectMode("manual")}
+              onClick={() => void onConfigure("manual")}
               type="button"
               variant="outline"
             >
@@ -131,16 +97,25 @@ export function BoardAutomation({
         ) : (
           <p className="board-automation-summary">
             <CirclePauseIcon aria-hidden="true" /> You decide when each task
-            starts. Kanban still shows what is blocked and ready.
+            starts. Ask Kanban for a recorded recommendation whenever you want.
           </p>
         )}
-        {!canCoordinate && (
+        {!isAutonomous && hasConfiguredRoles && (
+          <Button
+            onClick={() => void onCoordinate(snapshot.board.id)}
+            type="button"
+            variant="outline"
+          >
+            <BotIcon data-icon="inline-start" /> Ask Kanban what to do next
+          </Button>
+        )}
+        {!hasConfiguredRoles && (
           <Alert>
             <CirclePauseIcon aria-hidden="true" />
             <AlertTitle>Choose a task agent first</AlertTitle>
             <AlertDescription>
-              Select an installed agent in Settings before you turn on
-              coordination.
+              Select both an organiser and an installed ticket worker in
+              Settings before you turn on coordination.
             </AlertDescription>
           </Alert>
         )}
@@ -149,11 +124,25 @@ export function BoardAutomation({
           done or sends Linear updates here. Task agents retain the permissions
           configured for their own profile.
         </p>
+        {latestDecision && (
+          <Alert>
+            <BotIcon aria-hidden="true" />
+            <AlertTitle>Latest organiser decision</AlertTitle>
+            <AlertDescription>
+              {latestDecision.recommendation} {latestDecision.rationale} Result:{" "}
+              {decisionOutcome(latestDecision)}.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function isCoordinationMode(value: string): value is CoordinationMode {
+function isBoardSupervisionMode(value: string): value is BoardSupervisionMode {
   return value === "manual" || value === "autonomous";
+}
+
+function decisionOutcome(decision: SupervisionDecision): string {
+  return decision.outcome.replaceAll("_", " ");
 }

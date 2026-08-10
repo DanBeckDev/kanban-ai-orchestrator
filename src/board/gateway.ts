@@ -7,6 +7,8 @@ import type {
   BoardGateway,
   BoardPlan,
   BoardSnapshot,
+  BoardSupervision,
+  BoardSupervisionMode,
   ConfirmPlanRequest,
   CreateBoardRequest,
   CloneGitHubRepositoryRequest,
@@ -31,6 +33,7 @@ import type {
   QueueLinearCommentRequest,
   SaveProjectAgentSettingsRequest,
   StartExecutionRequest,
+  SupervisionDecision,
   TransitionWorkItemRequest,
 } from "./types";
 
@@ -114,11 +117,30 @@ export const tauriBoardGateway: BoardGateway = {
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
     return invoke("start_execution", { request });
   },
-  coordinateBoard(
+  configureBoardSupervision(
     boardId: string,
-    agentProfileName: string,
-  ): Promise<BoardSnapshot> {
-    return invoke("coordinate_board", { boardId, agentProfileName });
+    mode: BoardSupervisionMode,
+  ): Promise<BoardSupervision> {
+    return invoke("configure_board_supervision", { boardId, mode });
+  },
+  async boardSupervision(
+    boardId: string,
+  ): Promise<BoardSupervision | undefined> {
+    const supervision = await invoke<BoardSupervision | null>(
+      "board_supervision",
+      {
+        boardId,
+      },
+    );
+    return supervision ?? undefined;
+  },
+  supervisionDecisions(
+    boardId: string,
+  ): Promise<readonly SupervisionDecision[]> {
+    return invoke("supervision_decisions", { boardId });
+  },
+  coordinateBoard(boardId: string): Promise<BoardSnapshot> {
+    return invoke("coordinate_board", { boardId });
   },
   stopExecution(executionId: string): Promise<BoardSnapshot> {
     return invoke("stop_execution", { executionId });

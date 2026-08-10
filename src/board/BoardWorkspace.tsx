@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RepositoryPicker } from "./BoardSetup";
 import { BoardWorkspaceScreen } from "./BoardWorkspaceScreen";
 import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
-import { useBoardOperation } from "./useBoardOperation";
+import { errorMessage, useBoardOperation } from "./useBoardOperation";
 import { tauriBoardGateway } from "./gateway";
 import { selectCloneDestination, selectRepository } from "./repositoryPicker";
 import type {
@@ -11,6 +11,8 @@ import type {
   AgentProviderAvailability,
   BoardGateway,
   BoardLibraryEntry,
+  BoardSupervision,
+  BoardSupervisionMode,
   BoardPlan,
   BoardSnapshot,
   ConfirmPlanRequest,
@@ -30,6 +32,7 @@ import type {
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
   StartExecutionRequest,
+  SupervisionDecision,
   SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -58,6 +61,12 @@ export function BoardWorkspace({
   const [projectAgentSettings, setProjectAgentSettings] = useState<
     ProjectAgentSettings | undefined
   >();
+  const [boardSupervision, setBoardSupervision] = useState<
+    BoardSupervision | undefined
+  >();
+  const [supervisionDecisions, setSupervisionDecisions] = useState<
+    readonly SupervisionDecision[]
+  >([]);
   const [plannerProfiles, setPlannerProfiles] = useState<
     readonly PlannerProfile[]
   >([]);
@@ -199,8 +208,28 @@ export function BoardWorkspace({
     await run(() => gateway.startExecution(request));
   }
 
-  async function coordinateBoard(boardId: string, agentProfileName: string) {
-    await run(() => gateway.coordinateBoard(boardId, agentProfileName));
+  async function configureBoardSupervision(mode: BoardSupervisionMode) {
+    if (snapshot === undefined) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      setBoardSupervision(
+        await gateway.configureBoardSupervision(snapshot.board.id, mode),
+      );
+    } catch (operationError) {
+      setError(errorMessage(operationError));
+      throw operationError;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function coordinateBoard(boardId: string) {
+    await run(async () => {
+      const updatedSnapshot = await gateway.coordinateBoard(boardId);
+      setSupervisionDecisions(await gateway.supervisionDecisions(boardId));
+      return updatedSnapshot;
+    });
   }
 
   async function stopExecution(executionId: string) {
@@ -239,18 +268,30 @@ export function BoardWorkspace({
   }, [gateway]);
 
   async function loadBoardContext(boardId: string) {
-    const [profiles, planners, plan, providers, settings] = await Promise.all([
+    const [
+      profiles,
+      planners,
+      plan,
+      providers,
+      settings,
+      supervision,
+      decisions,
+    ] = await Promise.all([
       gateway.agentProfiles(),
       gateway.plannerProfiles(),
       gateway.boardPlan(boardId),
       gateway.agentProviderAvailability(),
       gateway.projectAgentSettings(boardId),
+      gateway.boardSupervision(boardId),
+      gateway.supervisionDecisions(boardId),
     ]);
     setAgentProfiles(profiles);
     setPlannerProfiles(planners);
     setBoardPlan(plan);
     setProviderAvailability(providers);
     setProjectAgentSettings(settings);
+    setBoardSupervision(supervision);
+    setSupervisionDecisions(decisions);
     setLinearIssues([]);
     await refreshLinearConnectionStatus();
   }
@@ -303,12 +344,6 @@ export function BoardWorkspace({
     }
   }
 
-  const loadExecutionActivity = useCallback(
-    (executionId: string, afterSequence?: number) =>
-      gateway.executionActivity(executionId, afterSequence),
-    [gateway],
-  );
-
   const boardLibraryLoadFailed = !snapshot && !boardLibrary && Boolean(error);
   useEffect(() => {
     void loadBoardLibrary();
@@ -332,6 +367,7 @@ export function BoardWorkspace({
             busy,
             agentProfiles,
             projectAgentSettings,
+            boardSupervision,
             providerAvailability,
             onAddDependency: addDependency,
             boardPlan,
@@ -353,9 +389,11 @@ export function BoardWorkspace({
             onSaveProjectAgentSettings: saveProjectAgentSettings,
             onSavePlannerProfile: savePlannerProfile,
             onCoordinateBoard: coordinateBoard,
+            supervisionDecisions,
+            onConfigureBoardSupervision: configureBoardSupervision,
             onStartExecution: startExecution,
             onStopExecution: stopExecution,
-            onLoadExecutionActivity: loadExecutionActivity,
+            onLoadExecutionActivity: gateway.executionActivity,
             onRecordReviewCheck: recordReviewCheck,
             onRecordReviewDecision: recordReviewDecision,
             onRecordCleanCodeReview: recordCleanCodeReview,
@@ -393,8 +431,4 @@ export function BoardWorkspace({
       {...activeBoardProps}
     />
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

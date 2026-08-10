@@ -6,6 +6,7 @@ mod policy;
 mod project;
 mod project_agent_settings;
 mod schema;
+mod ticket_effect;
 mod work_item;
 
 pub use board_supervision::{
@@ -26,8 +27,12 @@ pub use project_agent_settings::{
 pub use schema::{
     BoardId, CURRENT_SCHEMA_VERSION, ConnectorOutboxItemId, ConnectorReconciliationItemId,
     DependencyId, EvidenceId, ExecutionId, ExternalLinkId, PlanId, PolicyDecisionId, ProjectId,
-    SchemaMetadata, SchemaVersion, SupervisionDecisionId, VersionedSchema, WorkItemEventId,
-    WorkItemId,
+    SchemaMetadata, SchemaVersion, SupervisionDecisionId, TicketEffectId, VersionedSchema,
+    WorkItemEventId, WorkItemId,
+};
+pub use ticket_effect::{
+    TicketEffect, TicketEffectAction, TicketEffectOutcome, TicketEffectProposal,
+    TicketEffectResolution,
 };
 pub use work_item::{
     Dependency, DependencyKind, DependencySource, WorkItem, WorkItemBudget, WorkItemState,

@@ -26,6 +26,10 @@ mod supervision;
 mod supervision_recovery;
 #[path = "desktop_execution_runtime_supervision_selection.rs"]
 mod supervision_selection;
+#[path = "desktop_execution_runtime_ticket_effect.rs"]
+mod ticket_effect;
+#[path = "desktop_execution_runtime_ticket_effect_apply.rs"]
+mod ticket_effect_apply;
 
 #[cfg(test)]
 #[path = "desktop_execution_runtime_supervision_test_fixtures.rs"]
@@ -33,6 +37,15 @@ mod supervision_test_fixtures;
 #[cfg(test)]
 #[path = "desktop_execution_runtime_supervision_tests.rs"]
 mod supervision_tests;
+#[cfg(all(test, unix))]
+#[path = "desktop_execution_runtime_ticket_effect_action_tests.rs"]
+mod ticket_effect_action_tests;
+#[cfg(all(test, unix))]
+#[path = "desktop_execution_runtime_ticket_effect_rejection_tests.rs"]
+mod ticket_effect_rejection_tests;
+#[cfg(all(test, unix))]
+#[path = "desktop_execution_runtime_ticket_effect_tests.rs"]
+mod ticket_effect_tests;
 
 type LiveAgent = Box<dyn AgentAdapter + Send>;
 
@@ -42,6 +55,7 @@ pub(crate) struct ExecutionRuntime {
     pub(crate) workspace_root: PathBuf,
     launch_gate: Arc<Mutex<()>>,
     pub(crate) supervision_gate: Arc<Mutex<()>>,
+    pub(crate) ticket_effect_gate: Arc<Mutex<()>>,
     pub(crate) agents: Arc<Mutex<BTreeMap<String, LiveAgent>>>,
     activity_streams: Arc<Mutex<ExecutionActivityStreams>>,
     pub(crate) stop_requests: Arc<Mutex<BTreeSet<String>>>,
@@ -54,6 +68,7 @@ impl ExecutionRuntime {
             workspace_root,
             launch_gate: Arc::new(Mutex::new(())),
             supervision_gate: Arc::new(Mutex::new(())),
+            ticket_effect_gate: Arc::new(Mutex::new(())),
             agents: Arc::new(Mutex::new(BTreeMap::new())),
             activity_streams: Arc::new(Mutex::new(ExecutionActivityStreams::default())),
             stop_requests: Arc::new(Mutex::new(BTreeSet::new())),

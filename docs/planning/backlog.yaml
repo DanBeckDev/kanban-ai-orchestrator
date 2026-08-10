@@ -267,7 +267,7 @@ tasks:
   - id: ORCH-008
     epic: ORCH
     title: Turn ticket AI prompts into reviewable, daemon-owned task effects
-    status: ready
+    status: done
     priority: P0
     depends_on: [ORCH-006, UX-006]
     acceptance_criteria:
@@ -276,7 +276,14 @@ tasks:
       - The daemon persists the requested effect, rationale, policy result, and outcome while retaining the existing no-bypass boundaries for Done, review, policy, protected Git, and external actions.
       - Prompt I/O is bounded and redacted before persistence; task cards and snapshots expose only safe summaries, never raw transcripts, secrets, or unbounded payloads.
       - Daemon and UI tests cover every effect, rejection, confirmation, cancellation, restart, recovery, policy/budget denial, and the 80% coverage requirement.
-    notes: Added 2026-08-09 from the approved wireframe clarification that ticket AI should support all task-relevant requests. Do not substitute a UI-only composer for the typed daemon contract.
+    notes: >-
+      Added 2026-08-09 from the approved wireframe clarification that ticket AI
+      should support all task-relevant requests. Completed 2026-08-10 with a
+      typed, durable, bounded-and-redacted organiser contract; manually
+      reviewable effects; autonomous authority checks; recovery without replay;
+      and the task-detail UI. ADR-0027 and quality receipt ORCH-008 record the
+      boundary and review evidence. Do not substitute a UI-only composer for
+      the typed daemon contract.
 
   - id: APP-001
     epic: APP

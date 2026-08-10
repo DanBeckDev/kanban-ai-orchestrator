@@ -9,6 +9,7 @@ mod event_store_error;
 mod event_store_policy;
 mod event_store_queries;
 mod event_store_recovery;
+mod event_store_refinement;
 mod event_store_schema;
 mod event_store_support;
 mod execution_activation_store;
@@ -19,6 +20,7 @@ mod plan_store;
 mod planner_profile_store;
 mod project_agent_settings_store;
 pub(crate) mod sqlite_event_store;
+mod ticket_effect_store;
 
 pub use board_store_error::BoardStoreError;
 pub use event_store_error::EventStoreError;
@@ -53,3 +55,6 @@ mod connector_sync_store_tests;
 
 #[cfg(test)]
 mod board_supervision_store_tests;
+
+#[cfg(test)]
+mod ticket_effect_store_tests;

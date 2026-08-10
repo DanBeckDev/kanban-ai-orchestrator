@@ -1,0 +1,252 @@
+work_item: ORCH-008
+scope:
+  - "Typed, durable ticket-AI effects from an organiser prompt through the Tauri boundary."
+  - "Manual review decisions and narrowly authorised autonomous effects without bypassing existing policy, review, Done, Git, or external-action guards."
+  - "Bounded redacted organiser I/O, recovery semantics, task-detail UI, persistence migration, and focused tests."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 375
+      responsibilities: Extends the repository port with typed refinement and ticket-effect operations.
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_snapshot.rs
+      meaningful_lines: 49
+      responsibilities: Presents durable refinement events as safe board activity.
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 80
+      responsibilities: Composes application contracts and focused ticket-effect tests.
+      decision: kept cohesive
+    - path: src-tauri/src/application/ticket_effect_request.rs
+      meaningful_lines: 12
+      responsibilities: Defines small desktop request DTOs for prompt and resolution commands.
+      decision: kept cohesive
+    - path: src-tauri/src/application/ticket_effect_service.rs
+      meaningful_lines: 144
+      responsibilities: Provides ticket-effect use cases without exposing SQLite details to runtime code.
+      decision: kept cohesive
+    - path: src-tauri/src/application/ticket_effect_service_tests.rs
+      meaningful_lines: 144
+      responsibilities: Verifies effect persistence, guidance lookup, refinement idempotency, and stale rejection.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 400
+      responsibilities: Composes desktop state and narrowly registers desktop command modules.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime.rs
+      meaningful_lines: 194
+      responsibilities: Owns daemon composition and isolates ticket-effect runtime modules behind a dedicated gate.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_supervision.rs
+      meaningful_lines: 396
+      responsibilities: Shares the existing implementation-brief formatter with the guarded ticket-effect boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_support.rs
+      meaningful_lines: 268
+      responsibilities: Names runtime errors and shared synchronization helpers.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect.rs
+      meaningful_lines: 304
+      responsibilities: Coordinates durable task-AI request, review resolution, idempotency, and recovery flow.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect_action_tests.rs
+      meaningful_lines: 223
+      responsibilities: Verifies permitted restart, correction, interruption recovery, and guidance effects.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect_apply.rs
+      meaningful_lines: 222
+      responsibilities: Applies a prepared effect only after current-state, authority, policy, and review guards.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect_rejection_tests.rs
+      meaningful_lines: 266
+      responsibilities: Verifies denied states, changed authority, recovery, and invalid requests fail closed.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_ticket_effect_tests.rs
+      meaningful_lines: 291
+      responsibilities: Verifies prompt actions, review choices, cancellation, duplicate request recovery, and launch denial.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_ticket_effects.rs
+      meaningful_lines: 33
+      responsibilities: Adapts typed ticket-effect requests to the desktop command boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/events.rs
+      meaningful_lines: 74
+      responsibilities: Defines the versioned task-detail refinement event and command.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/mod.rs
+      meaningful_lines: 31
+      responsibilities: Exposes ticket-effect and refinement domain contracts.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/mod.rs
+      meaningful_lines: 43
+      responsibilities: Registers durable ticket-effect model exports.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/schema.rs
+      meaningful_lines: 46
+      responsibilities: Defines the typed ticket-effect identifier alongside other schema IDs.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/ticket_effect.rs
+      meaningful_lines: 70
+      responsibilities: Defines provider-neutral effect actions, proposals, outcomes, and durable audit fields.
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 94
+      responsibilities: Registers ticket-effect commands at the Tauri application edge.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/mod.rs
+      meaningful_lines: 39
+      responsibilities: Exposes the provider-neutral ticket-AI contract and bounded process adapter.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor.rs
+      meaningful_lines: 215
+      responsibilities: Reuses one redaction boundary for supervisor and ticket-AI safe summaries.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect.rs
+      meaningful_lines: 256
+      responsibilities: Validates bounded redacted task input and strict action-specific organiser proposals.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect_process.rs
+      meaningful_lines: 137
+      responsibilities: Runs an organiser with bounded I/O and maps only safe structured outcomes.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect_process_tests.rs
+      meaningful_lines: 342
+      responsibilities: Verifies redaction, bounded context, strict proposals, process failures, and safe errors.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 296
+      responsibilities: Implements the application ticket-effect port over SQLite storage.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_error.rs
+      meaningful_lines: 316
+      responsibilities: Names stale refinement and immutable ticket-effect persistence failures.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_refinement.rs
+      meaningful_lines: 41
+      responsibilities: Persists a version-checked idempotent task-detail refinement event.
+      decision: split
+    - path: src-tauri/src/persistence/event_store_schema.rs
+      meaningful_lines: 163
+      responsibilities: Defines the ordered ticket-effect SQLite migration.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_support.rs
+      meaningful_lines: 89
+      responsibilities: Verifies idempotent refinement replay at the event-store boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 37
+      responsibilities: Registers narrow persistence modules and ticket-effect tests.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 396
+      responsibilities: Owns store lifecycle and applies schema version fourteen.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: Guards forward compatibility for the ticket-effect migration.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 380
+      responsibilities: Updates current-schema store coverage after the migration.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/ticket_effect_store.rs
+      meaningful_lines: 157
+      responsibilities: Persists idempotent effects and allows only immutable audit records with valid outcome transitions.
+      decision: split
+    - path: src-tauri/src/persistence/ticket_effect_store_tests.rs
+      meaningful_lines: 198
+      responsibilities: Verifies durable loading, idempotency, outcome transitions, and audit immutability.
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 332
+      responsibilities: Composes task detail through an extracted focused view.
+      decision: split
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 397
+      responsibilities: Extends reusable board fixtures with the focused ticket-effect gateway.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.ticket-effects.fixtures.ts
+      meaningful_lines: 74
+      responsibilities: Isolates deterministic ticket-effect gateway fixtures from the larger workspace fixture file.
+      decision: split
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 400
+      responsibilities: Wires the existing board gateway to the extracted task-detail ticket-AI UI.
+      decision: kept cohesive
+    - path: src/board/TaskAiPrompt.test.tsx
+      meaningful_lines: 123
+      responsibilities: Verifies prompt submission, named review decisions, visible refinements, and setup gating.
+      decision: kept cohesive
+    - path: src/board/TaskAiPrompt.tsx
+      meaningful_lines: 255
+      responsibilities: Presents the typed task-AI prompt and reviewable safe decision history.
+      decision: kept cohesive
+    - path: src/board/TaskDetailView.tsx
+      meaningful_lines: 89
+      responsibilities: Keeps task-detail composition separate from the board workflow surface.
+      decision: split
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 122
+      responsibilities: Defines UI gateway operations for durable ticket effects.
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 109
+      responsibilities: Verifies typed Tauri command mapping for ticket effects.
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 225
+      responsibilities: Adapts typed ticket-effect UI calls to Tauri invokes.
+      decision: kept cohesive
+    - path: src/board/ticketEffectOperations.ts
+      meaningful_lines: 30
+      responsibilities: Encapsulates task-AI request and resolve refresh semantics.
+      decision: kept cohesive
+    - path: src/board/ticketEffectTypes.ts
+      meaningful_lines: 53
+      responsibilities: Defines the UI-side durable ticket-effect contract.
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 380
+      responsibilities: Re-exports the typed ticket-effect contracts through the board gateway surface.
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-10T02:49:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The ticket-effect gate remains held while a bounded organiser process prepares one effect."
+        resolution: accepted
+        rationale: "It makes a request ID idempotent across the only untrusted process boundary and does not cover worker execution; task effects, application service, process adapter, and UI composition are already separated by actor."
+        decision_reference: ADR-0027
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "A manual refinement could be applied from the task-AI history without showing the proposed title, details, and success checks."
+    change: "Rendered every proposed refinement field before the named Apply decision and added a UI test."
+  - finding: "Ticket-effect persistence and organiser error branches lacked enough focused safety coverage to preserve the repository coverage gate."
+    change: "Added immutable-audit transition coverage and safe bounded-process error coverage rather than weakening the 80 percent threshold."
+  - finding: "Task-AI UI work risked enlarging the board workflow component."
+    change: "Extracted TaskDetailView and ticket-effect fixtures and operations into focused modules."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: node scripts/check-code-structure.mjs --all
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.38
+        statements: 85.34
+        functions: 83.29
+        branches: 81.47
+      - package_or_crate: src-tauri-rust
+        lines: 84.06
+        statements: 80.33
+        functions: 84.45
+        branches: 81.18
+    threshold_met: true
+exceptions: []

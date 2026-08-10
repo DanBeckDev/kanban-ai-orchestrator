@@ -10,7 +10,8 @@ import { BoardSettings } from "./BoardSettings";
 import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
 import { DependencyView } from "./DependencyView";
 import { PlanProposalPanel } from "./PlanProposalPanel";
-import { WorkItemCard } from "./WorkItemCard";
+import { TaskDetailView } from "./TaskDetailView";
+import type { TicketEffectOperations } from "./ticketEffectOperations";
 import { boardSummary } from "./presentation";
 import type {
   AddDependencyRequest,
@@ -22,7 +23,6 @@ import type {
   BoardSupervisionMode,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
-  ExecutionActivityPage,
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
@@ -33,14 +33,9 @@ import type {
   ProjectAgentSettings,
   ProposePlanRequest,
   QueueLinearCommentRequest,
-  RecordCleanCodeReviewRequest,
-  RecordReviewCheckRequest,
-  RecordReviewDecisionRequest,
-  StartExecutionRequest,
   SupervisionDecision,
   SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
-  WorkItem,
 } from "./types";
 
 type BoardSurface = MainBoardView | "plan" | "new-task" | "task-detail";
@@ -74,6 +69,7 @@ type BoardViewProps = Readonly<{
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
+  ticketEffects: TicketEffectOperations;
   supervisionDecisions: readonly SupervisionDecision[];
   onConfigureBoardSupervision: (mode: BoardSupervisionMode) => Promise<void>;
   onCoordinateBoard: (boardId: string) => Promise<void>;
@@ -120,6 +116,7 @@ export function BoardView({
   onSaveAgentProfile,
   onSaveProjectAgentSettings,
   onSavePlannerProfile,
+  ticketEffects,
   onCoordinateBoard,
   supervisionDecisions,
   onConfigureBoardSupervision,
@@ -273,14 +270,16 @@ export function BoardView({
         />
       )}
       {surface === "task-detail" && selectedWorkItem !== undefined && (
-        <TaskDetail
+        <TaskDetailView
           agentProfiles={agentProfiles}
           busy={busy}
           defaultAgentProfileName={
             selectedWorkItem.assignedAgentProfileName ??
             projectAgentSettings?.ticketWorker?.agentProfileName
           }
+          hasOrganiser={projectAgentSettings?.organiser !== undefined}
           snapshot={snapshot}
+          ticketEffects={ticketEffects}
           workItem={selectedWorkItem}
           onBack={returnToWorkflow}
           onLoadExecutionActivity={onLoadExecutionActivity}
@@ -337,69 +336,5 @@ function BoardHeader({
         </div>
       )}
     </header>
-  );
-}
-
-function TaskDetail({
-  agentProfiles,
-  busy,
-  defaultAgentProfileName,
-  snapshot,
-  workItem,
-  onBack,
-  onLoadExecutionActivity,
-  onRecordCleanCodeReview,
-  onRecordReviewCheck,
-  onRecordReviewDecision,
-  onStartExecution,
-  onStopExecution,
-  onTransition,
-}: Readonly<{
-  agentProfiles: readonly AgentProfile[];
-  busy: boolean;
-  defaultAgentProfileName?: string;
-  snapshot: BoardSnapshot;
-  workItem: WorkItem;
-  onBack: () => void;
-  onLoadExecutionActivity: (
-    executionId: string,
-    afterSequence?: number,
-  ) => Promise<ExecutionActivityPage>;
-  onRecordCleanCodeReview: (
-    request: RecordCleanCodeReviewRequest,
-  ) => Promise<void>;
-  onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
-  onRecordReviewDecision: (
-    request: RecordReviewDecisionRequest,
-  ) => Promise<void>;
-  onStartExecution: (request: StartExecutionRequest) => Promise<void>;
-  onStopExecution: (executionId: string) => Promise<void>;
-  onTransition: (request: TransitionWorkItemRequest) => Promise<void>;
-}>) {
-  return (
-    <section
-      aria-label={`Task details for ${workItem.title}`}
-      className="workspace-surface"
-    >
-      <SurfaceHeader
-        description="Review the task's current decision, then act with the right context."
-        onBack={onBack}
-        title={workItem.title}
-      />
-      <WorkItemCard
-        agentProfiles={agentProfiles}
-        busy={busy}
-        defaultAgentProfileName={defaultAgentProfileName}
-        snapshot={snapshot}
-        workItem={workItem}
-        onLoadExecutionActivity={onLoadExecutionActivity}
-        onRecordCleanCodeReview={onRecordCleanCodeReview}
-        onRecordReviewCheck={onRecordReviewCheck}
-        onRecordReviewDecision={onRecordReviewDecision}
-        onStartExecution={onStartExecution}
-        onStopExecution={onStopExecution}
-        onTransition={onTransition}
-      />
-    </section>
   );
 }

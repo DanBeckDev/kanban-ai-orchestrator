@@ -38,6 +38,12 @@ pub enum WorkItemEventKind {
         evidence: Option<CompletionEvidence>,
         reason: String,
     },
+    DetailsRefined {
+        title: String,
+        description: String,
+        acceptance_criteria: Vec<String>,
+        reason: String,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -68,6 +74,18 @@ pub struct TransitionWorkItemCommand {
     pub next_state: WorkItemState,
     pub config: TransitionConfig,
     pub evidence: Option<CompletionEvidence>,
+    pub reason: String,
+    pub recorded_at: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RefineWorkItemDetailsCommand {
+    pub event_id: WorkItemEventId,
+    pub work_item_id: WorkItemId,
+    pub title: String,
+    pub description: String,
+    pub acceptance_criteria: Vec<String>,
+    pub expected_work_item_sequence: EventSequence,
     pub reason: String,
     pub recorded_at: String,
 }

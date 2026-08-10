@@ -185,6 +185,10 @@ fn sanitized_summary(value: &str) -> String {
     sanitized.join(" ")
 }
 
+pub fn redacted_summary(value: &str) -> String {
+    sanitized_summary(value)
+}
+
 fn looks_like_credential(word: &str) -> bool {
     let lower = word.to_ascii_lowercase();
     lower.starts_with("sk-")

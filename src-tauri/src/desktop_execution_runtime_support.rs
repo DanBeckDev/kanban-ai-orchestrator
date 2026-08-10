@@ -11,10 +11,13 @@ use crate::{
     application::{
         AgentProfileServiceError, BoardServiceError, BoardSupervisionServiceError,
         ExecutionEventControllerError, ExecutionLaunchError, PlannerProfileServiceError,
-        StartExecutionRequest,
+        ProjectAgentSettingsError, StartExecutionRequest, TicketEffectServiceError,
     },
     domain::{ExecutionRole, ExecutionStatus, WorkItemId, WorkItemState},
-    orchestration::{BoardSupervisionInputError, ProcessBoardSupervisionError},
+    orchestration::{
+        BoardSupervisionInputError, ProcessBoardSupervisionError, ProcessTicketEffectError,
+        TicketEffectInputError,
+    },
     persistence::{BoardStoreError, EventStoreError},
     workspace::WorkspaceError,
 };
@@ -24,6 +27,8 @@ type RuntimeProfileError = AgentProfileServiceError<BoardStoreError>;
 type RuntimeControllerError = ExecutionEventControllerError<BoardStoreError>;
 type RuntimeSupervisionError = BoardSupervisionServiceError<BoardStoreError>;
 type RuntimePlannerError = PlannerProfileServiceError<BoardStoreError>;
+type RuntimeTicketEffectError = TicketEffectServiceError<BoardStoreError>;
+type RuntimeProjectAgentSettingsError = ProjectAgentSettingsError<BoardStoreError>;
 
 pub(super) fn validate_start_request(
     request: &StartExecutionRequest,
@@ -95,11 +100,21 @@ pub(crate) enum ExecutionRuntimeError {
     SupervisorInput(BoardSupervisionInputError),
     Supervisor(ProcessBoardSupervisionError),
     Supervision(RuntimeSupervisionError),
+    TicketEffect(RuntimeTicketEffectError),
+    TicketEffectInput(TicketEffectInputError),
+    TicketEffectAdvisor(ProcessTicketEffectError),
+    ProjectAgentSettings(RuntimeProjectAgentSettingsError),
     SupervisionNotConfigured {
         board_id: String,
     },
     SupervisionDecisionInvalid {
         reason: String,
+    },
+    TicketWorkerNotConfigured {
+        work_item_id: WorkItemId,
+    },
+    OrganiserNotConfigured {
+        board_id: String,
     },
     SupervisionLoopLimit {
         board_id: String,
@@ -150,6 +165,16 @@ impl fmt::Display for ExecutionRuntimeError {
             }
             Self::Supervisor(error) => write!(formatter, "organiser assessment error: {error}"),
             Self::Supervision(error) => write!(formatter, "board supervision error: {error}"),
+            Self::TicketEffect(error) => write!(formatter, "ticket effect error: {error}"),
+            Self::TicketEffectInput(error) => {
+                write!(formatter, "safe ticket context error: {error}")
+            }
+            Self::TicketEffectAdvisor(error) => {
+                write!(formatter, "ticket assessment error: {error}")
+            }
+            Self::ProjectAgentSettings(error) => {
+                write!(formatter, "project AI settings error: {error}")
+            }
             Self::SupervisionNotConfigured { board_id } => write!(
                 formatter,
                 "board {board_id} needs an organiser and ticket worker before automation can run"
@@ -157,6 +182,15 @@ impl fmt::Display for ExecutionRuntimeError {
             Self::SupervisionDecisionInvalid { reason } => {
                 write!(formatter, "invalid supervision decision: {reason}")
             }
+            Self::TicketWorkerNotConfigured { work_item_id } => write!(
+                formatter,
+                "work item {} needs a ticket worker selected in Settings",
+                work_item_id.0
+            ),
+            Self::OrganiserNotConfigured { board_id } => write!(
+                formatter,
+                "board {board_id} needs an organiser selected in Settings before task AI can help"
+            ),
             Self::SupervisionLoopLimit { board_id } => write!(
                 formatter,
                 "automation stopped for board {board_id} because one pass exceeded its safe action limit"
@@ -223,11 +257,17 @@ impl Error for ExecutionRuntimeError {
             Self::SupervisorInput(error) => Some(error),
             Self::Supervisor(error) => Some(error),
             Self::Supervision(error) => Some(error),
+            Self::TicketEffect(error) => Some(error),
+            Self::TicketEffectInput(error) => Some(error),
+            Self::TicketEffectAdvisor(error) => Some(error),
+            Self::ProjectAgentSettings(error) => Some(error),
             Self::MissingRequiredField { .. }
             | Self::PolicyDenied { .. }
             | Self::UnsupportedPolicySet { .. }
             | Self::SupervisionNotConfigured { .. }
             | Self::SupervisionDecisionInvalid { .. }
+            | Self::TicketWorkerNotConfigured { .. }
+            | Self::OrganiserNotConfigured { .. }
             | Self::SupervisionLoopLimit { .. }
             | Self::WorkItemNotReady { .. }
             | Self::MissingLiveExecution { .. }

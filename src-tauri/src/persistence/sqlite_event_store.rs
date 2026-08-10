@@ -19,14 +19,14 @@ use super::{
         create_agent_profile_schema, create_board_supervision_schema, create_connector_sync_schema,
         create_execution_schema, create_external_link_schema, create_initial_schema,
         create_planner_profile_schema, create_policy_audit_schema,
-        create_project_agent_settings_schema,
+        create_project_agent_settings_schema, create_ticket_effect_schema,
     },
     event_store_support::{
         deserialize_recorded_event, event_sequence, idempotent_creation, idempotent_transition,
     },
 };
 
-const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 13;
+const CURRENT_DATABASE_SCHEMA_VERSION: i64 = 14;
 pub struct SqliteEventStore {
     pub(crate) connection: Connection,
 }
@@ -320,6 +320,11 @@ impl SqliteEventStore {
             transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [13])?;
         }
 
+        if current_version < 14 {
+            create_ticket_effect_schema(&transaction)?;
+            transaction.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [14])?;
+        }
+
         transaction.commit()?;
         Ok(())
     }
@@ -389,7 +394,7 @@ impl SqliteEventStore {
         })
     }
 
-    fn persist_event(
+    pub(super) fn persist_event(
         &mut self,
         event: WorkItemEvent,
         work_item: WorkItem,

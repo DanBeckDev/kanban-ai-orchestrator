@@ -2,7 +2,8 @@ use crate::domain::{
     Board, BoardId, BoardSupervision, ConnectorOutboxItem, ConnectorOutboxItemId,
     ConnectorReconciliationItem, CreateWorkItemCommand, Dependency, Evidence, Execution,
     ExternalLink, ExternalLinkId, MaterializedWorkItem, Project, ProjectAgentSettings,
-    RecordedWorkItemEvent, SupervisionDecision, TransitionWorkItemCommand, WorkItemId,
+    RecordedWorkItemEvent, RefineWorkItemDetailsCommand, SupervisionDecision, TicketEffect,
+    TicketEffectId, TransitionWorkItemCommand, WorkItemId,
 };
 use crate::{
     agent::AgentProfile,
@@ -78,6 +79,13 @@ impl BoardRepository for SqliteEventStore {
         command: TransitionWorkItemCommand,
     ) -> Result<RecordedWorkItemEvent, Self::Error> {
         SqliteEventStore::transition_work_item(self, command).map_err(BoardStoreError::from)
+    }
+
+    fn refine_work_item_details(
+        &mut self,
+        command: RefineWorkItemDetailsCommand,
+    ) -> Result<RecordedWorkItemEvent, Self::Error> {
+        SqliteEventStore::refine_work_item_details(self, command).map_err(BoardStoreError::from)
     }
 
     fn record_execution(&mut self, execution: Execution) -> Result<Execution, Self::Error> {
@@ -295,6 +303,29 @@ impl BoardRepository for SqliteEventStore {
         board_id: &BoardId,
     ) -> Result<Vec<SupervisionDecision>, Self::Error> {
         SqliteEventStore::supervision_decisions_for_board(self, board_id)
+            .map_err(BoardStoreError::from)
+    }
+
+    fn record_ticket_effect(&mut self, effect: TicketEffect) -> Result<TicketEffect, Self::Error> {
+        SqliteEventStore::record_ticket_effect(self, effect).map_err(BoardStoreError::from)
+    }
+
+    fn update_ticket_effect(&mut self, effect: TicketEffect) -> Result<TicketEffect, Self::Error> {
+        SqliteEventStore::update_ticket_effect(self, effect).map_err(BoardStoreError::from)
+    }
+
+    fn ticket_effect(
+        &self,
+        effect_id: &TicketEffectId,
+    ) -> Result<Option<TicketEffect>, Self::Error> {
+        SqliteEventStore::ticket_effect(self, effect_id).map_err(BoardStoreError::from)
+    }
+
+    fn ticket_effects_for_work_item(
+        &self,
+        work_item_id: &WorkItemId,
+    ) -> Result<Vec<TicketEffect>, Self::Error> {
+        SqliteEventStore::ticket_effects_for_work_item(self, work_item_id)
             .map_err(BoardStoreError::from)
     }
 

@@ -460,8 +460,13 @@ tasks:
       product must make that real choice usable rather than reduce it to a
       guessed static subset. The existing shadcn Select supports a bounded,
       overscroll-contained content region; this is a focused interaction repair,
-      not a new provider integration. Completed 2026-08-10 with a 20rem,
-      overscroll-contained model picker and a focused component regression test.
+      not a new provider integration. The initial 20rem, overscroll-contained
+      picker did not satisfy the interaction in live testing: Radix's default
+      item-aligned positioning continued to re-anchor the menu as its measured
+      height changed. Reopened 2026-08-10 to use trigger-edge positioning and
+      prevent the model list from jumping back to its first item. Completed
+      2026-08-10 with a fixed 20rem picker viewport (clamped to the available
+      screen height), trigger-edge positioning, and an updated regression test.
 
   - id: APP-001
     epic: APP

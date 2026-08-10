@@ -67,7 +67,10 @@ export function AgentRolePreferences({
           <SelectTrigger id={`${idPrefix}-model`}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="max-h-80 overscroll-contain">
+          <SelectContent
+            className="h-80 max-h-[min(20rem,var(--radix-select-content-available-height))] overscroll-contain"
+            position="popper"
+          >
             <SelectGroup>
               <SelectItem value="provider_default">
                 Provider default (recommended)

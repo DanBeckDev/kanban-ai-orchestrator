@@ -1,0 +1,47 @@
+work_item: ORCH-014
+scope:
+  - "Replace unstable item-aligned positioning for long installed-provider model lists."
+  - "Keep the model-picker viewport stable while a person scrolls through local runtime choices."
+source_structure:
+  reviewed_files:
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 130
+      responsibilities: "Renders one role's provider-default or runtime-supplied model and compatible effort selector."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.test.tsx
+      meaningful_lines: 93
+      responsibilities: "Exercises focused model and effort selector behavior for an agent role."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T13:06:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The previous bounded menu retained Radix's item-aligned position, which recomputes menu geometry and the selected-item viewport while a long list is open."
+    change: "Anchored the picker to its trigger edge and gave its scroll viewport a fixed 20rem height, clamped to Radix's available screen height."
+  - finding: "The earlier regression test did not distinguish the unstable item-aligned position from a stable trigger-edge menu."
+    change: "Updated the long-catalogue test to require bounded geometry and the documented trigger-edge position contract."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.21
+        statements: 85.12
+        functions: 82.94
+        branches: 80.86
+      - package_or_crate: src-tauri-rust
+        lines: 84.64
+        statements: 80.93
+        functions: 84.91
+        branches: 80.33
+    threshold_met: true
+exceptions: []

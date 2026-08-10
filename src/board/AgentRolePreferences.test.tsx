@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentRolePreferences } from "./AgentRolePreferences";
 
 describe("AgentRolePreferences", () => {
-  it("keeps a long model list inside a contained picker scroll region", async () => {
+  it("anchors a long model list to the trigger in a contained picker", async () => {
     render(
       <AgentRolePreferences
         effort="provider_default"
@@ -27,7 +27,12 @@ describe("AgentRolePreferences", () => {
     });
 
     const picker = await screen.findByRole("listbox");
-    expect(picker).toHaveClass("max-h-80", "overscroll-contain");
+    expect(picker).toHaveClass(
+      "h-80",
+      "max-h-[min(20rem,var(--radix-select-content-available-height))]",
+      "overscroll-contain",
+    );
+    expect(picker).toHaveAttribute("data-align-trigger", "false");
     expect(
       await screen.findByRole("option", { name: "Model 99" }),
     ).toBeVisible();

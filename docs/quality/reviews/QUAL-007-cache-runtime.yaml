@@ -1,0 +1,35 @@
+work_item: QUAL-007
+scope:
+  - "Updates the stable Cargo cache action runtime in the cross-platform quality workflow."
+  - "Preserves the existing cache paths, keys, platform/compiler/dependency isolation, and coverage-artifact exclusion."
+source_structure:
+  reviewed_files: []
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T03:21:25Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The cache-action major upgrade depends on the runner version required by actions/cache@v5."
+        resolution: accepted
+        rationale: "All quality workflow jobs run on GitHub-hosted runners, which satisfy the action's documented minimum runner version."
+        decision_reference: QUAL-007
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "GitHub Actions reported a Node 20 deprecation warning for both stable Cargo cache steps."
+    change: "Updated both explicit actions/cache references to v5 while retaining the cache paths, keys, restore prefixes, and coverage-artifact exclusion."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    package_or_crate: "minimum across React frontend and Rust core"
+    lines: 84.06
+    statements: 80.33
+    functions: 83.84
+    branches: 81.18
+    threshold_met: true
+exceptions: []

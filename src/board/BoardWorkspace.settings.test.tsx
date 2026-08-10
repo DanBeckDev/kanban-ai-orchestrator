@@ -118,15 +118,15 @@ describe("focused board and provider-owned AI settings", () => {
     );
     expect(
       await within(codex).findByText(
-        "Model list loaded from your installed AI session.",
+        "Model options loaded from your installed AI runtime.",
       ),
     ).toBeVisible();
     expect(within(codex).queryByText("Connect provider API")).toBeNull();
     expect(within(codex).queryByLabelText("Codex API key")).toBeNull();
     await selectOption(codex, "Plan work", "Model", "GPT-5 Codex");
-    await selectOption(codex, "Plan work", "Effort", "Thorough");
+    await selectOption(codex, "Plan work", "Effort", "Thorough (high)");
     await selectOption(codex, "Work on tickets", "Model", "GPT-5 Codex");
-    await selectOption(codex, "Work on tickets", "Effort", "Balanced");
+    await selectOption(codex, "Work on tickets", "Effort", "Balanced (medium)");
     fireEvent.click(screen.getByRole("button", { name: "Save AI setup" }));
 
     await waitFor(() =>
@@ -146,7 +146,7 @@ describe("focused board and provider-owned AI settings", () => {
     );
   });
 
-  it("uses the installed AI default when its runtime cannot list models", async () => {
+  it("shows Claude Code's installed runtime capabilities without an API key", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
@@ -161,11 +161,52 @@ describe("focused board and provider-owned AI settings", () => {
     );
     expect(
       await within(claude).findByText(
+        "Model options loaded from your installed AI runtime.",
+      ),
+    ).toBeVisible();
+    await selectOption(claude, "Plan work", "Model", "Claude Fable");
+    await selectOption(claude, "Plan work", "Effort", "Maximum (max)");
+    expect(within(claude).queryByText("Connect provider API")).toBeNull();
+    expect(within(claude).queryByLabelText("Claude Code API key")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save AI setup" }));
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: {
+          plannerProfileName: "Default Claude Code orchestrator",
+          model: { kind: "named", name: "fable" },
+          effort: "maximum",
+        },
+        ticketWorker: undefined,
+      }),
+    );
+  });
+
+  it("keeps one clear provider-default state when no local catalogue exists", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+    vi.mocked(boardGateway.providerModelCatalog).mockResolvedValueOnce({
+      providerKind: "claude_code",
+      status: "uses_provider_default",
+      models: [],
+    });
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const claude = providerCard("Claude Code");
+    fireEvent.click(within(claude).getByRole("button", { name: "Plan work" }));
+
+    expect(
+      await within(claude).findByText(
         "Claude Code manages its models in its own app. Kanban will use that provider's default.",
       ),
     ).toBeVisible();
-    expect(within(claude).queryByText("Connect provider API")).toBeNull();
-    expect(within(claude).queryByLabelText("Claude Code API key")).toBeNull();
+    expect(
+      within(claude).getByText(
+        "Plan work will use this AI's configured model and effort.",
+      ),
+    ).toBeVisible();
+    expect(within(claude).queryByLabelText("Model")).toBeNull();
+    expect(within(claude).queryByLabelText("Effort")).toBeNull();
   });
 
   it("offers a safe retry when an installed runtime is unavailable", async () => {

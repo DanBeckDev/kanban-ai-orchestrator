@@ -12,6 +12,9 @@ pub enum AgentEffort {
     Focused,
     Balanced,
     Thorough,
+    ExtraThorough,
+    Maximum,
+    Ultra,
 }
 
 /// A safe model preference for a project role. Native adapters remain responsible

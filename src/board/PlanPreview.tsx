@@ -149,11 +149,25 @@ export function PlanPreview({
 }
 
 function effortLabel(
-  effort: "provider_default" | "focused" | "balanced" | "thorough",
+  effort:
+    | "provider_default"
+    | "focused"
+    | "balanced"
+    | "thorough"
+    | "extra_thorough"
+    | "maximum"
+    | "ultra",
 ): string {
-  return effort === "provider_default"
-    ? "Provider default"
-    : `${effort[0].toUpperCase()}${effort.slice(1)}`;
+  const labels = {
+    provider_default: "Provider default",
+    focused: "Focused",
+    balanced: "Balanced",
+    thorough: "Thorough",
+    extra_thorough: "Extra thorough",
+    maximum: "Maximum",
+    ultra: "Ultra",
+  } as const;
+  return labels[effort];
 }
 
 function workerName(

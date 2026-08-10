@@ -68,6 +68,8 @@ export function ProviderConfigurationCard({
     ...(organiser === undefined ? [] : ["organiser"]),
     ...(worker === undefined ? [] : ["worker"]),
   ];
+  const hasSelectableModels =
+    catalog?.status === "ready" && catalog.models.length > 0;
 
   const loadCatalog = useCallback(async () => {
     setCatalogLoadAttempted(true);
@@ -143,7 +145,7 @@ export function ProviderConfigurationCard({
                   onLoad={() => void loadCatalog()}
                 />
               )}
-              {organiser !== undefined && (
+              {organiser !== undefined && hasSelectableModels && (
                 <RoleConfiguration
                   catalog={catalog}
                   effort={organiser.effort}
@@ -156,7 +158,7 @@ export function ProviderConfigurationCard({
                   onModelChange={(model) => onModelChange("organiser", model)}
                 />
               )}
-              {worker !== undefined && (
+              {worker !== undefined && hasSelectableModels && (
                 <RoleConfiguration
                   catalog={catalog}
                   effort={worker.effort}
@@ -165,6 +167,15 @@ export function ProviderConfigurationCard({
                   model={worker.model}
                   onEffortChange={(effort) => onEffortChange("worker", effort)}
                   onModelChange={(model) => onModelChange("worker", model)}
+                />
+              )}
+              {!hasSelectableModels && roles.length > 0 && (
+                <ProviderDefaultSummary
+                  busy={busy}
+                  organiser={organiser}
+                  onEffortChange={onEffortChange}
+                  onModelChange={onModelChange}
+                  worker={worker}
                 />
               )}
             </FieldGroup>
@@ -190,6 +201,59 @@ export function ProviderConfigurationCard({
         </CardFooter>
       )}
     </Card>
+  );
+}
+
+function ProviderDefaultSummary({
+  busy,
+  organiser,
+  onEffortChange,
+  onModelChange,
+  worker,
+}: Readonly<{
+  busy: boolean;
+  organiser?: RolePreferences;
+  onEffortChange: (role: ProviderRole, effort: AgentEffort) => void;
+  onModelChange: (role: ProviderRole, model: AgentModelPreference) => void;
+  worker?: RolePreferences;
+}>) {
+  const roles = [
+    ...(organiser === undefined ? [] : [["organiser", organiser] as const]),
+    ...(worker === undefined ? [] : [["worker", worker] as const]),
+  ];
+  const hasSavedOverride = roles.some(
+    ([, preferences]) =>
+      preferences.model.kind === "named" ||
+      preferences.effort !== "provider_default",
+  );
+
+  return (
+    <FieldSet>
+      <FieldLegend>Using provider default</FieldLegend>
+      <FieldDescription>
+        {roles
+          .map(([role]) =>
+            role === "organiser" ? "Plan work" : "Work on tickets",
+          )
+          .join(" and ")}{" "}
+        will use this AI's configured model and effort.
+      </FieldDescription>
+      {hasSavedOverride && (
+        <Button
+          disabled={busy}
+          onClick={() => {
+            roles.forEach(([role]) => {
+              onModelChange(role, { kind: "provider_default" });
+              onEffortChange(role, "provider_default");
+            });
+          }}
+          type="button"
+          variant="outline"
+        >
+          Use provider default
+        </Button>
+      )}
+    </FieldSet>
   );
 }
 
@@ -239,7 +303,7 @@ function CatalogControls({
         <FieldDescription>
           {catalog.models.length === 0
             ? "This installed AI did not return any selectable models."
-            : "Model list loaded from your installed AI session."}
+            : "Model options loaded from your installed AI runtime."}
         </FieldDescription>
         <Button
           disabled={busy}

@@ -30,9 +30,9 @@ export function providerGatewayMethods(): Pick<
     providerModelCatalog: vi.fn().mockImplementation(async (providerKind) => ({
       providerKind,
       status:
-        providerKind === "codex_cli"
-          ? ("ready" as const)
-          : ("uses_provider_default" as const),
+        providerKind === "cline_pass_cli"
+          ? ("uses_provider_default" as const)
+          : ("ready" as const),
       models:
         providerKind === "codex_cli"
           ? [
@@ -42,7 +42,26 @@ export function providerGatewayMethods(): Pick<
                 efforts: ["focused", "balanced", "thorough"],
               },
             ]
-          : [],
+          : providerKind === "claude_code"
+            ? [
+                {
+                  id: "fable",
+                  label: "Claude Fable",
+                  efforts: [
+                    "focused",
+                    "balanced",
+                    "thorough",
+                    "extra_thorough",
+                    "maximum",
+                  ],
+                },
+                {
+                  id: "sonnet",
+                  label: "Claude Sonnet",
+                  efforts: ["focused", "balanced", "thorough"],
+                },
+              ]
+            : [],
     })),
   };
 }

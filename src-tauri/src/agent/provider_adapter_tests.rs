@@ -25,7 +25,7 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
         profile(AgentProfileKind::ClaudeCode, "claude", Vec::new()),
         "execution-1",
         &AgentModelPreference::Named("sonnet".to_owned()),
-        AgentEffort::Balanced,
+        AgentEffort::Maximum,
     );
     let cline_pass = native_definition(
         profile(AgentProfileKind::ClinePassCli, "cline", Vec::new()),
@@ -62,7 +62,7 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "--model",
             "sonnet",
             "--effort",
-            "medium",
+            "max",
         ]
     );
     assert_eq!(cline_pass.name, "local-provider-execution-1");

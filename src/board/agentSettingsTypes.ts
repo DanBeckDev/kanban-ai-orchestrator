@@ -2,7 +2,10 @@ export type AgentEffort =
   | "provider_default"
   | "focused"
   | "balanced"
-  | "thorough";
+  | "thorough"
+  | "extra_thorough"
+  | "maximum"
+  | "ultra";
 
 export type AgentModelPreference =
   | Readonly<{ kind: "provider_default" }>

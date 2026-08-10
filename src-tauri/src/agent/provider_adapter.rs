@@ -255,6 +255,9 @@ fn native_effort_name(effort: AgentEffort) -> Option<&'static str> {
         AgentEffort::Focused => Some("low"),
         AgentEffort::Balanced => Some("medium"),
         AgentEffort::Thorough => Some("high"),
+        AgentEffort::ExtraThorough => Some("xhigh"),
+        AgentEffort::Maximum => Some("max"),
+        AgentEffort::Ultra => Some("ultra"),
     }
 }
 

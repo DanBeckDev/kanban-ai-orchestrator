@@ -59,7 +59,7 @@ with no listed purpose is removed rather than retained as decoration.
 | Surface | Persistent controls and primary purpose |
 | --- | --- |
 | `BoardSettings` | **Orient:** Settings, AI, Linear, Project. **Act:** choose a settings view. **Explain:** AI roles and connected tools apply to this project. |
-| `ProjectAgentDefaultsForm` and `ProviderConfigurationCard` | **Orient:** AI for this project, installed provider, Plan work, Work on tickets. **Act:** enable a provider role, refresh its locally discovered model list, choose a model and effort, save project defaults, or open install guidance. **Explain:** roles, model and effort belong to the selected provider; Provider default is safe when its installed runtime cannot list models; Kanban never asks for an API key. |
+| `ProjectAgentDefaultsForm` and `ProviderConfigurationCard` | **Orient:** AI for this project, installed provider, Plan work, Work on tickets. **Act:** enable a provider role, refresh locally supplied model options, choose a model and effort, save project defaults, or open install guidance. **Explain:** roles, model and effort belong to the selected provider; Provider default is safe when its installed runtime cannot supply selectable capabilities; Kanban never asks for an API key. |
 | `PlannerProfileForm` and `AgentProfileForm` | **Orient:** Orchestrator connections and Agent profiles. **Act:** add and save advanced connections/profiles. **Support:** program and argument fields are hidden behind advanced disclosure because they are only needed for a team-managed bridge. |
 | `LinearBoardModeNotice` and board header | **Orient:** local-only, read-only, or linked-execution state. **Explain:** whether this board exchanges Linear data and what must happen next. |
 | `LinearConnectionPanel` | **Orient:** Connect Linear. **Act:** connect a release-owned app in read-only mode, or deliberately open self-managed setup; enable manually sent comments. **Explain:** availability, authorization state, credential-store boundary, and scope. **Support:** client ID and fixed loopback callback appear only in self-managed Advanced setup. |
@@ -74,9 +74,9 @@ with no listed purpose is removed rather than retained as decoration.
 - “Clone a GitHub repository” describes the actual Git action; “use an existing
   local repository” makes the alternative equally explicit.
 - Provider default is the recommended model for each project role. A provider
-  card lists only models returned by that installed provider's local runtime;
-  Kanban does not guess a catalogue, ask people to type model identifiers, or
-  ask for a second API key.
+  card lists only model options returned or advertised by that installed
+  provider's local runtime; Kanban does not guess a catalogue, ask people to
+  type model identifiers, or ask for a second API key.
 - Error copy does not display raw local-service or provider errors in normal
   workflow. It states what did not complete, confirms saved-work safety where
   true, and gives the next permitted action.

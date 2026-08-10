@@ -11,6 +11,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Coverage creates a full browser-like runtime per file. Bound workers to
+    // preserve file parallelism without starving interaction tests on laptops.
+    maxWorkers: 4,
     setupFiles: ["./src/test/setup.ts"],
     coverage: {
       all: true,

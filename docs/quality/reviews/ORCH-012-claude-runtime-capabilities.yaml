@@ -1,0 +1,126 @@
+work_item: ORCH-012
+scope:
+  - docs/decisions/0033-installed-cli-capability-metadata.md
+  - docs/planning/backlog.yaml
+  - docs/product/approved-wireframes.md
+  - docs/product/content-inventory.md
+  - docs/product/requirements.md
+  - vitest.config.ts
+  - src-tauri/src/agent/provider_adapter.rs
+  - src-tauri/src/agent/provider_adapter_tests.rs
+  - src-tauri/src/agent/provider_runtime.rs
+  - src-tauri/src/agent/provider_runtime/claude_code.rs
+  - src-tauri/src/agent/provider_runtime/codex.rs
+  - src-tauri/src/domain/model/project_agent_settings.rs
+  - src/board/AgentRolePreferences.tsx
+  - src/board/AgentRolePreferences.test.tsx
+  - src/board/BoardWorkspace.settings.test.tsx
+  - src/board/BoardWorkspace.test.provider.fixtures.ts
+  - src/board/PlanPreview.tsx
+  - src/board/ProviderConfigurationCard.tsx
+  - src/board/agentSettingsTypes.ts
+source_structure:
+  reviewed_files:
+    - path: vitest.config.ts
+      meaningful_lines: 29
+      responsibilities: "Defines the repeatable frontend test runtime and coverage policy."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter.rs
+      meaningful_lines: 250
+      responsibilities: "Translates neutral saved preferences into native provider execution arguments."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter_tests.rs
+      meaningful_lines: 190
+      responsibilities: "Verifies native adapter protocol and preference translation."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime.rs
+      meaningful_lines: 28
+      responsibilities: "Selects a small installed-runtime capability adapter for each provider."
+      decision: split
+    - path: src-tauri/src/agent/provider_runtime/claude_code.rs
+      meaningful_lines: 237
+      responsibilities: "Bounds, parses, and tests Claude Code's read-only CLI capability metadata."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime/codex.rs
+      meaningful_lines: 242
+      responsibilities: "Bounds, parses, and tests Codex app-server model discovery."
+      decision: split
+    - path: src-tauri/src/domain/model/project_agent_settings.rs
+      meaningful_lines: 30
+      responsibilities: "Defines durable provider-neutral agent preferences."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 127
+      responsibilities: "Renders validated model and effort choices for one enabled role."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.test.tsx
+      meaningful_lines: 35
+      responsibilities: "Protects a stale model selection's supported saved effort choices."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 249
+      responsibilities: "Exercises provider-owned settings and persistence journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.provider.fixtures.ts
+      meaningful_lines: 65
+      responsibilities: "Supplies deterministic installed-provider capability fixtures."
+      decision: kept cohesive
+    - path: src/board/PlanPreview.tsx
+      meaningful_lines: 230
+      responsibilities: "Renders a human-reviewable plan preview and effort labels."
+      decision: kept cohesive
+    - path: src/board/ProviderConfigurationCard.tsx
+      meaningful_lines: 355
+      responsibilities: "Owns one installed provider's role, capability, and default-only UI states."
+      decision: kept cohesive
+    - path: src/board/agentSettingsTypes.ts
+      meaningful_lines: 49
+      responsibilities: "Defines frontend agent-settings boundary types."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-10T11:32:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric:
+      - finding: "The full frontend coverage suite timed out interaction tests when every available CPU was used for separate jsdom workers."
+        remediation: "Bound Vitest to four workers while retaining file parallelism; the full 44-file coverage suite then passed."
+    considers:
+      - finding: "Claude Code's local CLI advertises aliases and effort tokens rather than an account-specific model catalogue."
+        resolution: accepted
+        rationale: "The adapter labels these as locally supplied runtime options and leaves final entitlement validation to the signed-in Claude Code runtime; it never invents an account catalogue or adds a second API connection."
+        decision_reference: ADR-0033
+      - finding: "The installed-runtime module was separated into a dispatch module and provider-specific process/protocol modules."
+        resolution: implemented
+        rationale: "The split keeps vendor protocol and thread/process mechanics out of the shared provider-neutral dispatch boundary, with no source file approaching the 400-line limit."
+        decision_reference: ADR-0032
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Claude Code rendered an empty model selector despite its installed CLI advertising selectable aliases and effort values."
+    change: "Added a bounded read-only Claude CLI capability adapter, persisted its complete effort scale, and hid model/effort selectors whenever a provider cannot supply choices."
+  - finding: "Codex capability parsing previously discarded its higher native effort values."
+    change: "Preserved xhigh, max, and ultra through the neutral preference and native adapter boundary."
+verification:
+  commands:
+    - command: npm run test:coverage
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    - package_or_crate: frontend
+      lines: 86.32
+      statements: 85.23
+      functions: 83.05
+      branches: 81.03
+      threshold_met: true
+    - package_or_crate: rust
+      lines: 84.69
+      statements: 80.97
+      functions: 85.19
+      branches: 80.82
+      threshold_met: true
+exceptions: []

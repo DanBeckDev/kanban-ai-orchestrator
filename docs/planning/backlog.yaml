@@ -361,6 +361,48 @@ tasks:
       back to their provider-owned defaults until they expose an equivalent
       supported local catalogue endpoint.
 
+  - id: ORCH-012
+    epic: ORCH
+    title: Show selectable Claude Code capabilities from its installed runtime
+    status: done
+    priority: P0
+    depends_on: [ORCH-011]
+    acceptance_criteria:
+      - An installed Claude Code card shows the model aliases and effort levels
+        advertised by that installed Claude Code CLI, without prompting for,
+        storing, or transmitting an API key.
+      - Capability discovery is read-only, bounded, output-limited, and never
+        starts an AI session, changes Claude Code configuration, or reads
+        credential material.
+      - The app persists and passes every shown Claude Code effort level to the
+        native Claude Code adapter without relabelling it to a different value.
+      - A provider card presents model and effort controls only when the local
+        runtime has supplied selectable capabilities. Otherwise it keeps one
+        clear Provider default state rather than rendering empty configuration
+        controls.
+      - Rust and frontend tests cover capability parsing, unavailable and
+        malformed CLI output, the expanded effort mapping, the visible Claude
+        chooser, and the no-key fallback; source structure and every package's
+        coverage metric remain at least 80%.
+      - The complete browser-like frontend coverage run keeps file parallelism
+        but bounds its worker count so interaction tests remain repeatable on
+        developer laptops and hosted CI.
+    notes: >-
+      Added 2026-08-10 after live testing exposed that ORCH-011 delivered a
+      Codex-only catalogue while the Claude Code card rendered an empty model
+      chooser. The installed Claude Code 2.1.226 CLI documents its supported
+      model aliases and effort levels in its own --help capability metadata;
+      ORCH-012 makes that provider-owned selection surface available through
+      the same bounded local-runtime boundary. This is not API-key onboarding
+      and is not a direct provider API integration. Coverage validation also
+      found default all-core jsdom parallelism could time out interaction tests;
+      the suite now has a bounded worker budget rather than masking the failure
+      by extending individual test timeouts. Completed 2026-08-10 with a
+      bounded `claude --help` capability adapter for the CLI's advertised
+      aliases and efforts, native pass-through for every surfaced effort level,
+      an honest default-only provider state, ADR-0033, and a passing full
+      quality gate.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

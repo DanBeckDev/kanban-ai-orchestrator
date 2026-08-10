@@ -122,12 +122,13 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   worktree paths, or protocol flags.
 - **Provider default** is the recommended model setting for each role. Kanban
   discovers models only through the installed agent's already-authenticated
-  SDK, app server, or supported client protocol; it never asks for a second
-  API key. The dropdown contains only models the local runtime returns. If a
-  runtime cannot expose a supported catalogue, Provider default remains
-  available with a clear retry or provider-owned configuration action. Native
-  adapters translate the saved model and effort at invocation time. A generic
-  bridge that cannot express either
+  SDK, app server, supported client protocol, or documented read-only local
+  capability metadata; it never asks for a second API key. The dropdown
+  contains only choices the local runtime supplies. If a runtime cannot expose
+  selectable capabilities, Provider default remains available with a clear
+  retry or provider-owned configuration action. Native adapters translate the
+  saved model and effort at invocation time without changing a supported native
+  effort value. A generic bridge that cannot express either
   preference rejects it before a request starts rather than silently ignoring
   it.
 - A native orchestrator performs bounded, read-only plan, supervision, and

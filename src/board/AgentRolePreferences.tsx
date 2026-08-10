@@ -97,15 +97,13 @@ export function AgentRolePreferences({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="provider_default">Provider default</SelectItem>
-              {availableEfforts.includes("focused") && (
-                <SelectItem value="focused">Focused</SelectItem>
-              )}
-              {availableEfforts.includes("balanced") && (
-                <SelectItem value="balanced">Balanced</SelectItem>
-              )}
-              {availableEfforts.includes("thorough") && (
-                <SelectItem value="thorough">Thorough</SelectItem>
-              )}
+              {effortOptions
+                .filter(({ value }) => availableEfforts.includes(value))
+                .map(({ label, value }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -118,4 +116,19 @@ const defaultEfforts: readonly AgentEffort[] = [
   "focused",
   "balanced",
   "thorough",
+  "extra_thorough",
+  "maximum",
+  "ultra",
+];
+
+const effortOptions: readonly Readonly<{
+  value: Exclude<AgentEffort, "provider_default">;
+  label: string;
+}>[] = [
+  { value: "focused", label: "Focused (low)" },
+  { value: "balanced", label: "Balanced (medium)" },
+  { value: "thorough", label: "Thorough (high)" },
+  { value: "extra_thorough", label: "Extra thorough (xhigh)" },
+  { value: "maximum", label: "Maximum (max)" },
+  { value: "ultra", label: "Ultra" },
 ];

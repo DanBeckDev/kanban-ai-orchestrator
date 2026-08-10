@@ -403,6 +403,44 @@ tasks:
       an honest default-only provider state, ADR-0033, and a passing full
       quality gate.
 
+  - id: ORCH-013
+    epic: ORCH
+    title: Show Cline's installed-session model choices in provider settings
+    status: done
+    priority: P0
+    depends_on: [ORCH-012]
+    acceptance_criteria:
+      - An installed Cline card lists only model IDs, labels, and reasoning support
+        returned by Cline's installed SDK/Core provider catalogue. It must not ask
+        for, store, transmit, or log an API key, credentials, or provider settings.
+      - The Cline SDK query is a fixed, non-interactive, output-bounded child
+        process. It never starts an agent session, prompts Cline, changes Cline
+        configuration, or reads provider files directly; failure presents the
+        existing recoverable unavailable state.
+      - Cline model selections affect the native Cline invocation through
+        `--model`. Only Cline's documented `low`, `medium`, `high`, and `xhigh`
+        thinking levels are offered for models whose installed SDK marks them as
+        reasoning-capable; provider default remains available for all models.
+      - Rust and frontend tests cover safe SDK parsing, package discovery,
+        bounded/failing catalogue calls, the visible Cline chooser, model/effort
+        persistence, native argument mapping, and no-key behavior. Every package
+        remains at or above the 80% coverage threshold.
+    notes: >-
+      Added 2026-08-10 after live testing found the Cline card still used the
+      fallback from ORCH-011 despite Cline's installed Core SDK exposing a local
+      provider catalogue. BookCtx — The Product-Minded Engineer, Gergely Orosz,
+      “Chapter Summary” (chunk 16): surface actual safe affordances, make their
+      boundaries clear, and translate feedback into a small testable product
+      requirement. Project inference: list only Cline's SDK-returned choices and
+      provide a truthful recovery path instead of an empty or invented chooser.
+      Cline's official CLI and model references document local provider/model
+      selection and model-specific reasoning support. ADR-0034 records the
+      provider-neutral adapter boundary and read-only process constraints.
+      Completed 2026-08-10 with a bounded installed-SDK catalogue adapter,
+      visible Cline model/thinking selections, native argument translation, and
+      a stale-preference guard that rejects unsupported Cline thinking values
+      before a planner or worker process can begin.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

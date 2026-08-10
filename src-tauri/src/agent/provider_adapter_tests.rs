@@ -1,6 +1,7 @@
 use super::{
-    AgentAdapter, AgentProfile, AgentProfileKind, NativeProcessAdapter, NormalizedAgentEventKind,
-    ProcessAgentDefinition, WorkerAgentAdapter, provider_adapter::native_definition,
+    AgentAdapter, AgentAdapterError, AgentProfile, AgentProfileKind, NativeProcessAdapter,
+    NormalizedAgentEventKind, ProcessAgentDefinition, WorkerAgentAdapter,
+    provider_adapter::{native_definition, validate_native_preferences},
 };
 use crate::domain::{AgentEffort, AgentModelPreference};
 
@@ -30,8 +31,8 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
     let cline_pass = native_definition(
         profile(AgentProfileKind::ClinePassCli, "cline", Vec::new()),
         "execution-1",
-        &AgentModelPreference::ProviderDefault,
-        AgentEffort::Focused,
+        &AgentModelPreference::Named("~anthropic/claude-opus-latest".to_owned()),
+        AgentEffort::ExtraThorough,
     );
 
     assert_eq!(codex.name, "local-provider-execution-1");
@@ -74,9 +75,26 @@ fn native_profiles_own_their_protocol_and_safety_arguments() {
             "cline",
             "--auto-approve",
             "true",
+            "--model",
+            "~anthropic/claude-opus-latest",
             "--thinking",
-            "low",
+            "xhigh",
         ]
+    );
+}
+
+#[test]
+fn cline_pass_rejects_thinking_levels_the_cli_does_not_support() {
+    assert_eq!(
+        validate_native_preferences(AgentProfileKind::ClinePassCli, AgentEffort::Maximum),
+        Err(AgentAdapterError::UnsupportedPreference {
+            provider: "Cline",
+            preference: "Maximum or Ultra thinking level",
+        })
+    );
+    assert!(
+        validate_native_preferences(AgentProfileKind::ClinePassCli, AgentEffort::ExtraThorough)
+            .is_ok()
     );
 }
 

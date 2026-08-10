@@ -64,7 +64,10 @@ impl ProcessTicketEffectAdvisor {
 fn map_profile_process_error(error: ProfileProcessError) -> ProcessTicketEffectError {
     match error {
         ProfileProcessError::Process(error) => map_process_error(error),
-        ProfileProcessError::InvalidNativeOutput => ProcessTicketEffectError::InvalidOutput,
+        ProfileProcessError::InvalidNativeOutput
+        | ProfileProcessError::UnsupportedNativePreference => {
+            ProcessTicketEffectError::InvalidOutput
+        }
     }
 }
 

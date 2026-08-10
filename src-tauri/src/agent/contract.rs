@@ -115,6 +115,10 @@ pub enum AgentAdapterError {
         operation: &'static str,
         reason: String,
     },
+    UnsupportedPreference {
+        provider: &'static str,
+        preference: &'static str,
+    },
     InvalidWorkItemTransition(TransitionError),
 }
 
@@ -169,6 +173,13 @@ impl fmt::Display for AgentAdapterError {
                 formatter,
                 "agent session {session_id} could not {operation}: {reason}"
             ),
+            Self::UnsupportedPreference {
+                provider,
+                preference,
+            } => write!(
+                formatter,
+                "{provider} does not support the selected {preference} preference"
+            ),
             Self::InvalidWorkItemTransition(error) => {
                 write!(
                     formatter,
@@ -190,7 +201,8 @@ impl Error for AgentAdapterError {
             | Self::ProcessExited { .. }
             | Self::ProcessInput { .. }
             | Self::ProcessLaunch { .. }
-            | Self::ProcessRuntime { .. } => None,
+            | Self::ProcessRuntime { .. }
+            | Self::UnsupportedPreference { .. } => None,
         }
     }
 }

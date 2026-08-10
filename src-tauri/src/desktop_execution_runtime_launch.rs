@@ -1,5 +1,5 @@
 use crate::{
-    agent::{AgentProfile, WorkerAgentAdapter},
+    agent::{AgentProfile, WorkerAgentAdapter, validate_native_preferences},
     application::{
         ExecutionEventController, RecordExecutionRequest, StartExecutionRequest,
         prepare_execution_launch,
@@ -71,6 +71,8 @@ impl ExecutionRuntime {
             work_item.work_item.state,
             request.execution_role,
         )?;
+        validate_native_preferences(profile.kind, work_item.work_item.assigned_agent_effort)
+            .map_err(ExecutionRuntimeError::Agent)?;
         self.authorize_execution_start(&project, &work_item, &request.execution_id)?;
 
         let manager = WorkspaceManager::new(&project, &self.workspace_root)

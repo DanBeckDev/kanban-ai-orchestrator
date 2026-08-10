@@ -1,4 +1,6 @@
+mod bounded_output;
 mod claude_code;
+mod cline;
 mod codex;
 
 use super::{
@@ -16,7 +18,7 @@ impl ProviderModelCatalogClient for InstalledProviderRuntimeClient {
         match provider_kind {
             AgentProfileKind::CodexCli => codex::models().map(Some),
             AgentProfileKind::ClaudeCode => claude_code::models().map(Some),
-            AgentProfileKind::ClinePassCli => Ok(None),
+            AgentProfileKind::ClinePassCli => cline::models().map(Some),
             AgentProfileKind::StructuredProcess => {
                 Err(ProviderModelCatalogError::UnsupportedProvider)
             }
@@ -29,9 +31,12 @@ mod tests {
     use super::{AgentProfileKind, InstalledProviderRuntimeClient, ProviderModelCatalogClient};
 
     #[test]
-    fn defers_to_clients_that_do_not_expose_a_catalogue_protocol() {
+    fn rejects_the_structured_process_bridge() {
         let client = InstalledProviderRuntimeClient;
 
-        assert_eq!(client.list_models(AgentProfileKind::ClinePassCli), Ok(None));
+        assert_eq!(
+            client.list_models(AgentProfileKind::StructuredProcess),
+            Err(super::ProviderModelCatalogError::UnsupportedProvider)
+        );
     }
 }

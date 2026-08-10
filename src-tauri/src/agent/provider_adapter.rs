@@ -231,7 +231,7 @@ pub(crate) fn append_native_preferences(
     if let AgentModelPreference::Named(model) = model {
         arguments.extend(["--model".to_owned(), model.clone()]);
     }
-    let Some(effort) = native_effort_name(effort) else {
+    let Some(effort) = native_effort_name(kind, effort) else {
         return;
     };
     match kind {
@@ -249,15 +249,34 @@ pub(crate) fn append_native_preferences(
     }
 }
 
-fn native_effort_name(effort: AgentEffort) -> Option<&'static str> {
+/// Rejects a persisted preference that a native provider cannot express before
+/// a process is allowed to start. The settings catalogue avoids these choices
+/// for new selections; this guard also protects older saved board state.
+pub(crate) fn validate_native_preferences(
+    kind: AgentProfileKind,
+    effort: AgentEffort,
+) -> Result<(), AgentAdapterError> {
+    if kind == AgentProfileKind::ClinePassCli
+        && matches!(effort, AgentEffort::Maximum | AgentEffort::Ultra)
+    {
+        return Err(AgentAdapterError::UnsupportedPreference {
+            provider: "Cline",
+            preference: "Maximum or Ultra thinking level",
+        });
+    }
+    Ok(())
+}
+
+fn native_effort_name(kind: AgentProfileKind, effort: AgentEffort) -> Option<&'static str> {
     match effort {
         AgentEffort::ProviderDefault => None,
         AgentEffort::Focused => Some("low"),
         AgentEffort::Balanced => Some("medium"),
         AgentEffort::Thorough => Some("high"),
         AgentEffort::ExtraThorough => Some("xhigh"),
-        AgentEffort::Maximum => Some("max"),
-        AgentEffort::Ultra => Some("ultra"),
+        AgentEffort::Maximum if kind != AgentProfileKind::ClinePassCli => Some("max"),
+        AgentEffort::Ultra if kind != AgentProfileKind::ClinePassCli => Some("ultra"),
+        AgentEffort::Maximum | AgentEffort::Ultra => None,
     }
 }
 

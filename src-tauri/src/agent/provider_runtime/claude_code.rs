@@ -1,17 +1,11 @@
-use std::{
-    io::Read,
-    process::{Child, ChildStdout, Command, Stdio},
-    sync::mpsc,
-    thread,
-    time::{Duration, Instant},
-};
+use std::{process::Command, time::Duration};
 
+use crate::agent::{ProviderModel, ProviderModelCatalogError};
 use crate::domain::AgentEffort;
 
-use super::super::{ProviderModel, ProviderModelCatalogError};
+use super::bounded_output;
 
 const MAX_HELP_OUTPUT_BYTES: u64 = 65_536;
-const POLL_INTERVAL: Duration = Duration::from_millis(10);
 const RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Reads only Claude Code's own documented CLI capability metadata. It does not
@@ -26,77 +20,13 @@ fn query_model_capabilities(
     command: &mut Command,
     timeout: Duration,
 ) -> Result<Vec<ProviderModel>, ProviderModelCatalogError> {
-    let mut child = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)?;
-    let result = read_help_output(&mut child, timeout).and_then(|output| {
-        String::from_utf8(output)
-            .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)
-            .and_then(|help| models_from_help(&help))
-    });
-    finish_process(&mut child);
-    result
-}
-
-fn read_help_output(
-    child: &mut Child,
-    timeout: Duration,
-) -> Result<Vec<u8>, ProviderModelCatalogError> {
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or(ProviderModelCatalogError::RuntimeUnavailable)?;
-    let (sender, receiver) = mpsc::channel();
-    thread::spawn(move || {
-        let _ = sender.send(read_bounded_output(stdout));
-    });
-    wait_for_output(child, receiver, timeout)
-}
-
-fn wait_for_output(
-    child: &mut Child,
-    receiver: mpsc::Receiver<Result<Vec<u8>, ProviderModelCatalogError>>,
-    timeout: Duration,
-) -> Result<Vec<u8>, ProviderModelCatalogError> {
-    let deadline = Instant::now() + timeout;
-    loop {
-        if let Some(status) = child
-            .try_wait()
-            .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)?
-        {
-            if !status.success() {
-                return Err(ProviderModelCatalogError::RuntimeUnavailable);
-            }
-            return receiver
-                .recv_timeout(deadline.saturating_duration_since(Instant::now()))
-                .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)?;
-        }
-        if Instant::now() >= deadline {
-            return Err(ProviderModelCatalogError::RuntimeUnavailable);
-        }
-        thread::sleep(POLL_INTERVAL);
-    }
-}
-
-fn read_bounded_output(mut stdout: ChildStdout) -> Result<Vec<u8>, ProviderModelCatalogError> {
-    let mut output = Vec::new();
-    let bytes_read = stdout
-        .by_ref()
-        .take(MAX_HELP_OUTPUT_BYTES + 1)
-        .read_to_end(&mut output)
-        .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)?;
-    if bytes_read as u64 > MAX_HELP_OUTPUT_BYTES {
-        return Err(ProviderModelCatalogError::RuntimeUnavailable);
-    }
-    Ok(output)
-}
-
-fn finish_process(child: &mut Child) {
-    let _ = child.kill();
-    let _ = child.wait();
+    bounded_output::run(command, timeout, MAX_HELP_OUTPUT_BYTES)
+        .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)
+        .and_then(|output| {
+            String::from_utf8(output)
+                .map_err(|_| ProviderModelCatalogError::RuntimeUnavailable)
+                .and_then(|help| models_from_help(&help))
+        })
 }
 
 fn models_from_help(help: &str) -> Result<Vec<ProviderModel>, ProviderModelCatalogError> {

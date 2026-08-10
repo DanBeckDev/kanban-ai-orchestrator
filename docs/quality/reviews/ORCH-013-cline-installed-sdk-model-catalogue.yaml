@@ -1,0 +1,118 @@
+work_item: ORCH-013
+scope:
+  - "Expose Cline's existing signed-in SDK model catalogue in its provider card."
+  - "Keep Cline model and thinking choices bounded, provider-owned, and effective at execution."
+  - "Remove the duplicated bounded-child process implementation from Claude Code."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/contract.rs
+      meaningful_lines: 185
+      responsibilities: "Defines the provider-neutral agent contract and actionable adapter errors."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 33
+      responsibilities: "Exports the small agent boundary and native preference validation helper."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter.rs
+      meaningful_lines: 265
+      responsibilities: "Builds native provider invocations and validates expressible saved preferences."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_adapter_tests.rs
+      meaningful_lines: 206
+      responsibilities: "Verifies native adapter protocol and provider preference translation."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime.rs
+      meaningful_lines: 33
+      responsibilities: "Selects a focused installed-runtime catalogue adapter for each provider."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime/bounded_output.rs
+      meaningful_lines: 71
+      responsibilities: "Owns bounded non-interactive child-process output handling for catalogue adapters."
+      decision: split
+    - path: src-tauri/src/agent/provider_runtime/cline.rs
+      meaningful_lines: 234
+      responsibilities: "Resolves Cline's installed SDK, bounds its safe catalogue query, and maps model metadata."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime/claude_code.rs
+      meaningful_lines: 171
+      responsibilities: "Parses Claude Code's documented capability metadata through the shared bounded runner."
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_launch.rs
+      meaningful_lines: 263
+      responsibilities: "Coordinates a policy-authorized execution launch and rejects unsupported native preferences before provisioning."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/native_profile_process.rs
+      meaningful_lines: 285
+      responsibilities: "Builds bounded native organiser invocations and validates native preferences."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process.rs
+      meaningful_lines: 210
+      responsibilities: "Maps bounded planner profile process outcomes into the planning contract."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor_process.rs
+      meaningful_lines: 205
+      responsibilities: "Maps bounded organiser supervision process outcomes into the supervision contract."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/ticket_effect_process.rs
+      meaningful_lines: 163
+      responsibilities: "Maps bounded ticket-effect process outcomes into the typed ticket contract."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.test.tsx
+      meaningful_lines: 62
+      responsibilities: "Protects model-specific effort choices in the provider-owned settings controls."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 289
+      responsibilities: "Exercises installed-provider configuration and persistence journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.provider.fixtures.ts
+      meaningful_lines: 80
+      responsibilities: "Provides deterministic installed-provider catalogue fixtures for board tests."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T12:23:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "Cline's installed catalogue can be unavailable for a direct binary or custom launcher that does not expose its published Node package layout."
+        resolution: accepted
+        rationale: "ADR-0034 requires a truthful unavailable state instead of a guessed list or direct credential/config-file access. A future documented Cline local protocol can become a separate adapter."
+        decision_reference: ADR-0034
+      - finding: "Cline's catalogue query and Claude help query both need child-process output limits and cleanup."
+        resolution: implemented
+        rationale: "The shared bounded-output module centralizes non-interactive stdin, discarded stderr, stdout limits, timeout polling, and child cleanup without combining provider-specific protocol parsing."
+        decision_reference: ORCH-013
+      - finding: "A historical saved Cline Maximum or Ultra setting cannot be represented by Cline's documented thinking levels."
+        resolution: implemented
+        rationale: "The settings catalogue omits those choices for Cline and native planner/worker launch validates and rejects stale values before starting a process."
+        decision_reference: ADR-0034
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The Cline card fell back to provider default despite Cline's installed SDK exposing model metadata."
+    change: "Added a fixed, bounded Cline SDK/Core catalogue adapter that returns only model identifiers, labels, and reasoning support to the existing provider-neutral contract."
+  - finding: "Native Cline execution could receive a stale effort value the CLI does not support."
+    change: "Mapped only Cline's documented four thinking levels and rejected Maximum or Ultra before planner or worker process launch."
+  - finding: "Claude Code and Cline duplicated bounded local child-process handling."
+    change: "Extracted the shared non-interactive bounded-output runner, retaining provider-specific parsing modules."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.21
+        statements: 85.12
+        functions: 82.94
+        branches: 80.69
+      - package_or_crate: src-tauri-rust
+        lines: 84.66
+        statements: 80.97
+        functions: 84.91
+        branches: 80.41
+    threshold_met: true
+exceptions: []

@@ -20,8 +20,18 @@ Select **Cline CLI (ClinePass)** in the normal AI-role settings. Its default
 program is `cline`; the adapter owns `--json`, `--provider cline`, and
 `--auto-approve true` for a ticket worker. The settings surface can pass a
 deliberately named model and a provider-neutral effort choice as Cline's native
-model/thinking options. It never shows provider, credential, approval,
-worktree, or protocol flags.
+model/thinking options. The model dropdown is loaded from Cline's installed
+SDK/Core catalogue using the existing signed-in session. It contains only the
+model ID, label, and reasoning support that Cline returns; the app never asks
+for an API key or reads Cline configuration files directly. Reasoning-capable
+models offer Cline's `low`, `medium`, `high`, and `xhigh` thinking levels;
+models without reasoning support keep **Provider default**. It never shows
+provider, credential, approval, worktree, or protocol flags.
+
+If the installed Cline package cannot supply this metadata, the card says that
+the model list is unavailable and offers **Refresh models**. Update or sign in
+to Cline outside Kanban, then retry; do not paste a token or configure a second
+provider connection in Kanban. ADR 0034 records the bounded SDK boundary.
 
 Advanced profile arguments may tune only non-reserved behaviour. The adapter
 rejects profile arguments that can supply a key, select another provider or

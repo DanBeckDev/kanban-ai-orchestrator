@@ -86,7 +86,10 @@ impl ProcessPlanGenerator {
 fn map_profile_process_error(error: ProfileProcessError) -> ProcessPlanGenerationError {
     match error {
         ProfileProcessError::Process(error) => map_process_error(error),
-        ProfileProcessError::InvalidNativeOutput => ProcessPlanGenerationError::InvalidOutput,
+        ProfileProcessError::InvalidNativeOutput
+        | ProfileProcessError::UnsupportedNativePreference => {
+            ProcessPlanGenerationError::InvalidOutput
+        }
     }
 }
 

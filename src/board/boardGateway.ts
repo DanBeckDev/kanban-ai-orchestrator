@@ -5,6 +5,8 @@ import type {
   BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
+  BoardSupervision,
+  BoardSupervisionMode,
   ConfirmPlanRequest,
   CreateBoardRequest,
   CloneGitHubRepositoryRequest,
@@ -26,6 +28,7 @@ import type {
   RecordReviewDecisionRequest,
   RepositorySetup,
   StartExecutionRequest,
+  SupervisionDecision,
   SaveProjectAgentSettingsRequest,
   TransitionWorkItemRequest,
 } from "./types";
@@ -65,10 +68,15 @@ export interface BoardGateway {
   ): Promise<ProjectAgentSettings | undefined>;
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
-  coordinateBoard(
+  configureBoardSupervision(
     boardId: string,
-    agentProfileName: string,
-  ): Promise<BoardSnapshot>;
+    mode: BoardSupervisionMode,
+  ): Promise<BoardSupervision>;
+  boardSupervision(boardId: string): Promise<BoardSupervision | undefined>;
+  supervisionDecisions(
+    boardId: string,
+  ): Promise<readonly SupervisionDecision[]>;
+  coordinateBoard(boardId: string): Promise<BoardSnapshot>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   executionActivity(
     executionId: string,

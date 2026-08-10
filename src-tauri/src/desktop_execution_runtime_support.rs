@@ -9,10 +9,12 @@ use chrono::{SecondsFormat, Utc};
 use crate::{
     agent::{AgentAdapterError, NormalizedAgentEvent, NormalizedAgentEventKind},
     application::{
-        AgentProfileServiceError, BoardServiceError, ExecutionEventControllerError,
-        ExecutionLaunchError, StartExecutionRequest,
+        AgentProfileServiceError, BoardServiceError, BoardSupervisionServiceError,
+        ExecutionEventControllerError, ExecutionLaunchError, PlannerProfileServiceError,
+        StartExecutionRequest,
     },
     domain::{ExecutionRole, ExecutionStatus, WorkItemId, WorkItemState},
+    orchestration::{BoardSupervisionInputError, ProcessBoardSupervisionError},
     persistence::{BoardStoreError, EventStoreError},
     workspace::WorkspaceError,
 };
@@ -20,6 +22,8 @@ use crate::{
 type RuntimeServiceError = BoardServiceError<BoardStoreError>;
 type RuntimeProfileError = AgentProfileServiceError<BoardStoreError>;
 type RuntimeControllerError = ExecutionEventControllerError<BoardStoreError>;
+type RuntimeSupervisionError = BoardSupervisionServiceError<BoardStoreError>;
+type RuntimePlannerError = PlannerProfileServiceError<BoardStoreError>;
 
 pub(super) fn validate_start_request(
     request: &StartExecutionRequest,
@@ -87,6 +91,19 @@ pub(crate) enum ExecutionRuntimeError {
     Activation(RuntimeControllerError),
     Agent(AgentAdapterError),
     PolicyAudit(EventStoreError),
+    Planner(RuntimePlannerError),
+    SupervisorInput(BoardSupervisionInputError),
+    Supervisor(ProcessBoardSupervisionError),
+    Supervision(RuntimeSupervisionError),
+    SupervisionNotConfigured {
+        board_id: String,
+    },
+    SupervisionDecisionInvalid {
+        reason: String,
+    },
+    SupervisionLoopLimit {
+        board_id: String,
+    },
     PolicyDenied {
         reason: String,
     },
@@ -127,6 +144,23 @@ impl fmt::Display for ExecutionRuntimeError {
             Self::Activation(error) => write!(formatter, "execution lifecycle error: {error}"),
             Self::Agent(error) => write!(formatter, "agent process error: {error}"),
             Self::PolicyAudit(error) => write!(formatter, "policy audit error: {error}"),
+            Self::Planner(error) => write!(formatter, "organiser profile error: {error}"),
+            Self::SupervisorInput(error) => {
+                write!(formatter, "safe organiser context error: {error}")
+            }
+            Self::Supervisor(error) => write!(formatter, "organiser assessment error: {error}"),
+            Self::Supervision(error) => write!(formatter, "board supervision error: {error}"),
+            Self::SupervisionNotConfigured { board_id } => write!(
+                formatter,
+                "board {board_id} needs an organiser and ticket worker before automation can run"
+            ),
+            Self::SupervisionDecisionInvalid { reason } => {
+                write!(formatter, "invalid supervision decision: {reason}")
+            }
+            Self::SupervisionLoopLimit { board_id } => write!(
+                formatter,
+                "automation stopped for board {board_id} because one pass exceeded its safe action limit"
+            ),
             Self::PolicyDenied { reason } => {
                 write!(formatter, "execution denied by policy: {reason}")
             }
@@ -185,9 +219,16 @@ impl Error for ExecutionRuntimeError {
             Self::Activation(error) => Some(error),
             Self::Agent(error) => Some(error),
             Self::PolicyAudit(error) => Some(error),
+            Self::Planner(error) => Some(error),
+            Self::SupervisorInput(error) => Some(error),
+            Self::Supervisor(error) => Some(error),
+            Self::Supervision(error) => Some(error),
             Self::MissingRequiredField { .. }
             | Self::PolicyDenied { .. }
             | Self::UnsupportedPolicySet { .. }
+            | Self::SupervisionNotConfigured { .. }
+            | Self::SupervisionDecisionInvalid { .. }
+            | Self::SupervisionLoopLimit { .. }
             | Self::WorkItemNotReady { .. }
             | Self::MissingLiveExecution { .. }
             | Self::ExecutionNotStoppable { .. }

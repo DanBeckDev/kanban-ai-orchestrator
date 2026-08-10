@@ -4,7 +4,7 @@ use crate::{
     agent::AgentProfileError,
     domain::{
         ConnectorOutboxItemId, ConnectorReconciliationItemId, EvidenceId, ExecutionId,
-        ExternalLinkId, PolicyDecisionId, WorkItemEventId, WorkItemId,
+        ExternalLinkId, PolicyDecisionId, SupervisionDecisionId, WorkItemEventId, WorkItemId,
     },
     orchestration::PlannerProfileError,
 };
@@ -72,6 +72,12 @@ pub enum EventStoreError {
     },
     PolicyDecisionIdConflict {
         decision_id: PolicyDecisionId,
+    },
+    SupervisionDecisionConflict {
+        decision_id: SupervisionDecisionId,
+    },
+    SupervisionDecisionNotFound {
+        decision_id: SupervisionDecisionId,
     },
     ProtectedGitApprovalIdConflict {
         decision_id: PolicyDecisionId,
@@ -198,6 +204,16 @@ impl fmt::Display for EventStoreError {
             Self::PolicyDecisionIdConflict { decision_id } => write!(
                 formatter,
                 "policy decision id {} conflicts with a recorded decision",
+                decision_id.0
+            ),
+            Self::SupervisionDecisionConflict { decision_id } => write!(
+                formatter,
+                "supervision decision {} conflicts with a recorded decision",
+                decision_id.0
+            ),
+            Self::SupervisionDecisionNotFound { decision_id } => write!(
+                formatter,
+                "supervision decision {} was not found",
                 decision_id.0
             ),
             Self::ProtectedGitApprovalIdConflict { decision_id } => write!(

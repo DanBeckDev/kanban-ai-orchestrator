@@ -1,0 +1,215 @@
+work_item: ORCH-007
+scope:
+  - Durable board-supervision records, organiser boundary, runtime coordination, and board UI.
+  - Tests, schema migration, and review evidence for bounded autonomous supervision.
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/application/board_service.rs
+      meaningful_lines: 360
+      responsibilities: Board application use cases and repository-facing orchestration.
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_supervision_service.rs
+      meaningful_lines: 195
+      responsibilities: Validates and persists board supervision configuration.
+      decision: kept cohesive
+    - path: src-tauri/src/application/board_supervision_service_tests.rs
+      meaningful_lines: 174
+      responsibilities: Verifies supervision configuration use-case outcomes.
+      decision: kept cohesive
+    - path: src-tauri/src/application/mod.rs
+      meaningful_lines: 75
+      responsibilities: Exposes application-layer modules and contracts.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_coordination.rs
+      meaningful_lines: 69
+      responsibilities: Translates desktop commands into supervision use cases.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime.rs
+      meaningful_lines: 187
+      responsibilities: Owns daemon runtime lifecycle and module composition.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_events.rs
+      meaningful_lines: 55
+      responsibilities: Converts worker events into durable runtime effects.
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_execution_runtime_supervision.rs
+      meaningful_lines: 396
+      responsibilities: Applies bounded autonomous supervision decisions through daemon guards.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_supervision_recovery.rs
+      meaningful_lines: 19
+      responsibilities: Triggers follow-up supervision after a worker lifecycle event.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_supervision_selection.rs
+      meaningful_lines: 187
+      responsibilities: Builds normalized organiser input and dependency-safe candidates.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_supervision_test_fixtures.rs
+      meaningful_lines: 278
+      responsibilities: Provides isolated durable supervision test fixtures.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_supervision_tests.rs
+      meaningful_lines: 240
+      responsibilities: Verifies supervision outcomes, recovery, and pause ordering.
+      decision: split
+    - path: src-tauri/src/desktop_execution_runtime_support.rs
+      meaningful_lines: 228
+      responsibilities: Defines runtime errors and shared lifecycle helpers.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/mod.rs
+      meaningful_lines: 29
+      responsibilities: Exposes domain modules at the application boundary.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/board_supervision.rs
+      meaningful_lines: 85
+      responsibilities: Defines durable supervision records and enums.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/mod.rs
+      meaningful_lines: 38
+      responsibilities: Re-exports stable domain model types.
+      decision: kept cohesive
+    - path: src-tauri/src/domain/model/schema.rs
+      meaningful_lines: 45
+      responsibilities: Defines schema metadata and domain identifier types.
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 91
+      responsibilities: Composes desktop commands at the application edge.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/bounded_process.rs
+      meaningful_lines: 149
+      responsibilities: Runs one bounded JSON process without persisting raw output.
+      decision: split
+    - path: src-tauri/src/orchestration/mod.rs
+      meaningful_lines: 31
+      responsibilities: Exposes provider-neutral orchestration contracts.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process.rs
+      meaningful_lines: 162
+      responsibilities: Adapts the plan contract to the shared bounded process runner.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor.rs
+      meaningful_lines: 212
+      responsibilities: Defines bounded organiser input and validates redacted recommendations.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor_process.rs
+      meaningful_lines: 150
+      responsibilities: Adapts organiser profiles to the bounded recommendation contract.
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/supervisor_process_tests.rs
+      meaningful_lines: 243
+      responsibilities: Verifies organiser boundary validation, limits, and redaction.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_repository.rs
+      meaningful_lines: 270
+      responsibilities: Implements the board repository adapter over SQLite storage.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_supervision_store.rs
+      meaningful_lines: 159
+      responsibilities: Persists immutable supervision records and decision audit entries.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/board_supervision_store_tests.rs
+      meaningful_lines: 147
+      responsibilities: Verifies durable decision idempotency and immutability.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_error.rs
+      meaningful_lines: 277
+      responsibilities: Defines typed persistence errors and actionable rendering.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/event_store_schema.rs
+      meaningful_lines: 146
+      responsibilities: Defines ordered SQLite schema migrations.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/mod.rs
+      meaningful_lines: 34
+      responsibilities: Exposes persistence modules and repository types.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store.rs
+      meaningful_lines: 392
+      responsibilities: Owns SQLite store lifecycle and migration application.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_migration_tests.rs
+      meaningful_lines: 87
+      responsibilities: Verifies forward schema migration compatibility.
+      decision: kept cohesive
+    - path: src-tauri/src/persistence/sqlite_event_store_tests.rs
+      meaningful_lines: 380
+      responsibilities: Verifies SQLite store lifecycle and replay behavior.
+      decision: kept cohesive
+    - path: src/board/BoardAutomation.test.tsx
+      meaningful_lines: 52
+      responsibilities: Verifies board automation interaction states.
+      decision: kept cohesive
+    - path: src/board/BoardAutomation.tsx
+      meaningful_lines: 140
+      responsibilities: Presents durable automation controls and decision explanation.
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 396
+      responsibilities: Composes board workflow views and UI actions.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.coordination.test.tsx
+      meaningful_lines: 42
+      responsibilities: Verifies workspace coordination gateway behavior.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 395
+      responsibilities: Supplies reusable deterministic board workspace fixtures.
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 398
+      responsibilities: Owns board workspace state loading and command callbacks.
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 110
+      responsibilities: Defines the UI-facing board command gateway contract.
+      decision: kept cohesive
+    - path: src/board/gateway.test.ts
+      meaningful_lines: 93
+      responsibilities: Verifies Tauri gateway command mapping.
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 207
+      responsibilities: Adapts the typed board gateway to Tauri invokes.
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 371
+      responsibilities: Defines stable UI data contracts.
+      decision: kept cohesive
+    - path: src/board/useBoardOperation.ts
+      meaningful_lines: 32
+      responsibilities: Encapsulates UI operation busy and error state.
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex
+  reviewed_at: 2026-08-10T01:40:00Z
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: Runtime coordination approached the 400-line gate after adding durable decisions.
+        resolution: implemented
+        rationale: Candidate selection, recovery, fixtures, and focused tests were extracted; the guarded effect flow remains cohesive at 396 meaningful lines.
+        decision_reference: ADR-0026
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: Supervision configuration reads could be silently treated as a pause.
+    change: Propagate the durable configuration read error from autonomy_is_active rather than converting it to false.
+  - finding: Bearer credential values could outlive a redacted bearer label in organiser summaries.
+    change: Redact authorization labels and the following bearer value before a decision can be persisted.
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: node scripts/check-code-structure.mjs --all
+      result: passed
+  coverage:
+    package_or_crate: frontend Vitest and Rust cargo-llvm-cov
+    lines: frontend 87.06%; Rust 83.83%
+    statements: frontend 86.08%; Rust 80.15%
+    functions: frontend 84.10%; Rust 84.20%
+    branches: frontend 82.34%; Rust 80.04%
+    threshold_met: true
+exceptions: []

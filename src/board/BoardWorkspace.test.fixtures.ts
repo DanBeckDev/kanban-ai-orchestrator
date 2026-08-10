@@ -9,6 +9,7 @@ import type {
   BoardLibraryEntry,
   BoardPlan,
   BoardSnapshot,
+  BoardSupervision,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
   GeneratePlanRequest,
@@ -84,6 +85,8 @@ export function gateway(
   let profiles: readonly AgentProfile[] = [];
   let plannerProfiles: readonly PlannerProfile[] = [];
   let agentSettings: ProjectAgentSettings | undefined;
+  let boardSupervision: BoardSupervision | undefined;
+  const supervisionDecisions: readonly [] = [];
   let savedPlan: BoardPlan | undefined;
   let proposedPlan: ProposePlanRequest | undefined;
   return {
@@ -306,6 +309,27 @@ export function gateway(
       return agentSettings;
     }),
     projectAgentSettings: vi.fn().mockImplementation(async () => agentSettings),
+    configureBoardSupervision: vi.fn().mockImplementation(async (_, mode) => {
+      if (!agentSettings?.organiser || !agentSettings.ticketWorker) {
+        throw new Error("choose roles first");
+      }
+      boardSupervision = {
+        boardId: current.board.id,
+        mode,
+        organiser: agentSettings.organiser,
+        ticketWorker: agentSettings.ticketWorker,
+        limits: { maxParallelWorkItems: 1, maxRetriesPerWorkItem: 1 },
+        permittedActions: ["prepare_work", "make_work_ready", "start_work"],
+        configuredBy: "local-user",
+        configuredAt: "2026-08-10T00:00:00Z",
+        revision: (boardSupervision?.revision ?? 0) + 1,
+      };
+      return boardSupervision;
+    }),
+    boardSupervision: vi.fn().mockImplementation(async () => boardSupervision),
+    supervisionDecisions: vi
+      .fn()
+      .mockImplementation(async () => supervisionDecisions),
     generatePlan: vi
       .fn()
       .mockImplementation(async (request: GeneratePlanRequest) => {

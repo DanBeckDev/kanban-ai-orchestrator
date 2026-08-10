@@ -84,6 +84,28 @@ pub(super) fn create_project_agent_settings_schema(
     )
 }
 
+pub(super) fn create_board_supervision_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS board_supervisions (
+            board_id TEXT PRIMARY KEY,
+            supervision_json TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS supervision_decisions (
+            decision_id TEXT PRIMARY KEY,
+            board_id TEXT NOT NULL,
+            work_item_id TEXT,
+            idempotency_key TEXT NOT NULL,
+            recorded_at TEXT NOT NULL,
+            decision_json TEXT NOT NULL,
+            UNIQUE(board_id, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS supervision_decisions_by_board
+            ON supervision_decisions (board_id, recorded_at, decision_id);",
+    )
+}
+
 pub(super) fn create_external_link_schema(
     transaction: &Transaction<'_>,
 ) -> Result<(), rusqlite::Error> {

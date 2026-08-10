@@ -1,3 +1,4 @@
+mod board_supervision;
 mod connector_sync;
 mod execution;
 mod external_link;
@@ -7,6 +8,10 @@ mod project_agent_settings;
 mod schema;
 mod work_item;
 
+pub use board_supervision::{
+    BoardSupervision, BoardSupervisionLimits, BoardSupervisionMode, SupervisionAction,
+    SupervisionDecision, SupervisionDecisionOutcome, SupervisionPolicyResult,
+};
 pub use execution::{
     Evidence, EvidenceKind, EvidenceResult, Execution, ExecutionRole, ExecutionStatus,
     ExecutionUsage,
@@ -21,7 +26,8 @@ pub use project_agent_settings::{
 pub use schema::{
     BoardId, CURRENT_SCHEMA_VERSION, ConnectorOutboxItemId, ConnectorReconciliationItemId,
     DependencyId, EvidenceId, ExecutionId, ExternalLinkId, PlanId, PolicyDecisionId, ProjectId,
-    SchemaMetadata, SchemaVersion, VersionedSchema, WorkItemEventId, WorkItemId,
+    SchemaMetadata, SchemaVersion, SupervisionDecisionId, VersionedSchema, WorkItemEventId,
+    WorkItemId,
 };
 pub use work_item::{
     Dependency, DependencyKind, DependencySource, WorkItem, WorkItemBudget, WorkItemState,

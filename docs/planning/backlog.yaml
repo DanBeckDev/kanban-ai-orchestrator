@@ -245,7 +245,7 @@ tasks:
   - id: ORCH-007
     epic: ORCH
     title: Add durable, explainable autonomous worker supervision
-    status: ready
+    status: done
     priority: P0
     depends_on: [ORCH-005, ORCH-006, UX-005, UX-006]
     acceptance_criteria:
@@ -253,7 +253,16 @@ tasks:
       - The organiser receives only normalized state, dependency facts, bounded activity summaries, and evidence. Its recommendation, rationale, policy result, and outcome are visible without storing raw transcripts or credentials.
       - Within explicit policy it can start dependency-ready work and recommend bounded retry or return-for-correction actions; a named user can pause it immediately, and it can never perform automatic Done, provider installation/authentication, protected Git, or external writes.
       - Restart, duplicate events, policy/budget denials, stale decisions, pause, retry, correction, and recovery are covered by daemon and UI tests.
-    notes: This is the intelligent organiser loop in the product vision; do not simulate it with UI-only timers or unrecorded client state.
+    notes: >-
+      Completed on 2026-08-10 with a daemon-owned board-supervision record,
+      decision audit, provider-neutral bounded organiser process contract, normalized
+      and redacted board context, candidate validation, stale/idempotent/recovery
+      handling, durable capacity denials, and an immediate named pause guard.
+      The browser reads the daemon state and contains no scheduler timer or
+      local-storage authority. BookCtx — AI Agents: The Definitive Guide, Nicole
+      Koenigstein, “From LLMs to Agents: The Foundational Blueprint” (chunk 1)
+      supports the project-specific bounded-autonomy design of explicit state,
+      events, guards, actions, safeguards, and termination.
 
   - id: ORCH-008
     epic: ORCH

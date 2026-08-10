@@ -3,11 +3,11 @@ use std::error::Error;
 use chrono::Utc;
 
 use crate::domain::{
-    Board, BoardId, ConnectorOutboxItem, ConnectorReconciliationItem, CreateWorkItemCommand,
-    Dependency, DependencyId, DependencySource, Evidence, Execution, ExecutionId, ExternalLink,
-    ExternalLinkId, MaterializedWorkItem, Project, ProjectAgentSettings, ProjectId,
-    RecordedWorkItemEvent, SchemaMetadata, TransitionConfig, TransitionWorkItemCommand, WorkItem,
-    WorkItemEventId, WorkItemId, WorkItemState,
+    Board, BoardId, BoardSupervision, ConnectorOutboxItem, ConnectorReconciliationItem,
+    CreateWorkItemCommand, Dependency, DependencyId, DependencySource, Evidence, Execution,
+    ExecutionId, ExternalLink, ExternalLinkId, MaterializedWorkItem, Project, ProjectAgentSettings,
+    ProjectId, RecordedWorkItemEvent, SchemaMetadata, SupervisionDecision, TransitionConfig,
+    TransitionWorkItemCommand, WorkItem, WorkItemEventId, WorkItemId, WorkItemState,
 };
 use crate::orchestration::{PlanConfirmation, PlanProposal};
 use crate::{agent::AgentProfile, orchestration::PlannerProfile};
@@ -132,6 +132,26 @@ pub trait BoardRepository {
         &self,
         project_id: &ProjectId,
     ) -> Result<Option<ProjectAgentSettings>, Self::Error>;
+    fn save_board_supervision(
+        &mut self,
+        supervision: BoardSupervision,
+    ) -> Result<BoardSupervision, Self::Error>;
+    fn board_supervision(
+        &self,
+        board_id: &BoardId,
+    ) -> Result<Option<BoardSupervision>, Self::Error>;
+    fn record_supervision_decision(
+        &mut self,
+        decision: SupervisionDecision,
+    ) -> Result<SupervisionDecision, Self::Error>;
+    fn resolve_supervision_decision(
+        &mut self,
+        decision: SupervisionDecision,
+    ) -> Result<SupervisionDecision, Self::Error>;
+    fn supervision_decisions_for_board(
+        &self,
+        board_id: &BoardId,
+    ) -> Result<Vec<SupervisionDecision>, Self::Error>;
     fn save_plan_proposal(&mut self, proposal: PlanProposal) -> Result<(), Self::Error>;
     fn stored_plan_for_board(&self, board_id: &BoardId) -> Result<Option<StoredPlan>, Self::Error>;
     fn confirm_and_materialize_plan(

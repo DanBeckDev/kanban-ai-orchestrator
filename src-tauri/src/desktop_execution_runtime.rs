@@ -18,10 +18,21 @@ use crate::desktop_execution_runtime_support::{
     ExecutionRuntimeError, is_terminal_event, lock, timestamp,
 };
 
-#[path = "desktop_execution_runtime_coordination.rs"]
-mod coordination;
 #[path = "desktop_execution_runtime_launch.rs"]
 mod launch;
+#[path = "desktop_execution_runtime_supervision.rs"]
+mod supervision;
+#[path = "desktop_execution_runtime_supervision_recovery.rs"]
+mod supervision_recovery;
+#[path = "desktop_execution_runtime_supervision_selection.rs"]
+mod supervision_selection;
+
+#[cfg(test)]
+#[path = "desktop_execution_runtime_supervision_test_fixtures.rs"]
+mod supervision_test_fixtures;
+#[cfg(test)]
+#[path = "desktop_execution_runtime_supervision_tests.rs"]
+mod supervision_tests;
 
 type LiveAgent = Box<dyn AgentAdapter + Send>;
 
@@ -30,6 +41,7 @@ pub(crate) struct ExecutionRuntime {
     pub(crate) service: Arc<Mutex<LocalBoardService>>,
     pub(crate) workspace_root: PathBuf,
     launch_gate: Arc<Mutex<()>>,
+    pub(crate) supervision_gate: Arc<Mutex<()>>,
     pub(crate) agents: Arc<Mutex<BTreeMap<String, LiveAgent>>>,
     activity_streams: Arc<Mutex<ExecutionActivityStreams>>,
     pub(crate) stop_requests: Arc<Mutex<BTreeSet<String>>>,
@@ -41,6 +53,7 @@ impl ExecutionRuntime {
             service,
             workspace_root,
             launch_gate: Arc::new(Mutex::new(())),
+            supervision_gate: Arc::new(Mutex::new(())),
             agents: Arc::new(Mutex::new(BTreeMap::new())),
             activity_streams: Arc::new(Mutex::new(ExecutionActivityStreams::default())),
             stop_requests: Arc::new(Mutex::new(BTreeSet::new())),
@@ -102,6 +115,7 @@ impl ExecutionRuntime {
                 }
                 if is_terminal {
                     self.record_review_artifacts(&execution);
+                    self.coordinate_after_execution(&execution.work_item_id);
                     return self.stop_agent(&execution_id, &session_id);
                 }
             }

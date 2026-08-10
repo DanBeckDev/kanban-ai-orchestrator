@@ -18,14 +18,32 @@ async function openBoard(boardGateway: BoardGateway) {
 }
 
 describe("Linear connection in the board workspace", () => {
+  it("identifies a new board as local-only before an issue is imported", async () => {
+    const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
+
+    await openBoard(boardGateway);
+
+    expect(screen.getByText("Local-only board")).toBeVisible();
+    expect(
+      screen.getByText(
+        "No task is linked to Linear. Connect an account to load issues, then choose how each link should work.",
+      ),
+    ).toBeVisible();
+  });
+
   it("starts OAuth after opening a board and shows its awaiting status", async () => {
     const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
 
     await openBoard(boardGateway);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Use a self-managed Linear app" }),
+    );
     fireEvent.change(screen.getByLabelText("OAuth client ID"), {
       target: { value: "linear-client-id" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Connect Linear" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect self-managed app" }),
+    );
 
     await waitFor(() =>
       expect(boardGateway.beginLinearOAuth).toHaveBeenCalledWith({
@@ -50,7 +68,7 @@ describe("Linear connection in the board workspace", () => {
 
     expect(
       screen.getByText(
-        "Kanban could not connect Linear. Check the app setup, then try again.",
+        "Kanban could not connect Linear. Reopen setup, check the app details, then connect again.",
       ),
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: "MVP" })).toBeVisible();
@@ -83,5 +101,31 @@ describe("Linear connection in the board workspace", () => {
     expect(
       screen.getByRole("button", { name: "Use LIN-12: Load the issue" }),
     ).toBeVisible();
+  });
+
+  it("keeps a board open and offers a specific reconnect path when Linear expires", async () => {
+    const boardGateway = gateway(snapshot(), [boardLibraryEntry()]);
+    boardGateway.linearConnectionStatus = vi.fn().mockResolvedValue({
+      kind: "connected",
+      expiresAt: "2026-08-09T12:00:00Z",
+      scopes: ["read"],
+    });
+    boardGateway.linearAssignedIssues = vi
+      .fn()
+      .mockRejectedValue(new Error("refresh credential expired"));
+
+    await openBoard(boardGateway);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load my assigned Linear issues" }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Kanban could not connect Linear. Reopen setup, check the app details, then connect again.",
+        ),
+      ).toBeVisible(),
+    );
+    expect(screen.getByRole("heading", { name: "MVP" })).toBeVisible();
   });
 });

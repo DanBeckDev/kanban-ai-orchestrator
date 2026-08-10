@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RepositoryPicker } from "./BoardSetup";
 import { BoardWorkspaceScreen } from "./BoardWorkspaceScreen";
 import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
+import { useLinearBoardConnection } from "./useLinearBoardConnection";
 import { errorMessage, useBoardOperation } from "./useBoardOperation";
 import { tauriBoardGateway } from "./gateway";
 import { ticketEffectOperations } from "./ticketEffectOperations";
@@ -22,10 +23,6 @@ import type {
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
-  LinearConnectionStatus,
-  LinearIssueSummary,
-  LinearOAuthConfiguration,
-  QueueLinearCommentRequest,
   ProposePlanRequest,
   PlannerProfile,
   ProjectAgentSettings,
@@ -72,15 +69,15 @@ export function BoardWorkspace({
     readonly PlannerProfile[]
   >([]);
   const [boardPlan, setBoardPlan] = useState<BoardPlan>();
-  const [linearConnectionStatus, setLinearConnectionStatus] =
-    useState<LinearConnectionStatus>({ kind: "disconnected" });
-  const [linearIssues, setLinearIssues] = useState<
-    readonly LinearIssueSummary[]
-  >([]);
-
   const run = useBoardOperation({
     onError: setError,
     onSnapshot: setSnapshot,
+    setBusy,
+  });
+  const linear = useLinearBoardConnection({
+    clearError: () => setError(undefined),
+    gateway,
+    run,
     setBusy,
   });
 
@@ -257,17 +254,6 @@ export function BoardWorkspace({
     await run(() => gateway.importLinearBlocker(request));
   }
 
-  const refreshLinearConnectionStatus = useCallback(async () => {
-    try {
-      setLinearConnectionStatus(await gateway.linearConnectionStatus());
-    } catch (connectionError) {
-      setLinearConnectionStatus({
-        kind: "failed",
-        message: errorMessage(connectionError),
-      });
-    }
-  }, [gateway]);
-
   async function loadBoardContext(boardId: string) {
     const [
       profiles,
@@ -293,56 +279,8 @@ export function BoardWorkspace({
     setProjectAgentSettings(settings);
     setBoardSupervision(supervision);
     setSupervisionDecisions(decisions);
-    setLinearIssues([]);
-    await refreshLinearConnectionStatus();
-  }
-
-  async function beginLinearOAuth(configuration: LinearOAuthConfiguration) {
-    setBusy(true);
-    setError(undefined);
-    try {
-      setLinearConnectionStatus(await gateway.beginLinearOAuth(configuration));
-    } catch (connectionError) {
-      setError(errorMessage(connectionError));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function beginLinearCommentAccess() {
-    setBusy(true);
-    setError(undefined);
-    try {
-      setLinearConnectionStatus(await gateway.beginLinearCommentAccess());
-    } catch (connectionError) {
-      setError(errorMessage(connectionError));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function queueLinearComment(request: QueueLinearCommentRequest) {
-    await run(() => gateway.queueLinearComment(request));
-  }
-
-  async function deliverLinearComment(outboxItemId: string) {
-    await run(() => gateway.deliverLinearComment(outboxItemId));
-  }
-
-  async function refreshLinearSharedFields(externalLinkId: string) {
-    await run(() => gateway.syncLinearSharedFields(externalLinkId));
-  }
-
-  async function loadLinearAssignedIssues() {
-    setBusy(true);
-    setError(undefined);
-    try {
-      setLinearIssues(await gateway.linearAssignedIssues());
-    } catch (linearError) {
-      setError(errorMessage(linearError));
-    } finally {
-      setBusy(false);
-    }
+    linear.resetIssues();
+    await linear.refreshConnectionStatus();
   }
 
   const boardLibraryLoadFailed = !snapshot && !boardLibrary && Boolean(error);
@@ -354,8 +292,8 @@ export function BoardWorkspace({
     boardId: snapshot?.board.id,
     gateway,
     isAwaitingLinearAuthorization:
-      linearConnectionStatus.kind === "awaiting_authorization",
-    onLinearStatusRefresh: refreshLinearConnectionStatus,
+      linear.connectionStatus.kind === "awaiting_authorization",
+    onLinearStatusRefresh: linear.refreshConnectionStatus,
     onSnapshot: setSnapshot,
   });
 
@@ -376,14 +314,14 @@ export function BoardWorkspace({
             onCreateWorkItem: createWorkItem,
             onImportLinearBlocker: importLinearBlocker,
             onImportLinearIssue: importLinearIssue,
-            linearConnectionStatus,
-            linearIssues,
-            onConnectLinear: beginLinearOAuth,
-            onEnableLinearCommentAccess: beginLinearCommentAccess,
-            onLoadLinearIssues: loadLinearAssignedIssues,
-            onQueueLinearComment: queueLinearComment,
-            onDeliverLinearComment: deliverLinearComment,
-            onRefreshLinearSharedFields: refreshLinearSharedFields,
+            linearConnectionStatus: linear.connectionStatus,
+            linearIssues: linear.issues,
+            onConnectLinear: linear.beginOAuth,
+            onEnableLinearCommentAccess: linear.beginCommentAccess,
+            onLoadLinearIssues: linear.loadAssignedIssues,
+            onQueueLinearComment: linear.queueComment,
+            onDeliverLinearComment: linear.deliverComment,
+            onRefreshLinearSharedFields: linear.refreshSharedFields,
             onProposePlan: proposePlan,
             onGeneratePlan: generatePlan,
             onSaveAgentProfile: saveAgentProfile,

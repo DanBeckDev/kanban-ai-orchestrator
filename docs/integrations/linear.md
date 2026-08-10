@@ -18,11 +18,25 @@ OAuth is the release path. A personal API key may be offered only for private de
 
 ## Desktop OAuth connection
 
-The desktop connection uses Linear's authorization-code flow with PKCE. The user creates a Linear OAuth application and configures this exact redirect URI:
+The desktop connection uses Linear's authorization-code flow with PKCE. A
+release that has a supported, product-managed Linear OAuth application supplies
+its public client ID through `VITE_LINEAR_OAUTH_CLIENT_ID` at build time and
+offers a one-action **Connect Linear** read-only path. When that release
+configuration is absent, the normal UI says so plainly and leaves the board
+unchanged; a board without an existing link remains local-only. It does not ask
+an individual to create or configure an OAuth app.
+
+Teams that already own a Linear OAuth application can deliberately open
+**Use a self-managed Linear app** in Advanced setup. They supply only that
+application's public client ID and configure this exact redirect URI:
 
 `http://127.0.0.1:38471/linear/oauth/callback`
 
-The app accepts only an explicit HTTP loopback IP address, port, and path. It generates a fresh state value and S256 verifier for every attempt, opens the system browser, and accepts one bounded callback. The callback state must match before the daemon exchanges the code. The public client ID is supplied in the UI; a client secret is neither requested nor embedded in the desktop app.
+The app accepts only an explicit HTTP loopback IP address, port, and path. It
+generates a fresh state value and S256 verifier for every attempt, opens the
+system browser, and accepts one bounded callback. The callback state must match
+before the daemon exchanges the code. A client secret is neither requested nor
+embedded in the desktop app.
 
 Access and refresh tokens, together with the public connection metadata needed to refresh them, are serialized only into the operating system credential store: Keychain Services on macOS, Credential Manager on Windows, and Secret Service on Linux. SQLite, diagnostics, activity history, and board snapshots never contain a token. A refresh happens only when an access token is within one minute of expiry; the existing credential is preserved until its replacement has been validated and saved. This produces no background polling and respects Linear's guidance to avoid it.
 
@@ -35,6 +49,20 @@ Verified against Linear's developer documentation on 2026-08-09: Linear complete
 ## Authenticated issue retrieval
 
 After the connection status is explicitly `connected`, the user may press **Load my assigned Linear issues**. That one user action sends a read-only GraphQL `viewer.assignedIssues` query, ordered by `updatedAt` and bounded to 50 issue summaries (`id`, `identifier`, `title`, and `url`). It never creates, changes, comments on, or transitions a Linear issue, and it does not poll. Choosing a returned summary merely pre-fills the existing local import form; the daemon still validates the immutable ID and Linear HTTPS URL before it creates a durable link.
+
+## Entry and access-mode guidance
+
+Every new board starts **local-only**: it does not load from or send to Linear.
+The board header and Linear settings name that state directly. A locally linked
+issue is **read-only** unless the user has separately granted the narrow
+`comments:create` scope. Read-only mode can load and link issues but cannot
+send an update. After the narrow scope is confirmed, a person may deliberately
+choose **linked execution** while linking an issue. That enables preparing a
+bounded public update, but the outbox still requires an explicit **Send** for
+each update.
+
+This distinction is visible before importing an issue or queueing a comment;
+the app never infers linked execution from an unconnected or read-only session.
 
 ## Mapping and provenance
 

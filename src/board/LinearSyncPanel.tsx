@@ -1,9 +1,28 @@
 import { useMemo, useState, type FormEvent } from "react";
 
-import type { BoardSnapshot, QueueLinearCommentRequest } from "./types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
+import {
+  commentsAreAuthorized,
+  connectedLinearDescription,
+} from "./linearConnectionPresentation";
+import type {
+  BoardSnapshot,
+  LinearConnectionStatus,
+  QueueLinearCommentRequest,
+} from "./types";
 
 type LinearSyncPanelProps = Readonly<{
   busy: boolean;
+  connectionStatus: LinearConnectionStatus;
   snapshot: BoardSnapshot;
   onDeliver: (outboxItemId: string) => Promise<void>;
   onQueue: (request: QueueLinearCommentRequest) => Promise<void>;
@@ -12,6 +31,7 @@ type LinearSyncPanelProps = Readonly<{
 
 export function LinearSyncPanel({
   busy,
+  connectionStatus,
   snapshot,
   onDeliver,
   onQueue,
@@ -40,6 +60,7 @@ export function LinearSyncPanel({
   const reconciliationItems = snapshot.connectorReconciliationItems.filter(
     (item) => item.connectorId === "linear",
   );
+  const canQueueComments = commentsAreAuthorized(connectionStatus);
 
   async function queueComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,53 +85,77 @@ export function LinearSyncPanel({
         update is sent; transcripts, command output, secrets, and diffs are not
         inputs to this form.
       </p>
+      {!canQueueComments && (
+        <Alert>
+          <AlertTitle>Comments are not enabled</AlertTitle>
+          <AlertDescription>
+            {connectedLinearDescription(connectionStatus)} Enable manually sent
+            Linear comments before you queue a public update.
+          </AlertDescription>
+        </Alert>
+      )}
       {linkedWorkItems.length === 0 ? (
         <p>
           Import an issue in linked-execution mode before queuing a comment.
         </p>
-      ) : (
+      ) : canQueueComments ? (
         <form aria-label="Queue public Linear comment" onSubmit={queueComment}>
-          <label>
-            Linked task
-            <select
-              required
-              value={workItemId}
-              onChange={(event) => setWorkItemId(event.target.value)}
-            >
-              <option value="">Select a linked task</option>
-              {linkedWorkItems.map(({ link, workItem }) => (
-                <option key={link.id} value={workItem.id}>
-                  {link.displayIdentifier}: {workItem.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Public update
-            <input
-              maxLength={512}
-              required
-              value={publicSummary}
-              onChange={(event) => setPublicSummary(event.target.value)}
-            />
-          </label>
-          <button disabled={busy || workItemId === ""} type="submit">
-            Queue Linear comment
-          </button>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="linear-comment-work-item">
+                Linked task
+              </FieldLabel>
+              <select
+                id="linear-comment-work-item"
+                name="linear-comment-work-item"
+                required
+                value={workItemId}
+                onChange={(event) => setWorkItemId(event.target.value)}
+              >
+                <option value="">Select a linked task</option>
+                {linkedWorkItems.map(({ link, workItem }) => (
+                  <option key={link.id} value={workItem.id}>
+                    {link.displayIdentifier}: {workItem.title}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="linear-public-summary">
+                Public update
+              </FieldLabel>
+              <Input
+                autoComplete="off"
+                id="linear-public-summary"
+                maxLength={512}
+                name="linear-public-summary"
+                required
+                value={publicSummary}
+                onChange={(event) => setPublicSummary(event.target.value)}
+              />
+              <FieldDescription>
+                This is the only text Kanban will include in the comment.
+              </FieldDescription>
+            </Field>
+            <Button disabled={busy || workItemId === ""} type="submit">
+              Queue Linear comment
+            </Button>
+          </FieldGroup>
         </form>
-      )}
+      ) : null}
       {linkedWorkItems.length > 0 && (
         <section aria-label="Refresh shared Linear fields">
           <h4>Refresh shared fields</h4>
           {linkedWorkItems.map(({ link }) => (
-            <button
+            <Button
               disabled={busy}
               key={link.id}
               type="button"
               onClick={() => void onRefresh(link.id)}
+              variant="outline"
             >
               Refresh {link.displayIdentifier}
-            </button>
+            </Button>
           ))}
         </section>
       )}
@@ -141,17 +186,20 @@ function OutboxItems({
               <p>{item.operation.comment.body}</p>
             )}
             {item.state === "pending" && (
-              <button
+              <Button
                 disabled={busy}
                 type="button"
                 onClick={() => void onDeliver(item.id)}
+                size="sm"
               >
                 Send comment
-              </button>
+              </Button>
             )}
             {item.state === "delivery_uncertain" && (
               <p>
-                The delivery result is unknown. It will not retry automatically.
+                The delivery result is unknown. Check Linear before deciding
+                whether to send a new update; Kanban will not retry this one
+                automatically.
               </p>
             )}
           </li>
@@ -176,12 +224,18 @@ function ReconciliationItems({
             <strong>{item.field.replaceAll("_", " ")}</strong>:{" "}
             {item.state.replaceAll("_", " ")}
             {item.state === "needs_resolution" && (
-              <dl>
-                <dt>Local</dt>
-                <dd>{item.localValue}</dd>
-                <dt>Linear</dt>
-                <dd>{item.remoteValue}</dd>
-              </dl>
+              <>
+                <p>
+                  Choose which value to keep outside this view, then refresh
+                  shared fields again. Kanban has not overwritten either value.
+                </p>
+                <dl>
+                  <dt>Local</dt>
+                  <dd>{item.localValue}</dd>
+                  <dt>Linear</dt>
+                  <dd>{item.remoteValue}</dd>
+                </dl>
+              </>
             )}
           </li>
         ))}

@@ -3,9 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AgentProfileForm } from "./AgentProfileForm";
 import { BoardSupportDetails } from "./BoardSupportDetails";
+import { LinearBoardModeNotice } from "./LinearBoardModeNotice";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
 import { LinearImportForm } from "./LinearImportForm";
 import { LinearSyncPanel } from "./LinearSyncPanel";
+import { productManagedLinearOAuthConfiguration } from "./linearConnectionPresentation";
 import { PlannerProfileForm } from "./PlannerProfileForm";
 import { ProjectAgentDefaultsForm } from "./ProjectAgentDefaultsForm";
 import { SurfaceHeader } from "./BoardManagement";
@@ -128,8 +130,10 @@ export function BoardSettings({
                 Connect and import only when Linear belongs in this workflow.
               </p>
             </div>
+            <LinearBoardModeNotice snapshot={snapshot} />
             <LinearConnectionPanel
               busy={busy}
+              productManagedConfiguration={productManagedLinearOAuthConfiguration()}
               status={linearConnectionStatus}
               onConnect={onConnectLinear}
               onEnableCommentAccess={onEnableLinearCommentAccess}
@@ -147,6 +151,7 @@ export function BoardSettings({
             <Separator />
             <LinearSyncPanel
               busy={busy}
+              connectionStatus={linearConnectionStatus}
               snapshot={snapshot}
               onDeliver={onDeliverLinearComment}
               onQueue={onQueueLinearComment}

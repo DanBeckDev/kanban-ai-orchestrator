@@ -9,6 +9,7 @@ import { BoardManagement, SurfaceHeader } from "./BoardManagement";
 import { BoardSettings } from "./BoardSettings";
 import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
 import { DependencyView } from "./DependencyView";
+import { boardLinearMode } from "./linearConnectionPresentation";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { TaskDetailView } from "./TaskDetailView";
 import type { TicketEffectOperations } from "./ticketEffectOperations";
@@ -165,6 +166,7 @@ export function BoardView({
       <BoardHeader
         boardName={snapshot.board.name}
         activeView={activeView}
+        linearConnectionStatus={linearConnectionStatus}
         snapshot={snapshot}
         showQuickActions={surface === "workflow"}
         onCreateTask={() => setSurface("new-task")}
@@ -298,6 +300,7 @@ export function BoardView({
 function BoardHeader({
   activeView,
   boardName,
+  linearConnectionStatus,
   showQuickActions,
   snapshot,
   onCreateTask,
@@ -306,6 +309,7 @@ function BoardHeader({
 }: Readonly<{
   activeView: MainBoardView;
   boardName: string;
+  linearConnectionStatus: LinearConnectionStatus;
   showQuickActions: boolean;
   snapshot: BoardSnapshot;
   onCreateTask: () => void;
@@ -313,6 +317,7 @@ function BoardHeader({
   onViewChange: (view: MainBoardView) => void;
 }>) {
   const summary = boardSummary(snapshot);
+  const linearMode = boardLinearMode(snapshot);
   return (
     <header className="board-header">
       <div className="board-heading">
@@ -321,6 +326,12 @@ function BoardHeader({
           <p className="eyebrow">Your board</p>
           <h2 id="board-title">{boardName}</h2>
           <p>{summary}</p>
+          <p>
+            {linearMode.description}
+            {linearConnectionStatus.kind === "connected" &&
+              linearMode.mode === "local_only" &&
+              " Linear is connected, but no task is linked yet."}
+          </p>
         </div>
       </div>
       {showQuickActions && (

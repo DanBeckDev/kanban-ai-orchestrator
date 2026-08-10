@@ -37,4 +37,34 @@ describe("AgentRolePreferences", () => {
 
     expect(onEffortChange).toHaveBeenCalledWith("extra_thorough");
   });
+
+  it("keeps provider default as the only effort for a model without reasoning support", async () => {
+    render(
+      <AgentRolePreferences
+        effort="provider_default"
+        idPrefix="worker"
+        model={{ kind: "named", name: "openai/gpt-4o" }}
+        models={[
+          {
+            id: "openai/gpt-4o",
+            label: "GPT-4o",
+            efforts: [],
+          },
+        ]}
+        onEffortChange={vi.fn()}
+        onModelChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByLabelText("Effort"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
+
+    expect(
+      await screen.findByRole("option", { name: "Provider default" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("option", { name: "Focused (low)" })).toBeNull();
+  });
 });

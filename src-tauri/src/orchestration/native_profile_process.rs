@@ -3,7 +3,7 @@ use std::{path::Path, time::Duration};
 use serde_json::Value;
 
 use crate::{
-    agent::{AgentProfileKind, append_native_preferences},
+    agent::{AgentProfileKind, append_native_preferences, validate_native_preferences},
     domain::{AgentEffort, AgentModelPreference},
 };
 
@@ -16,6 +16,7 @@ use super::{
 pub(crate) enum ProfileProcessError {
     Process(BoundedProcessError),
     InvalidNativeOutput,
+    UnsupportedNativePreference,
 }
 
 pub(crate) fn run_json_profile(
@@ -56,6 +57,8 @@ impl NativePlannerInvocation {
         input: &[u8],
     ) -> Result<Self, ProfileProcessError> {
         let prompt = organiser_prompt(input).ok_or(ProfileProcessError::InvalidNativeOutput)?;
+        validate_native_preferences(profile.kind, effort)
+            .map_err(|_| ProfileProcessError::UnsupportedNativePreference)?;
         let mut arguments = native_arguments(profile.kind, model, effort);
         arguments.extend(profile.arguments.clone());
         match profile.kind {
@@ -294,5 +297,18 @@ mod tests {
             Some(br#"{"action":"start_work"}"#.to_vec())
         );
         assert!(extract_native_json(AgentProfileKind::StructuredProcess, b"{}").is_none());
+    }
+
+    #[test]
+    fn rejects_a_c_line_thinking_level_that_the_cli_cannot_express() {
+        assert!(matches!(
+            NativePlannerInvocation::new(
+                &profile(AgentProfileKind::ClinePassCli),
+                &AgentModelPreference::Named("~anthropic/claude-opus-latest".to_owned()),
+                AgentEffort::Maximum,
+                br#"{"goal":"Keep the setting valid."}"#,
+            ),
+            Err(ProfileProcessError::UnsupportedNativePreference)
+        ));
     }
 }

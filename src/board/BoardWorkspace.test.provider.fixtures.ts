@@ -24,15 +24,12 @@ export function providerGatewayMethods(): Pick<
         kind: "cline_pass_cli",
         label: "Cline",
         program: "cline",
-        installed: false,
+        installed: true,
       },
     ]),
     providerModelCatalog: vi.fn().mockImplementation(async (providerKind) => ({
       providerKind,
-      status:
-        providerKind === "cline_pass_cli"
-          ? ("uses_provider_default" as const)
-          : ("ready" as const),
+      status: "ready" as const,
       models:
         providerKind === "codex_cli"
           ? [
@@ -61,7 +58,25 @@ export function providerGatewayMethods(): Pick<
                   efforts: ["focused", "balanced", "thorough"],
                 },
               ]
-            : [],
+            : providerKind === "cline_pass_cli"
+              ? [
+                  {
+                    id: "~anthropic/claude-opus-latest",
+                    label: "Claude Opus Latest",
+                    efforts: [
+                      "focused",
+                      "balanced",
+                      "thorough",
+                      "extra_thorough",
+                    ],
+                  },
+                  {
+                    id: "openai/gpt-4o",
+                    label: "GPT-4o",
+                    efforts: [],
+                  },
+                ]
+              : [],
     })),
   };
 }

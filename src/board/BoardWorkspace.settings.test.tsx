@@ -43,10 +43,7 @@ describe("focused board and provider-owned AI settings", () => {
     const codex = providerCard("Codex");
     const cline = providerCard("Cline");
     expect(within(codex).getByText("Installed")).toBeVisible();
-    expect(within(cline).getByText("Not installed")).toBeVisible();
-    expect(
-      within(cline).getByRole("link", { name: "How to install" }),
-    ).toHaveAttribute("href", "https://docs.cline.bot/cli");
+    expect(within(cline).getByText("Installed")).toBeVisible();
     expect(screen.queryByLabelText("AI connection")).toBeNull();
     expect(screen.queryByLabelText("Specific model name")).toBeNull();
 
@@ -178,6 +175,53 @@ describe("focused board and provider-owned AI settings", () => {
           effort: "maximum",
         },
         ticketWorker: undefined,
+      }),
+    );
+  });
+
+  it("shows Cline's installed SDK models and compatible thinking levels", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const cline = providerCard("Cline");
+    fireEvent.click(
+      within(cline).getByRole("button", { name: "Work on tickets" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.providerModelCatalog).toHaveBeenCalledWith(
+        "cline_pass_cli",
+      ),
+    );
+    expect(
+      await within(cline).findByText(
+        "Model options loaded from your installed AI runtime.",
+      ),
+    ).toBeVisible();
+    await selectOption(cline, "Work on tickets", "Model", "Claude Opus Latest");
+    await selectOption(
+      cline,
+      "Work on tickets",
+      "Effort",
+      "Extra thorough (xhigh)",
+    );
+    expect(within(cline).queryByText("Connect provider API")).toBeNull();
+    expect(within(cline).queryByLabelText("Cline API key")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save AI setup" }));
+
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: undefined,
+        ticketWorker: {
+          agentProfileName: "Default Cline CLI (ClinePass)",
+          model: {
+            kind: "named",
+            name: "~anthropic/claude-opus-latest",
+          },
+          effort: "extra_thorough",
+        },
       }),
     );
   });

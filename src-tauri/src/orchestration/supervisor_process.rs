@@ -95,7 +95,10 @@ impl ProcessBoardSupervisor {
 fn map_profile_process_error(error: ProfileProcessError) -> ProcessBoardSupervisionError {
     match error {
         ProfileProcessError::Process(error) => map_process_error(error),
-        ProfileProcessError::InvalidNativeOutput => ProcessBoardSupervisionError::InvalidOutput,
+        ProfileProcessError::InvalidNativeOutput
+        | ProfileProcessError::UnsupportedNativePreference => {
+            ProcessBoardSupervisionError::InvalidOutput
+        }
     }
 }
 

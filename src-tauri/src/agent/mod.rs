@@ -18,8 +18,8 @@ pub use fake_adapter::FakeAgentAdapter;
 pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
 pub use profile::{AgentProfile, AgentProfileError, AgentProfileKind};
-pub(crate) use provider_adapter::append_native_preferences;
 pub use provider_adapter::{NativeProcessAdapter, WorkerAgentAdapter};
+pub(crate) use provider_adapter::{append_native_preferences, validate_native_preferences};
 pub(crate) use provider_catalog::ProviderModelCatalogService;
 pub use provider_catalog::{
     ProviderModel, ProviderModelCatalog, ProviderModelCatalogClient, ProviderModelCatalogError,

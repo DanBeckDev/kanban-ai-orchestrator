@@ -4,9 +4,7 @@ import type { BoardGateway } from "./types";
 
 export function providerGatewayMethods(): Pick<
   BoardGateway,
-  | "agentProviderAvailability"
-  | "providerModelCatalog"
-  | "saveProviderCatalogCredential"
+  "agentProviderAvailability" | "providerModelCatalog"
 > {
   return {
     agentProviderAvailability: vi.fn().mockResolvedValue([
@@ -31,21 +29,20 @@ export function providerGatewayMethods(): Pick<
     ]),
     providerModelCatalog: vi.fn().mockImplementation(async (providerKind) => ({
       providerKind,
-      status: "disconnected" as const,
-      models: [],
+      status:
+        providerKind === "codex_cli"
+          ? ("ready" as const)
+          : ("uses_provider_default" as const),
+      models:
+        providerKind === "codex_cli"
+          ? [
+              {
+                id: "gpt-5-codex",
+                label: "GPT-5 Codex",
+                efforts: ["focused", "balanced", "thorough"],
+              },
+            ]
+          : [],
     })),
-    saveProviderCatalogCredential: vi
-      .fn()
-      .mockImplementation(async ({ providerKind }) => ({
-        providerKind,
-        status: "ready" as const,
-        models: [
-          {
-            id: "gpt-5-codex",
-            label: "GPT-5 Codex",
-            efforts: ["focused", "balanced", "thorough"],
-          },
-        ],
-      })),
   };
 }

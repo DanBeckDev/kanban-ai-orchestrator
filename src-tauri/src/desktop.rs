@@ -18,7 +18,6 @@ use crate::{
     },
     desktop_daemon_lock::DaemonLock,
     desktop_execution_runtime::ExecutionRuntime,
-    desktop_provider_catalog::{LocalProviderModelCatalog, provider_model_catalog_service},
     domain::{BoardId, Project, WorkItemState},
     linear::{
         KeyringCredentialStore, LinearConnectionStatus, LinearIssueReader, LinearIssueSummary,
@@ -45,7 +44,6 @@ pub(crate) struct BoardDaemonState {
     linear_issue_reader: LocalLinearIssueReader,
     linear_oauth: Arc<Mutex<LocalLinearOAuthService>>,
     linear_token_client: Arc<ReqwestLinearTokenClient>,
-    pub(crate) provider_model_catalog: LocalProviderModelCatalog,
     service: Arc<Mutex<LocalBoardService>>,
     runtime: ExecutionRuntime,
 }
@@ -64,7 +62,6 @@ impl BoardDaemonState {
             linear_issue_reader: LocalLinearIssueReader::new(ReqwestLinearGraphQlTransport::new()),
             linear_oauth: Arc::new(Mutex::new(LinearOAuthService::new(KeyringCredentialStore))),
             linear_token_client: Arc::new(ReqwestLinearTokenClient::new()),
-            provider_model_catalog: provider_model_catalog_service(),
             runtime: ExecutionRuntime::new(service.clone(), data_directory.join("workspaces")),
             service,
         })

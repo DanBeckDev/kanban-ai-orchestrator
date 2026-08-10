@@ -90,7 +90,7 @@ describe("focused board and provider-owned AI settings", () => {
     ).toHaveTextContent("Default Codex CLI");
   });
 
-  it("loads account models inside the selected provider and saves role-specific choices", async () => {
+  it("loads installed-agent models inside the selected provider and saves role-specific choices", async () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
 
     await createBoard(boardGateway);
@@ -111,26 +111,18 @@ describe("focused board and provider-owned AI settings", () => {
     await waitFor(() =>
       expect(boardGateway.saveAgentProfile).toHaveBeenCalledOnce(),
     );
-
-    fireEvent.click(within(codex).getByText("Connect provider API"));
-    fireEvent.change(within(codex).getByLabelText("Codex API key"), {
-      target: { value: "test-key" },
-    });
-    fireEvent.click(
-      within(codex).getByRole("button", { name: "Connect and load models" }),
-    );
-
     await waitFor(() =>
-      expect(boardGateway.saveProviderCatalogCredential).toHaveBeenCalledWith({
-        providerKind: "codex_cli",
-        apiKey: "test-key",
-      }),
+      expect(boardGateway.providerModelCatalog).toHaveBeenCalledWith(
+        "codex_cli",
+      ),
     );
     expect(
       await within(codex).findByText(
-        "Model list loaded from this provider account.",
+        "Model list loaded from your installed AI session.",
       ),
     ).toBeVisible();
+    expect(within(codex).queryByText("Connect provider API")).toBeNull();
+    expect(within(codex).queryByLabelText("Codex API key")).toBeNull();
     await selectOption(codex, "Plan work", "Model", "GPT-5 Codex");
     await selectOption(codex, "Plan work", "Effort", "Thorough");
     await selectOption(codex, "Work on tickets", "Model", "GPT-5 Codex");
@@ -152,6 +144,51 @@ describe("focused board and provider-owned AI settings", () => {
         },
       }),
     );
+  });
+
+  it("uses the installed AI default when its runtime cannot list models", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const claude = providerCard("Claude Code");
+    fireEvent.click(within(claude).getByRole("button", { name: "Plan work" }));
+
+    await waitFor(() =>
+      expect(boardGateway.providerModelCatalog).toHaveBeenCalledWith(
+        "claude_code",
+      ),
+    );
+    expect(
+      await within(claude).findByText(
+        "Claude Code manages its models in its own app. Kanban will use that provider's default.",
+      ),
+    ).toBeVisible();
+    expect(within(claude).queryByText("Connect provider API")).toBeNull();
+    expect(within(claude).queryByLabelText("Claude Code API key")).toBeNull();
+  });
+
+  it("offers a safe retry when an installed runtime is unavailable", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+    vi.mocked(boardGateway.providerModelCatalog).mockResolvedValueOnce({
+      providerKind: "codex_cli",
+      status: "unavailable",
+      models: [],
+    });
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const codex = providerCard("Codex");
+    fireEvent.click(within(codex).getByRole("button", { name: "Plan work" }));
+
+    expect(
+      await within(codex).findByText(
+        "Kanban could not read models from Codex. Sign in or update it, then try again.",
+      ),
+    ).toBeVisible();
+    expect(
+      within(codex).getByRole("button", { name: "Refresh models" }),
+    ).toBeVisible();
   });
 
   it("does not select an agent when its safe profile could not be saved", async () => {

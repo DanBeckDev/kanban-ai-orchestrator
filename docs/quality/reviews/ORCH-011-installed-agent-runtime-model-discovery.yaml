@@ -1,0 +1,115 @@
+work_item: ORCH-011
+scope:
+  - "Replace the application-owned API-key model catalogue with installed-agent runtime discovery."
+  - "Keep provider-card role, model, and effort choices local to the already authenticated client."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 33
+      responsibilities: "Exposes the small provider-catalogue port and installed-runtime adapter."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_catalog.rs
+      meaningful_lines: 157
+      responsibilities: "Defines provider-neutral catalogue data, states, errors, service orchestration, and deterministic tests."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_runtime.rs
+      meaningful_lines: 253
+      responsibilities: "Owns the bounded Codex app-server JSON-RPC exchange and maps its response to the neutral catalogue port."
+      decision: kept cohesive; process concurrency and provider protocol are isolated at the outer adapter boundary
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 397
+      responsibilities: "Owns desktop-daemon construction while provider catalogue commands remain in their focused module."
+      decision: kept cohesive below the 400-line gate
+    - path: src-tauri/src/desktop_provider_catalog.rs
+      meaningful_lines: 20
+      responsibilities: "Wires installed-runtime catalogue discovery into narrow Tauri commands."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 96
+      responsibilities: "Registers the focused desktop command boundary."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 115
+      responsibilities: "Renders a role's provider-default or runtime-supplied model and compatible effort selector."
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 179
+      responsibilities: "Routes AI Settings dependencies to the focused project-defaults form."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 349
+      responsibilities: "Threads typed installed-runtime catalogue loading through the active board surface."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 211
+      responsibilities: "Exercises dynamic local model discovery, provider-default fallback, retry, role selection, and saved defaults."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.provider.fixtures.ts
+      meaningful_lines: 46
+      responsibilities: "Provides deterministic installed-provider and model-catalogue gateway fixtures."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 350
+      responsibilities: "Coordinates board gateway state and forwards non-persistent runtime catalogue operations."
+      decision: kept cohesive
+    - path: src/board/ProjectAgentDefaultsForm.tsx
+      meaningful_lines: 216
+      responsibilities: "Maps provider-card role choices to safe saved project role defaults."
+      decision: kept cohesive
+    - path: src/board/ProviderConfigurationCard.tsx
+      meaningful_lines: 293
+      responsibilities: "Presents one provider's installed state, local model discovery, fallback, retry, and per-role preferences."
+      decision: kept cohesive
+    - path: src/board/agentSettingsTypes.ts
+      meaningful_lines: 46
+      responsibilities: "Defines provider-neutral Settings catalogue contracts without credential input."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 127
+      responsibilities: "Defines typed frontend operations for local provider catalogue loading."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 232
+      responsibilities: "Maps typed local provider catalogue loading to a Tauri invocation."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T10:37:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "Claude Code and Cline currently return Use provider default until their supported local SDK/client APIs expose the same catalogue capability."
+        resolution: accepted
+        rationale: "ADR-0032 rejects guessed model lists and duplicate authentication. The provider-neutral port allows a future official adapter without changing board state, Settings contracts, or execution policy."
+        decision_reference: ADR-0032
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The prior model-list implementation duplicated account configuration with direct provider REST calls and API-key persistence."
+    change: "Removed the credential command, keychain store, direct provider transports, and every API-key control. Provider cards now use only the installed local runtime."
+  - finding: "A model list could promise an effort level that the native execution adapter cannot send."
+    change: "The Codex adapter exposes only low, medium, and high levels that the existing neutral effort contract can translate, rather than relabelling xhigh, max, or ultra."
+  - finding: "Runtime protocol notifications could accumulate while waiting for a model response."
+    change: "The focused reader thread filters non-response notifications before the request channel, uses only local state, has a five-second response bound, and is terminated after the catalogue response."
+  - finding: "Provider models and supported efforts needed a repeatable integration test without a real signed-in account."
+    change: "Added a deterministic process fixture that validates the full JSON-RPC initialise, initialized, and model/list exchange, alongside model mapping and fallback tests."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.56
+        statements: 85.45
+        functions: 83.39
+        branches: 80.94
+      - package_or_crate: src-tauri-rust
+        lines: 84.55
+        statements: 80.76
+        functions: 85.03
+        branches: 80.75
+    threshold_met: true
+exceptions: []

@@ -6,11 +6,9 @@ mod process_event_reader;
 mod profile;
 mod provider_adapter;
 mod provider_catalog;
-mod provider_catalog_credentials;
-mod provider_catalog_response;
-mod provider_catalog_transport;
 mod provider_discovery;
 mod provider_event_decoder;
+mod provider_runtime;
 
 pub use contract::{
     AgentAdapter, AgentAdapterError, AgentCapabilities, AgentSession, NormalizedAgentEvent,
@@ -24,12 +22,11 @@ pub(crate) use provider_adapter::append_native_preferences;
 pub use provider_adapter::{NativeProcessAdapter, WorkerAgentAdapter};
 pub(crate) use provider_catalog::ProviderModelCatalogService;
 pub use provider_catalog::{
-    ProviderModel, ProviderModelCatalog, ProviderModelCatalogStatus,
-    SaveProviderCatalogCredentialRequest,
+    ProviderModel, ProviderModelCatalog, ProviderModelCatalogClient, ProviderModelCatalogError,
+    ProviderModelCatalogStatus,
 };
-pub(crate) use provider_catalog_credentials::KeyringProviderCatalogCredentialStore;
-pub(crate) use provider_catalog_transport::ReqwestProviderModelCatalogClient;
 pub use provider_discovery::{AgentProviderAvailability, discover_native_agent_providers};
+pub(crate) use provider_runtime::InstalledProviderRuntimeClient;
 
 #[cfg(test)]
 mod tests;

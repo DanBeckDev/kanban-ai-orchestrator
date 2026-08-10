@@ -441,6 +441,28 @@ tasks:
       a stale-preference guard that rejects unsupported Cline thinking values
       before a planner or worker process can begin.
 
+  - id: ORCH-014
+    epic: ORCH
+    title: Keep long installed-provider model lists usable in Settings
+    status: done
+    priority: P0
+    depends_on: [ORCH-013]
+    acceptance_criteria:
+      - A long model list remains within a bounded picker viewport instead of
+        expanding across the Settings page.
+      - Pointer-wheel scrolling stays within the picker and cannot chain to or
+        reset the underlying Settings page while a person is choosing a model.
+      - A focused component test protects the bounded, contained model-picker
+        composition, and all repository quality/coverage gates remain met.
+    notes: >-
+      Added 2026-08-10 from live product feedback and the recorded Cline model
+      selection flow. Cline returns a legitimate large local catalogue, so the
+      product must make that real choice usable rather than reduce it to a
+      guessed static subset. The existing shadcn Select supports a bounded,
+      overscroll-contained content region; this is a focused interaction repair,
+      not a new provider integration. Completed 2026-08-10 with a 20rem,
+      overscroll-contained model picker and a focused component regression test.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

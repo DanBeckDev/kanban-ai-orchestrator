@@ -1,0 +1,45 @@
+work_item: ORCH-014
+scope:
+  - "Keep a long installed-provider model list inside the Settings picker."
+  - "Prevent picker wheel scrolling from moving the Settings surface."
+source_structure:
+  reviewed_files:
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 127
+      responsibilities: "Renders one role's provider-default or runtime-supplied model and compatible effort selector."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.test.tsx
+      meaningful_lines: 88
+      responsibilities: "Exercises focused model and effort selector behavior for an agent role."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T12:48:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "A legitimate large local Cline catalogue expanded the existing Select past the viewport and allowed wheel scrolling to affect Settings."
+    change: "Bounded the existing shadcn Select content to 20rem and contained overscroll, with a long-catalogue component regression test."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.21
+        statements: 85.12
+        functions: 82.94
+        branches: 80.69
+      - package_or_crate: src-tauri-rust
+        lines: 84.64
+        statements: 80.93
+        functions: 84.91
+        branches: 80.33
+    threshold_met: true
+exceptions: []

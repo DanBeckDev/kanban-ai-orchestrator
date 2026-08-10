@@ -4,6 +4,35 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentRolePreferences } from "./AgentRolePreferences";
 
 describe("AgentRolePreferences", () => {
+  it("keeps a long model list inside a contained picker scroll region", async () => {
+    render(
+      <AgentRolePreferences
+        effort="provider_default"
+        idPrefix="worker"
+        model={{ kind: "provider_default" }}
+        models={Array.from({ length: 100 }, (_, index) => ({
+          id: `model-${index}`,
+          label: `Model ${index}`,
+          efforts: [],
+        }))}
+        onEffortChange={vi.fn()}
+        onModelChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByLabelText("Model"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
+
+    const picker = await screen.findByRole("listbox");
+    expect(picker).toHaveClass("max-h-80", "overscroll-contain");
+    expect(
+      await screen.findByRole("option", { name: "Model 99" }),
+    ).toBeVisible();
+  });
+
   it("keeps a saved maximum effort selectable when its model is no longer listed", async () => {
     const onEffortChange = vi.fn();
 

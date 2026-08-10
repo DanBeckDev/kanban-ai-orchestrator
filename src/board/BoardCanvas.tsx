@@ -64,8 +64,7 @@ export function BoardCanvas({
             </EmptyMedia>
             <EmptyTitle>No tasks yet</EmptyTitle>
             <EmptyDescription>
-              Describe the outcome above, or create one task yourself in manual
-              mode.
+              Describe the outcome above, or create a task yourself.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -128,7 +127,7 @@ function WorkflowLanes({
                   ))}
                 </div>
                 {cards.length === 0 && (
-                  <p className="empty-column-copy">No work here yet</p>
+                  <p className="empty-column-copy">No tasks here yet.</p>
                 )}
               </AccordionContent>
             </AccordionItem>

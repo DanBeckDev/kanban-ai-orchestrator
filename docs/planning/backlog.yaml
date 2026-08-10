@@ -489,7 +489,7 @@ tasks:
   - id: UI-003
     epic: UI
     title: Complete an outcome-led copy review across board controls
-    status: ready
+    status: done
     priority: P1
     depends_on: [UI-002, UX-004]
     acceptance_criteria:
@@ -498,9 +498,13 @@ tasks:
       - Empty, loading, blocked, failed, review, and disconnected states state what happened, why it matters, and the permitted next action without relying on colour, IDs, or raw daemon terminology.
       - Focused component tests and representative developer walkthroughs cover discovery, understanding, and safe use of the revised language.
     notes: >-
-      Keep this separate from UI-002: it needs the outcome-first board-home
-      information architecture from UX-004 so that revised wording does not
-      merely polish the current control-heavy layout.
+      Completed on 2026-08-10. Added the source-owned board content inventory,
+      direct clone/local repository language, role-specific named-model and
+      effort defaults, safe actionable errors and recovery copy, and tested
+      developer walkthroughs. ADR 0028 records the enduring wording and
+      preference decision. Full quality verification passed with frontend
+      coverage at 86.38% lines, 85.35% statements, 83.31% functions, and
+      81.82% branches; Rust remains at or above 80% for every metric.
 
   - id: UI-004
     epic: UI

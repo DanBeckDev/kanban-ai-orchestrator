@@ -149,7 +149,9 @@ export function BoardSetup({
     <section aria-labelledby="board-setup-title" className="board-setup">
       <div>
         <h2 id="board-setup-title">Set up workspace</h2>
-        <p>Link a GitHub repository or use one that is already on this Mac.</p>
+        <p>
+          Clone a GitHub repository, or use one that is already on this Mac.
+        </p>
       </div>
       <Card className="board-setup-card" size="sm">
         <CardHeader>
@@ -164,7 +166,7 @@ export function BoardSetup({
             <FieldGroup>
               <Field>
                 <FieldTitle id="repository-source-label">
-                  Repository source
+                  Where is your repository?
                 </FieldTitle>
                 <ToggleGroup
                   aria-labelledby="repository-source-label"
@@ -179,11 +181,11 @@ export function BoardSetup({
                 >
                   <ToggleGroupItem value="local">
                     <FolderOpenIcon data-icon="inline-start" />
-                    Use a local repository
+                    Use an existing local repository
                   </ToggleGroupItem>
                   <ToggleGroupItem value="github">
                     <GitBranchIcon data-icon="inline-start" />
-                    Link a GitHub repository
+                    Clone a GitHub repository
                   </ToggleGroupItem>
                 </ToggleGroup>
                 <FieldDescription>

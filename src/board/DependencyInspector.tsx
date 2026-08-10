@@ -152,7 +152,7 @@ function PlanContext({
     return (
       <p>
         No current plan has calculated an execution order for this exact graph.
-        Ask the organiser to plan the work after you update relationships.
+        Ask the orchestrator to plan the work after you update relationships.
       </p>
     );
   }

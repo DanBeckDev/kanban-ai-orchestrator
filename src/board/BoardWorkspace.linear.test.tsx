@@ -34,7 +34,9 @@ describe("Linear connection in the board workspace", () => {
       }),
     );
     expect(
-      screen.getByText("Waiting for Linear authorization in your browser."),
+      screen.getByText(
+        "Finish connecting Linear in your browser. Return here when it is complete.",
+      ),
     ).toBeVisible();
   });
 
@@ -47,7 +49,9 @@ describe("Linear connection in the board workspace", () => {
     await openBoard(boardGateway);
 
     expect(
-      screen.getByText("Connection failed: Keychain is unavailable"),
+      screen.getByText(
+        "Kanban could not connect Linear. Check the app setup, then try again.",
+      ),
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: "MVP" })).toBeVisible();
   });

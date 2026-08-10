@@ -52,7 +52,7 @@ const actions: readonly Readonly<{
   {
     value: "prepare_start",
     label: "Start this task",
-    hint: "Prepare a daemon-checked worker start.",
+    hint: "Prepare a safe worker start.",
   },
   {
     value: "prepare_restart",

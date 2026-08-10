@@ -39,8 +39,8 @@ clear repository sources:
 
 | Choice | Meaning | Required behaviour |
 | --- | --- | --- |
-| **Link a GitHub repository** | Clone a repository so Kanban can work locally. | Let the person choose a repository and local destination, state the source and destination before cloning, then validate the cloned repository before creating the workspace. |
-| **Use a local repository** | Use an existing local folder that already contains a repository. | Open the native directory picker, validate the chosen repository root, and preserve entered setup details on cancellation or validation failure. |
+| **Clone a GitHub repository** | Clone a repository so Kanban can work locally. | Let the person choose a repository and local destination, state the source and destination before cloning, then validate the cloned repository before creating the workspace. |
+| **Use an existing local repository** | Use an existing local folder that already contains a repository. | Open the native directory picker, validate the chosen repository root, and preserve entered setup details on cancellation or validation failure. |
 
 The normal path does not ask for an ID, raw path, base branch, policy name, Git
 credential, OAuth client configuration, or provider command. GitHub linking
@@ -72,14 +72,13 @@ at review or ticket detail; they do not alter the organiser selection.
 
 ## Create and coordinate work
 
-The Workflow view gives the organiser a prominent natural-language composer:
+The Workflow view gives the orchestrator a prominent natural-language composer:
 **Prompt AI to orchestrate**. It is the primary way to ask for an outcome,
 decompose it into tickets, identify dependencies, revise a plan, or ask about
-coordination. Compact model and effort controls beside the composer identify the
-selected organiser default without turning the workspace into a configuration
-form.
+coordination. Settings owns the separate model and effort defaults without
+turning the workspace into a configuration form.
 
-The organiser first returns a typed, reviewable proposal: tickets, acceptance
+The orchestrator first returns a typed, reviewable proposal: tickets, acceptance
 criteria, dependency reasons, order, safe parallel work, assumptions, budgets,
 and proposed workers. The person can revise the request, edit the proposal, or
 confirm it. Confirmation creates tickets but does not itself start a worker.
@@ -147,8 +146,8 @@ without its existing authorization.
   disclosure; ORCH-008 supplies the typed daemon contract for the complete
   ticket-prompt action set.
 - ORCH-006 completed draft editing plus distinct durable organiser/worker
-  selection on 2026-08-10. It uses each provider's signed-in default model and
-  stores a safe effort preference without exposing raw command flags; verified
+  selection on 2026-08-10. UI-003 adds an optional named model and separate
+  effort preference for both roles without exposing raw command flags; verified
   model discovery and provider-native argument mapping remain adapter work.
   ORCH-007 implements durable autonomous supervision. These product surfaces
   must use their daemon-authoritative contracts rather than UI timers.

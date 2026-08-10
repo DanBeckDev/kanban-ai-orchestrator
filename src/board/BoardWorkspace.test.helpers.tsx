@@ -31,7 +31,7 @@ export async function createBoard(boardGateway: BoardGateway) {
 }
 
 export function openPlan() {
-  fireEvent.click(screen.getByRole("button", { name: "Plan with AI" }));
+  fireEvent.click(screen.getByRole("button", { name: "Plan work with AI" }));
 }
 
 export function openNewTask() {
@@ -62,19 +62,19 @@ export function openTask(title: string) {
 export async function configurePlanner() {
   openSettings("AI");
   const profileForm = screen.getByRole("form", {
-    name: "Save organiser connection",
+    name: "Save orchestrator connection",
   });
   fireEvent.change(within(profileForm).getByLabelText("Connection name"), {
     target: { value: "local planner" },
   });
   fireEvent.click(
     within(profileForm).getByRole("button", {
-      name: "Save organiser connection",
+      name: "Save orchestrator connection",
     }),
   );
   await waitFor(() => {
     if (screen.queryAllByText("local planner").length === 0) {
-      throw new Error("The organiser connection has not been saved yet.");
+      throw new Error("The orchestrator connection has not been saved yet.");
     }
   });
   fireEvent.click(screen.getByRole("button", { name: "Back to board" }));

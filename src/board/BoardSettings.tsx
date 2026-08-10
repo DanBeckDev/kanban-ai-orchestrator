@@ -98,7 +98,7 @@ export function BoardSettings({
             onSaveSettings={onSaveProjectAgentSettings}
           />
           <details className="advanced-disclosure">
-            <summary>Set up an organiser connection</summary>
+            <summary>Add an orchestrator</summary>
             <p className="field-hint">
               Use an approved planning bridge that returns a validated plan.
             </p>

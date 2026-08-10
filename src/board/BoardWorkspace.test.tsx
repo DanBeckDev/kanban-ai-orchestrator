@@ -172,7 +172,11 @@ describe("board workspace", () => {
       .mockRejectedValue(new Error("not found"));
     render(<App gateway={failingGateway} />);
     fireEvent.click(await screen.findByRole("button", { name: "Open MVP" }));
-    expect(await screen.findByText("not found")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "Your saved work has not changed. Check your last action, then try again.",
+      ),
+    ).toBeVisible();
   });
 
   it("records a durable check while a task is awaiting review", async () => {

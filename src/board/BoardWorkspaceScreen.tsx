@@ -61,7 +61,10 @@ export function BoardWorkspaceScreen(props: BoardWorkspaceScreenProps) {
         >
           <AlertCircleIcon aria-hidden="true" />
           <AlertTitle>Kanban could not complete that request.</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            Your saved work has not changed. Check your last action, then try
+            again.
+          </AlertDescription>
         </Alert>
       )}
       {snapshot === undefined && boardLibraryLoadFailed ? (
@@ -74,13 +77,14 @@ export function BoardWorkspaceScreen(props: BoardWorkspaceScreenProps) {
               Kanban could not load your boards
             </EmptyTitle>
             <EmptyDescription>
-              Try again. If it keeps happening, restart Kanban.
+              Your saved boards have not changed. Reload your boards, or restart
+              Kanban if this keeps happening.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button onClick={onRetryBoardLibrary} type="button">
               <RefreshCwIcon data-icon="inline-start" />
-              Try again
+              Reload boards
             </Button>
           </EmptyContent>
         </Empty>

@@ -38,7 +38,7 @@ export class WorkspaceErrorBoundary extends Component<
               <AlertCircleIcon />
             </EmptyMedia>
             <EmptyTitle aria-level={2} role="heading">
-              Kanban needs to try again
+              Kanban couldn&apos;t show this workspace
             </EmptyTitle>
             <EmptyDescription>
               Your saved boards and work have not been changed.
@@ -50,7 +50,7 @@ export class WorkspaceErrorBoundary extends Component<
               type="button"
             >
               <RefreshCwIcon data-icon="inline-start" />
-              Try again
+              Reload workspace
             </Button>
           </EmptyContent>
         </Empty>

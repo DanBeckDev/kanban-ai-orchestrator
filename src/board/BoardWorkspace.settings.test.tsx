@@ -6,6 +6,7 @@ import {
   createBoard,
   openSettings,
   openTask,
+  selectOption,
 } from "./BoardWorkspace.test.helpers";
 
 describe("focused board and agent settings", () => {
@@ -104,11 +105,59 @@ describe("focused board and agent settings", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Profile store is unavailable",
+      "Your saved work has not changed. Check your last action, then try again.",
     );
     expect(
       within(codexItem).getByRole("button", { name: "Use as worker" }),
     ).toBeEnabled();
+  });
+
+  it("saves separate model and effort defaults for the orchestrator and workers", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+    await boardGateway.savePlannerProfile({
+      name: "Planning agent",
+      program: "planner",
+      arguments: [],
+    });
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    await selectOption("AI connection", "Planning agent");
+
+    await selectPreference("Orchestrator", "Thorough");
+    await selectPreference("Ticket workers", "Balanced");
+    const models = screen.getAllByLabelText("Model name (optional)");
+    fireEvent.change(models[0], { target: { value: "gpt-5" } });
+
+    const providerList = screen.getByRole("list", {
+      name: "Available ticket workers",
+    });
+    fireEvent.click(
+      within(listItemFor(providerList, "Codex")).getByRole("button", {
+        name: "Use as worker",
+      }),
+    );
+    await screen.findByRole("button", { name: "Chosen" });
+    fireEvent.change(screen.getAllByLabelText("Model name (optional)")[1], {
+      target: { value: "gpt-5-mini" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save AI defaults" }));
+
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: {
+          plannerProfileName: "Planning agent",
+          model: { kind: "named", name: "gpt-5" },
+          effort: "thorough",
+        },
+        ticketWorker: {
+          agentProfileName: "Default Codex CLI",
+          model: { kind: "named", name: "gpt-5-mini" },
+          effort: "balanced",
+        },
+      }),
+    );
   });
 });
 
@@ -116,4 +165,14 @@ function listItemFor(list: HTMLElement, name: string): HTMLElement {
   const item = within(list).getByText(name).closest("li");
   if (item === null) throw new Error(`Missing provider option: ${name}`);
   return item;
+}
+
+async function selectPreference(groupName: string, optionName: string) {
+  const group = screen.getByRole("group", { name: groupName });
+  fireEvent.pointerDown(within(group).getByLabelText("Effort"), {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+  fireEvent.click(await screen.findByRole("option", { name: optionName }));
 }

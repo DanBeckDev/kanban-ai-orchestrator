@@ -112,7 +112,7 @@ export function PlanProposalPanel({
         aria-labelledby="plan-proposal-title"
         className="panel form-panel"
       >
-        <h3 id="plan-proposal-title">Plan with AI</h3>
+        <h3 id="plan-proposal-title">Plan work with AI</h3>
         {error !== undefined && <ErrorNotice message={error} />}
         <PlanDraftEditor
           agentProfiles={agentProfiles}
@@ -130,10 +130,10 @@ export function PlanProposalPanel({
   return (
     <section aria-labelledby="plan-proposal-title" className="panel form-panel">
       <div>
-        <h3 id="plan-proposal-title">Plan with AI</h3>
+        <h3 id="plan-proposal-title">Plan work with AI</h3>
         <p className="field-hint">
-          Ask the organiser to break an outcome into a reviewable plan. No task
-          is created or started until you confirm the proposal.
+          Ask the orchestrator to break an outcome into a reviewable plan. No
+          task is created or started until you confirm the proposal.
         </p>
       </div>
       {error !== undefined && <ErrorNotice message={error} />}
@@ -156,6 +156,8 @@ export function PlanProposalPanel({
               <label>
                 Plan JSON
                 <textarea
+                  autoComplete="off"
+                  name="plan-json"
                   required
                   value={draftText}
                   onChange={(event) => setDraftText(event.target.value)}
@@ -237,5 +239,11 @@ function parseDraft(draftText: string): PlanDraft {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  if (error instanceof SyntaxError) {
+    return "Check the plan JSON, then preview it again.";
+  }
+  if (error instanceof Error && error.message.includes("workItems")) {
+    return "Add a workItems list to the plan JSON, then preview it again.";
+  }
+  return "Check your changes, then try again.";
 }

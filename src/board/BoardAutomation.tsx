@@ -1,7 +1,6 @@
 import { BotIcon, CirclePauseIcon, UserRoundCheckIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -82,7 +81,7 @@ export function BoardAutomation({
                 Kanban can prepare dependency-ready work, start one worker, and
                 retry once. It never marks work done or performs external
                 actions. <strong>Pause automation</strong> takes effect in the
-                daemon immediately.
+                immediately.
               </AlertDescription>
             </Alert>
             <Button
@@ -114,20 +113,20 @@ export function BoardAutomation({
             <CirclePauseIcon aria-hidden="true" />
             <AlertTitle>Choose a task agent first</AlertTitle>
             <AlertDescription>
-              Select both an organiser and an installed ticket worker in
+              Select both an orchestrator and an installed ticket worker in
               Settings before you turn on coordination.
             </AlertDescription>
           </Alert>
         )}
         <p className="board-automation-safeguard">
-          <Badge variant="secondary">Bounded</Badge> Kanban never marks a task
-          done or sends Linear updates here. Task agents retain the permissions
-          configured for their own profile.
+          Kanban stays within your saved limits. It never marks a task done or
+          sends Linear updates here. Task agents retain the permissions in their
+          own profile.
         </p>
         {latestDecision && (
           <Alert>
             <BotIcon aria-hidden="true" />
-            <AlertTitle>Latest organiser decision</AlertTitle>
+            <AlertTitle>Latest orchestrator decision</AlertTitle>
             <AlertDescription>
               {latestDecision.recommendation} {latestDecision.rationale} Result:{" "}
               {decisionOutcome(latestDecision)}.

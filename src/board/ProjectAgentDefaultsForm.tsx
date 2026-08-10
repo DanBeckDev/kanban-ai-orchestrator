@@ -10,6 +10,7 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
 } from "./agentProfilePresentation";
 import type {
   AgentEffort,
+  AgentModelPreference,
   AgentProfile,
   AgentProviderAvailability,
   PlannerProfile,
@@ -44,7 +46,9 @@ type ProjectAgentDefaultsFormProps = Readonly<{
 }>;
 
 const noSelection = "__none__";
-const providerDefaultModel = { kind: "provider_default" } as const;
+const providerDefaultModel: AgentModelPreference = {
+  kind: "provider_default",
+};
 
 export function ProjectAgentDefaultsForm({
   agentProfiles,
@@ -59,23 +63,41 @@ export function ProjectAgentDefaultsForm({
   const [organiserName, setOrganiserName] = useState(noSelection);
   const [organiserEffort, setOrganiserEffort] =
     useState<AgentEffort>("provider_default");
+  const [organiserModel, setOrganiserModel] =
+    useState<AgentModelPreference>(providerDefaultModel);
   const [workerName, setWorkerName] = useState(noSelection);
   const [workerEffort, setWorkerEffort] =
     useState<AgentEffort>("provider_default");
+  const [workerModel, setWorkerModel] =
+    useState<AgentModelPreference>(providerDefaultModel);
 
   useEffect(() => {
     setOrganiserName(settings?.organiser?.plannerProfileName ?? noSelection);
     setOrganiserEffort(settings?.organiser?.effort ?? "provider_default");
+    setOrganiserModel(settings?.organiser?.model ?? providerDefaultModel);
     setWorkerName(settings?.ticketWorker?.agentProfileName ?? noSelection);
     setWorkerEffort(settings?.ticketWorker?.effort ?? "provider_default");
+    setWorkerModel(settings?.ticketWorker?.model ?? providerDefaultModel);
   }, [settings]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await saveDefaults(workerName);
+  }
+
+  async function saveDefaults(nextWorkerName: string) {
     await onSaveSettings({
       boardId,
-      organiser: organiserDefaults(organiserName, organiserEffort),
-      ticketWorker: ticketWorkerDefaults(workerName, workerEffort),
+      organiser: organiserDefaults(
+        organiserName,
+        organiserModel,
+        organiserEffort,
+      ),
+      ticketWorker: ticketWorkerDefaults(
+        nextWorkerName,
+        workerModel,
+        workerEffort,
+      ),
     });
   }
 
@@ -91,11 +113,7 @@ export function ProjectAgentDefaultsForm({
       return;
     }
     setWorkerName(profile.name);
-    await onSaveSettings({
-      boardId,
-      organiser: organiserDefaults(organiserName, organiserEffort),
-      ticketWorker: ticketWorkerDefaults(profile.name, workerEffort),
-    });
+    await saveDefaults(profile.name);
   }
 
   return (
@@ -113,20 +131,22 @@ export function ProjectAgentDefaultsForm({
       </div>
       <FieldGroup>
         <FieldSet>
-          <FieldLegend>Organiser</FieldLegend>
+          <FieldLegend>Orchestrator</FieldLegend>
           <FieldDescription>
             Turns your outcome into a reviewable plan. It never creates tickets
             or starts workers until you confirm.
           </FieldDescription>
           <Field>
-            <FieldLabel htmlFor="organiser-profile">Connection</FieldLabel>
+            <FieldLabel htmlFor="organiser-profile">AI connection</FieldLabel>
             <Select onValueChange={setOrganiserName} value={organiserName}>
               <SelectTrigger id="organiser-profile">
-                <SelectValue placeholder="Choose an organiser" />
+                <SelectValue placeholder="Choose an orchestrator" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value={noSelection}>No organiser yet</SelectItem>
+                  <SelectItem value={noSelection}>
+                    No orchestrator yet
+                  </SelectItem>
                   {plannerProfiles.map((profile) => (
                     <SelectItem key={profile.name} value={profile.name}>
                       {profile.name}
@@ -140,6 +160,8 @@ export function ProjectAgentDefaultsForm({
             effort={organiserEffort}
             idPrefix="organiser"
             onEffortChange={setOrganiserEffort}
+            onModelChange={setOrganiserModel}
+            model={organiserModel}
           />
         </FieldSet>
         <FieldSet>
@@ -172,6 +194,8 @@ export function ProjectAgentDefaultsForm({
             effort={workerEffort}
             idPrefix="ticket-worker"
             onEffortChange={setWorkerEffort}
+            onModelChange={setWorkerModel}
+            model={workerModel}
           />
         </FieldSet>
       </FieldGroup>
@@ -189,44 +213,67 @@ export function ProjectAgentDefaultsForm({
   );
 }
 
-function organiserDefaults(name: string, effort: AgentEffort) {
+function organiserDefaults(
+  name: string,
+  model: AgentModelPreference,
+  effort: AgentEffort,
+) {
   return name === noSelection || name.trim().length === 0
     ? undefined
-    : { plannerProfileName: name, model: providerDefaultModel, effort };
+    : { plannerProfileName: name, model: modelPreference(model), effort };
 }
 
-function ticketWorkerDefaults(name: string, effort: AgentEffort) {
+function ticketWorkerDefaults(
+  name: string,
+  model: AgentModelPreference,
+  effort: AgentEffort,
+) {
   return name === noSelection || name.trim().length === 0
     ? undefined
-    : { agentProfileName: name, model: providerDefaultModel, effort };
+    : { agentProfileName: name, model: modelPreference(model), effort };
+}
+
+function modelPreference(model: AgentModelPreference): AgentModelPreference {
+  if (model.kind === "provider_default") return model;
+  const name = model.name.trim();
+  return name.length === 0 ? providerDefaultModel : { kind: "named", name };
 }
 
 function RolePreferences({
   effort,
   idPrefix,
   onEffortChange,
+  onModelChange,
+  model,
 }: Readonly<{
   effort: AgentEffort;
   idPrefix: string;
   onEffortChange: (effort: AgentEffort) => void;
+  onModelChange: (model: AgentModelPreference) => void;
+  model: AgentModelPreference;
 }>) {
   return (
     <>
       <Field>
-        <FieldLabel htmlFor={`${idPrefix}-model`}>Model</FieldLabel>
-        <Select disabled value="provider-default">
-          <SelectTrigger id={`${idPrefix}-model`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="provider-default">Provider default</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <FieldLabel htmlFor={`${idPrefix}-model`}>
+          Model name (optional)
+        </FieldLabel>
+        <Input
+          autoComplete="off"
+          id={`${idPrefix}-model`}
+          name={`${idPrefix}-model`}
+          onChange={(event) =>
+            onModelChange(
+              event.target.value.trim().length === 0
+                ? providerDefaultModel
+                : { kind: "named", name: event.target.value },
+            )
+          }
+          value={model.kind === "named" ? model.name : ""}
+        />
         <FieldDescription>
-          Kanban uses the provider's signed-in default model. It never asks for
-          credentials or exposes command flags here.
+          Leave this blank to use the provider default. Otherwise, enter a model
+          name supported by the selected AI connection.
         </FieldDescription>
       </Field>
       <Field>

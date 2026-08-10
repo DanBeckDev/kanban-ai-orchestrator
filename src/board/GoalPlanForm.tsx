@@ -46,7 +46,7 @@ export function GoalPlanForm({
   const selectedProfile =
     plannerProfileName || defaultPlannerProfileName || profiles[0]?.name || "";
   const formLabel =
-    label ?? (hasProposal ? "Revise plan with AI" : "Plan with AI");
+    label ?? (hasProposal ? "Revise plan with AI" : "Plan work with AI");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,9 +61,9 @@ export function GoalPlanForm({
   if (profiles.length === 0) {
     return (
       <Alert>
-        <AlertTitle>Set up an organiser first</AlertTitle>
+        <AlertTitle>Set up an orchestrator first</AlertTitle>
         <AlertDescription>
-          Choose an organiser connection in Settings before you create a plan.
+          Choose an orchestrator in Settings before you create a plan.
         </AlertDescription>
       </Alert>
     );
@@ -73,7 +73,7 @@ export function GoalPlanForm({
     <form aria-label={formLabel} className="goal-plan-form" onSubmit={submit}>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="planner-profile">Organiser</FieldLabel>
+          <FieldLabel htmlFor="planner-profile">Orchestrator</FieldLabel>
           <Select onValueChange={setPlannerProfileName} value={selectedProfile}>
             <SelectTrigger id="planner-profile">
               <SelectValue />
@@ -107,7 +107,7 @@ export function GoalPlanForm({
         </Field>
         {generationError !== undefined && (
           <Alert role="alert" variant="destructive">
-            <AlertTitle>Kanban could not create a plan preview</AlertTitle>
+            <AlertTitle>Kanban could not prepare your plan</AlertTitle>
             <AlertDescription>{generationError}</AlertDescription>
           </Alert>
         )}
@@ -121,5 +121,9 @@ export function GoalPlanForm({
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : "";
+  if (message.toLowerCase().includes("planner profile")) {
+    return "Choose an orchestrator in Settings, then try again.";
+  }
+  return "Check the outcome and selected orchestrator, then try again.";
 }

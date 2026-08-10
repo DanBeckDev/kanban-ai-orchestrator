@@ -9,6 +9,7 @@ This documentation is deliberately small, versioned, and task-oriented. It is de
 | `product/user-experience.md` | Interaction model, onboarding, information architecture, and usability scenarios | Changing a user journey, navigation, or UI priority |
 | `product/ux-prototype.md` | Low-fidelity later-map prototype for the next UX slice | Testing or changing the first-use, returning-user, or first-plan flow |
 | `product/ux-validation.md` | Current-journey audit, moderated-study protocol, and anonymized findings record | Running or recording UX-008 validation |
+| `product/content-inventory.md` | Purpose and placement of every persistent board-control string | Adding, removing, or changing a persistent board control |
 | `architecture/overview.md` | System components, authority boundaries, and data model | A component or interface changes |
 | `integrations/cline-pass.md` | ClinePass worker setup, credential boundary, and supported profile options | Changing the ClinePass adapter |
 | `integrations/linear.md` | Linear connector contract and sync rules | Linear-facing behavior changes |

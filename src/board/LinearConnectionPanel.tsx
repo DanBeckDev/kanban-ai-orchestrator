@@ -37,6 +37,8 @@ export function LinearConnectionPanel({
         <label>
           OAuth client ID
           <input
+            autoComplete="off"
+            name="linear-oauth-client-id"
             required
             value={clientId}
             onChange={(event) => setClientId(event.target.value)}
@@ -45,6 +47,8 @@ export function LinearConnectionPanel({
         <label>
           Redirect URI
           <input
+            autoComplete="url"
+            name="linear-oauth-redirect-uri"
             required
             type="url"
             value={redirectUri}
@@ -78,12 +82,12 @@ export function LinearConnectionPanel({
 function statusDescription(status: LinearConnectionStatus): string {
   switch (status.kind) {
     case "awaiting_authorization":
-      return "Waiting for Linear authorization in your browser.";
+      return "Finish connecting Linear in your browser. Return here when it is complete.";
     case "connected":
-      return `Connected with ${status.scopes.join(", ")} access; token expires ${status.expiresAt}.`;
+      return "Connected. You can now load Linear issues and choose what to share.";
     case "failed":
-      return `Connection failed: ${status.message}`;
+      return "Kanban could not connect Linear. Check the app setup, then try again.";
     case "disconnected":
-      return "No Linear account is connected.";
+      return "No Linear account is connected. Connect Linear to load issues or share updates.";
   }
 }

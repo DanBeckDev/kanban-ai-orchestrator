@@ -153,7 +153,7 @@ describe("BoardSetup", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("radio", { name: "Link a GitHub repository" }),
+      screen.getByRole("radio", { name: "Clone a GitHub repository" }),
     );
     fireEvent.change(screen.getByLabelText("GitHub repository URL"), {
       target: { value: "https://github.com/acme/reliable-app" },
@@ -189,7 +189,7 @@ describe("BoardSetup", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("radio", { name: "Link a GitHub repository" }),
+      screen.getByRole("radio", { name: "Clone a GitHub repository" }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Choose clone destination" }),

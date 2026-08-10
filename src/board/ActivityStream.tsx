@@ -18,7 +18,7 @@ type ActivityStreamProps = Readonly<{
 
 export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
   const [chunks, setChunks] = useState<ExecutionActivityPage["chunks"]>([]);
-  const [error, setError] = useState<string>();
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -37,10 +37,10 @@ export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
           afterSequence = page.chunks.at(-1)?.sequence;
           setChunks((current) => appendChunks(current, page.chunks));
         }
-        setError(undefined);
+        setUnavailable(false);
         hasMore = page.hasMore && afterSequence !== requestedAfterSequence;
-      } catch (loadError) {
-        if (active) setError(errorMessage(loadError));
+      } catch {
+        if (active) setUnavailable(true);
       } finally {
         loading = false;
       }
@@ -48,7 +48,7 @@ export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
     }
 
     setChunks([]);
-    setError(undefined);
+    setUnavailable(false);
     void load();
     const intervalId = window.setInterval(
       () => void load(),
@@ -66,9 +66,10 @@ export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
       className="activity-stream"
     >
       <h5>Live agent activity</h5>
-      {error !== undefined ? (
+      {unavailable ? (
         <p className="activity-error" role="status">
-          Activity is temporarily unavailable: {error}
+          Activity is temporarily unavailable. Keep this task open and Kanban
+          will try again.
         </p>
       ) : chunks.length === 0 ? (
         <p className="activity-empty">
@@ -135,8 +136,4 @@ function appendChunks(
     ...current,
     ...additions.filter((chunk) => !knownSequences.has(chunk.sequence)),
   ].slice(-MAX_RETAINED_RENDERED_CHUNKS);
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

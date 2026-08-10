@@ -1,11 +1,12 @@
 use std::{error::Error, fmt, path::Path, time::Duration};
 
+use crate::domain::{AgentEffort, AgentModelPreference};
+
 use super::{
     PlannerProfile, PlannerProfileError, TicketEffectInput, TicketEffectRecommendation,
     TicketEffectRecommendationError,
-    bounded_process::{
-        BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES, run_direct_json_process,
-    },
+    bounded_process::{BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES},
+    native_profile_process::{ProfileProcessError, run_json_profile},
 };
 
 const MAX_TICKET_EFFECT_INPUT_BYTES: usize = 16_384;
@@ -19,6 +20,22 @@ impl ProcessTicketEffectAdvisor {
         repository_path: &Path,
         input: &TicketEffectInput,
     ) -> Result<TicketEffectRecommendation, ProcessTicketEffectError> {
+        Self::advise_with_preferences(
+            profile,
+            repository_path,
+            input,
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+        )
+    }
+
+    pub fn advise_with_preferences(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        input: &TicketEffectInput,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+    ) -> Result<TicketEffectRecommendation, ProcessTicketEffectError> {
         profile
             .validate()
             .map_err(ProcessTicketEffectError::Profile)?;
@@ -26,19 +43,28 @@ impl ProcessTicketEffectAdvisor {
         if encoded.len() > MAX_TICKET_EFFECT_INPUT_BYTES {
             return Err(ProcessTicketEffectError::InputTooLarge);
         }
-        let output = run_direct_json_process(
+        let output = run_json_profile(
             profile,
             repository_path,
+            model,
+            effort,
             &encoded,
             MAX_TICKET_EFFECT_RUNTIME,
         )
-        .map_err(map_process_error)?;
+        .map_err(map_profile_process_error)?;
         let mut recommendation: TicketEffectRecommendation =
             serde_json::from_slice(&output).map_err(|_| ProcessTicketEffectError::InvalidOutput)?;
         recommendation
             .validate_against(input)
             .map_err(ProcessTicketEffectError::InvalidRecommendation)?;
         Ok(recommendation)
+    }
+}
+
+fn map_profile_process_error(error: ProfileProcessError) -> ProcessTicketEffectError {
+    match error {
+        ProfileProcessError::Process(error) => map_process_error(error),
+        ProfileProcessError::InvalidNativeOutput => ProcessTicketEffectError::InvalidOutput,
     }
 }
 

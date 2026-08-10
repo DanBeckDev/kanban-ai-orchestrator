@@ -32,16 +32,34 @@ pub(crate) fn run_direct_json_process(
     input: &[u8],
     max_runtime: Duration,
 ) -> Result<Vec<u8>, BoundedProcessError> {
-    let mut child = Command::new(&profile.program)
-        .args(&profile.arguments)
+    run_process(
+        &profile.name,
+        &profile.program,
+        &profile.arguments,
+        repository_path,
+        input,
+        max_runtime,
+    )
+}
+
+pub(crate) fn run_process(
+    profile_name: &str,
+    program: &str,
+    arguments: &[String],
+    repository_path: &Path,
+    input: &[u8],
+    max_runtime: Duration,
+) -> Result<Vec<u8>, BoundedProcessError> {
+    let mut command = Command::new(program);
+    command
+        .args(arguments)
         .current_dir(repository_path)
-        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|_| BoundedProcessError::Launch {
-            profile_name: profile.name.clone(),
-        })?;
+        .stderr(Stdio::null());
+    command.stdin(Stdio::piped());
+    let mut child = command.spawn().map_err(|_| BoundedProcessError::Launch {
+        profile_name: profile_name.to_owned(),
+    })?;
     write_input(&mut child, input)?;
     let stdout = take_stdout(&mut child)?;
     read_process_output(&mut child, stdout, max_runtime)

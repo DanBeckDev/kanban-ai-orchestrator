@@ -16,6 +16,7 @@ pub use fake_adapter::FakeAgentAdapter;
 pub use ingestion::AgentEventIngestor;
 pub use process_adapter::{ProcessAgentAdapter, ProcessAgentDefinition};
 pub use profile::{AgentProfile, AgentProfileError, AgentProfileKind};
+pub(crate) use provider_adapter::append_native_preferences;
 pub use provider_adapter::{NativeProcessAdapter, WorkerAgentAdapter};
 pub use provider_discovery::{AgentProviderAvailability, discover_native_agent_providers};
 

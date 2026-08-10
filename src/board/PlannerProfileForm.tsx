@@ -23,6 +23,7 @@ export function PlannerProfileForm({
     try {
       await onSave({
         name,
+        kind: "structured_process",
         program,
         arguments: argumentsText
           .split("\n")

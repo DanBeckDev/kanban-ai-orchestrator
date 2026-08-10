@@ -1,4 +1,5 @@
 use crate::{
+    agent::AgentProfileKind,
     domain::DependencyKind,
     orchestration::{
         MAX_PLAN_ASSUMPTIONS, MAX_PLAN_DEPENDENCIES, MAX_PLAN_WORK_ITEMS, PlanDraft,
@@ -65,6 +66,7 @@ fn rejects_unrecognized_model_output_fields_and_invalid_planner_profiles() {
     assert!(
         PlannerProfile {
             name: "planner".to_owned(),
+            kind: Default::default(),
             program: " ".to_owned(),
             arguments: Vec::new(),
         }
@@ -74,9 +76,20 @@ fn rejects_unrecognized_model_output_fields_and_invalid_planner_profiles() {
 }
 
 #[test]
+fn defaults_legacy_planner_profiles_to_the_structured_bridge_protocol() {
+    let profile: PlannerProfile = serde_json::from_str(
+        r#"{"name":"legacy planner","program":"planner-bridge","arguments":[]}"#,
+    )
+    .expect("legacy planner profile should deserialize");
+
+    assert_eq!(profile.kind, AgentProfileKind::StructuredProcess);
+}
+
+#[test]
 fn rejects_profile_nulls_and_draft_limits_before_the_board_boundary() {
     let name_with_null = PlannerProfile {
         name: "planner\0profile".to_owned(),
+        kind: Default::default(),
         program: "planner-bridge".to_owned(),
         arguments: Vec::new(),
     };
@@ -88,6 +101,7 @@ fn rejects_profile_nulls_and_draft_limits_before_the_board_boundary() {
     ));
     let argument_with_null = PlannerProfile {
         name: "planner".to_owned(),
+        kind: Default::default(),
         program: "planner-bridge".to_owned(),
         arguments: vec!["--model\0unsafe".to_owned()],
     };

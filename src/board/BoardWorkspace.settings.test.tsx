@@ -42,7 +42,7 @@ describe("focused board and agent settings", () => {
 
     expect(boardGateway.agentProviderAvailability).toHaveBeenCalledOnce();
     const providerList = screen.getByRole("list", {
-      name: "Available ticket workers",
+      name: "Available AI providers",
     });
     const codexItem = listItemFor(providerList, "Codex");
     const clineItem = listItemFor(providerList, "Cline");
@@ -96,7 +96,7 @@ describe("focused board and agent settings", () => {
     await createBoard(boardGateway);
     openSettings("AI");
     const providerList = screen.getByRole("list", {
-      name: "Available ticket workers",
+      name: "Available AI providers",
     });
     const codexItem = listItemFor(providerList, "Codex");
 
@@ -116,6 +116,7 @@ describe("focused board and agent settings", () => {
     const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
     await boardGateway.savePlannerProfile({
       name: "Planning agent",
+      kind: "codex_cli",
       program: "planner",
       arguments: [],
     });
@@ -126,19 +127,22 @@ describe("focused board and agent settings", () => {
 
     await selectPreference("Orchestrator", "Thorough");
     await selectPreference("Ticket workers", "Balanced");
-    const models = screen.getAllByLabelText("Model name (optional)");
-    fireEvent.change(models[0], { target: { value: "gpt-5" } });
+    await selectModel("Orchestrator");
+    fireEvent.change(screen.getByLabelText("Specific model name"), {
+      target: { value: "gpt-5" },
+    });
 
     const providerList = screen.getByRole("list", {
-      name: "Available ticket workers",
+      name: "Available AI providers",
     });
     fireEvent.click(
       within(listItemFor(providerList, "Codex")).getByRole("button", {
         name: "Use as worker",
       }),
     );
-    await screen.findByRole("button", { name: "Chosen" });
-    fireEvent.change(screen.getAllByLabelText("Model name (optional)")[1], {
+    await screen.findByRole("button", { name: "Worker chosen" });
+    await selectModel("Ticket workers");
+    fireEvent.change(screen.getAllByLabelText("Specific model name")[1], {
       target: { value: "gpt-5-mini" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save AI defaults" }));
@@ -159,6 +163,40 @@ describe("focused board and agent settings", () => {
       }),
     );
   });
+
+  it("sets an installed provider as the orchestrator without raw bridge setup", async () => {
+    const boardGateway = gateway(snapshot([workItem("ready-task", "ready")]));
+
+    await createBoard(boardGateway);
+    openSettings("AI");
+    const providerList = screen.getByRole("list", {
+      name: "Available AI providers",
+    });
+    const claudeItem = listItemFor(providerList, "Claude Code");
+    fireEvent.click(
+      within(claudeItem).getByRole("button", { name: "Use as orchestrator" }),
+    );
+
+    await waitFor(() =>
+      expect(boardGateway.savePlannerProfile).toHaveBeenCalledWith({
+        name: "Default Claude Code orchestrator",
+        kind: "claude_code",
+        program: "claude",
+        arguments: [],
+      }),
+    );
+    await waitFor(() =>
+      expect(boardGateway.saveProjectAgentSettings).toHaveBeenCalledWith({
+        boardId: "board-1",
+        organiser: {
+          plannerProfileName: "Default Claude Code orchestrator",
+          model: { kind: "provider_default" },
+          effort: "provider_default",
+        },
+        ticketWorker: undefined,
+      }),
+    );
+  });
 });
 
 function listItemFor(list: HTMLElement, name: string): HTMLElement {
@@ -175,4 +213,16 @@ async function selectPreference(groupName: string, optionName: string) {
     pointerType: "mouse",
   });
   fireEvent.click(await screen.findByRole("option", { name: optionName }));
+}
+
+async function selectModel(groupName: string) {
+  const group = screen.getByRole("group", { name: groupName });
+  fireEvent.pointerDown(within(group).getByLabelText("Model"), {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+  fireEvent.click(
+    await screen.findByRole("option", { name: "Choose a specific model" }),
+  );
 }

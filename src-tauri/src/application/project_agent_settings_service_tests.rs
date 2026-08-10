@@ -32,6 +32,14 @@ fn stores_project_scoped_role_defaults_and_uses_the_worker_for_new_tasks() {
             .effort,
         AgentEffort::Thorough
     );
+    let organiser_context = service
+        .planner_context("board-1", "organiser")
+        .expect("organiser context should resolve");
+    assert_eq!(
+        organiser_context.model,
+        AgentModelPreference::ProviderDefault
+    );
+    assert_eq!(organiser_context.effort, AgentEffort::Thorough);
     assert_eq!(
         snapshot.work_items[0]
             .work_item
@@ -164,6 +172,58 @@ fn validates_named_model_preferences_before_persisting_role_defaults() {
 }
 
 #[test]
+fn rejects_preferences_that_a_structured_bridge_cannot_apply() {
+    let mut service = service();
+    create_board(&mut service);
+    service
+        .save_planner_profile(PlannerProfile {
+            name: "structured organiser".to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
+            program: "organiser-bridge".to_owned(),
+            arguments: Vec::new(),
+        })
+        .expect("structured organiser should save");
+    service
+        .save_agent_profile(AgentProfile {
+            name: "structured worker".to_owned(),
+            kind: AgentProfileKind::StructuredProcess,
+            program: "worker-bridge".to_owned(),
+            arguments: Vec::new(),
+        })
+        .expect("structured worker should save");
+
+    let organiser_error = service.save_project_agent_settings(SaveProjectAgentSettingsRequest {
+        board_id: "board-1".to_owned(),
+        organiser: Some(OrganiserDefaults {
+            planner_profile_name: "structured organiser".to_owned(),
+            model: AgentModelPreference::Named("gpt-5".to_owned()),
+            effort: AgentEffort::ProviderDefault,
+        }),
+        ticket_worker: None,
+    });
+    assert!(matches!(
+        organiser_error,
+        Err(ProjectAgentSettingsError::PreferencesUnsupported { role, .. })
+            if role == "orchestrator"
+    ));
+
+    let worker_error = service.save_project_agent_settings(SaveProjectAgentSettingsRequest {
+        board_id: "board-1".to_owned(),
+        organiser: None,
+        ticket_worker: Some(TicketWorkerDefaults {
+            agent_profile_name: "structured worker".to_owned(),
+            model: AgentModelPreference::ProviderDefault,
+            effort: AgentEffort::Balanced,
+        }),
+    });
+    assert!(matches!(
+        worker_error,
+        Err(ProjectAgentSettingsError::PreferencesUnsupported { role, .. })
+            if role == "ticket worker"
+    ));
+}
+
+#[test]
 fn assigns_the_project_ticket_worker_to_ai_proposed_tasks() {
     let mut service = service();
     create_board(&mut service);
@@ -234,16 +294,17 @@ fn save_profiles(
     service
         .save_planner_profile(PlannerProfile {
             name: "organiser".to_owned(),
-            program: "planner-bridge".to_owned(),
-            arguments: vec!["--strict-json".to_owned()],
+            kind: AgentProfileKind::CodexCli,
+            program: "codex".to_owned(),
+            arguments: Vec::new(),
         })
         .expect("organiser profile should save");
     service
         .save_agent_profile(AgentProfile {
             name: "ticket-worker".to_owned(),
-            kind: AgentProfileKind::StructuredProcess,
-            program: "agent-worker".to_owned(),
-            arguments: vec!["--jsonl".to_owned()],
+            kind: AgentProfileKind::CodexCli,
+            program: "codex".to_owned(),
+            arguments: Vec::new(),
         })
         .expect("ticket worker profile should save");
 }

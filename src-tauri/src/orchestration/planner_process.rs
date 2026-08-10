@@ -2,11 +2,12 @@ use std::{error::Error, fmt, path::Path, time::Duration};
 
 use serde::Serialize;
 
+use crate::domain::{AgentEffort, AgentModelPreference};
+
 use super::{
     MAX_PLANNER_GOAL_BYTES, PlanDraft, PlanDraftError, PlannerProfile, PlannerProfileError,
-    bounded_process::{
-        BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES, run_direct_json_process,
-    },
+    bounded_process::{BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES},
+    native_profile_process::{ProfileProcessError, run_json_profile},
 };
 
 const MAX_PLANNER_RUNTIME: Duration = Duration::from_secs(45);
@@ -19,13 +20,55 @@ impl ProcessPlanGenerator {
         repository_path: &Path,
         goal: &str,
     ) -> Result<PlanDraft, ProcessPlanGenerationError> {
-        Self::generate_with_runtime(profile, repository_path, goal, MAX_PLANNER_RUNTIME)
+        Self::generate_with_preferences(
+            profile,
+            repository_path,
+            goal,
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+        )
     }
 
+    pub fn generate_with_preferences(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        goal: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+    ) -> Result<PlanDraft, ProcessPlanGenerationError> {
+        Self::generate_with_preferences_and_runtime(
+            profile,
+            repository_path,
+            goal,
+            model,
+            effort,
+            MAX_PLANNER_RUNTIME,
+        )
+    }
+
+    #[cfg(test)]
     pub(super) fn generate_with_runtime(
         profile: &PlannerProfile,
         repository_path: &Path,
         goal: &str,
+        max_runtime: Duration,
+    ) -> Result<PlanDraft, ProcessPlanGenerationError> {
+        Self::generate_with_preferences_and_runtime(
+            profile,
+            repository_path,
+            goal,
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+            max_runtime,
+        )
+    }
+
+    fn generate_with_preferences_and_runtime(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        goal: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
         max_runtime: Duration,
     ) -> Result<PlanDraft, ProcessPlanGenerationError> {
         profile
@@ -34,9 +77,16 @@ impl ProcessPlanGenerator {
         validate_goal(goal)?;
         let input = serde_json::to_vec(&PlannerInput::new(goal))
             .map_err(ProcessPlanGenerationError::InputEncoding)?;
-        let output = run_direct_json_process(profile, repository_path, &input, max_runtime)
-            .map_err(map_process_error)?;
+        let output = run_json_profile(profile, repository_path, model, effort, &input, max_runtime)
+            .map_err(map_profile_process_error)?;
         parse_plan_draft(&output)
+    }
+}
+
+fn map_profile_process_error(error: ProfileProcessError) -> ProcessPlanGenerationError {
+    match error {
+        ProfileProcessError::Process(error) => map_process_error(error),
+        ProfileProcessError::InvalidNativeOutput => ProcessPlanGenerationError::InvalidOutput,
     }
 }
 

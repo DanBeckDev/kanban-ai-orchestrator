@@ -1,11 +1,12 @@
 use std::{error::Error, fmt, path::Path, time::Duration};
 
+use crate::domain::{AgentEffort, AgentModelPreference};
+
 use super::{
     BoardSupervisionInput, PlannerProfile, PlannerProfileError, SupervisorRecommendation,
     SupervisorRecommendationError,
-    bounded_process::{
-        BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES, run_direct_json_process,
-    },
+    bounded_process::{BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES},
+    native_profile_process::{ProfileProcessError, run_json_profile},
 };
 
 const MAX_SUPERVISOR_RUNTIME: Duration = Duration::from_secs(30);
@@ -19,13 +20,55 @@ impl ProcessBoardSupervisor {
         repository_path: &Path,
         input: &BoardSupervisionInput,
     ) -> Result<SupervisorRecommendation, ProcessBoardSupervisionError> {
-        Self::recommend_with_runtime(profile, repository_path, input, MAX_SUPERVISOR_RUNTIME)
+        Self::recommend_with_preferences(
+            profile,
+            repository_path,
+            input,
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+        )
     }
 
+    pub fn recommend_with_preferences(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        input: &BoardSupervisionInput,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+    ) -> Result<SupervisorRecommendation, ProcessBoardSupervisionError> {
+        Self::recommend_with_preferences_and_runtime(
+            profile,
+            repository_path,
+            input,
+            model,
+            effort,
+            MAX_SUPERVISOR_RUNTIME,
+        )
+    }
+
+    #[cfg(test)]
     pub(super) fn recommend_with_runtime(
         profile: &PlannerProfile,
         repository_path: &Path,
         input: &BoardSupervisionInput,
+        max_runtime: Duration,
+    ) -> Result<SupervisorRecommendation, ProcessBoardSupervisionError> {
+        Self::recommend_with_preferences_and_runtime(
+            profile,
+            repository_path,
+            input,
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+            max_runtime,
+        )
+    }
+
+    fn recommend_with_preferences_and_runtime(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        input: &BoardSupervisionInput,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
         max_runtime: Duration,
     ) -> Result<SupervisorRecommendation, ProcessBoardSupervisionError> {
         profile
@@ -36,9 +79,23 @@ impl ProcessBoardSupervisor {
         if encoded.len() > MAX_SUPERVISION_INPUT_BYTES {
             return Err(ProcessBoardSupervisionError::InputTooLarge);
         }
-        let output = run_direct_json_process(profile, repository_path, &encoded, max_runtime)
-            .map_err(map_process_error)?;
+        let output = run_json_profile(
+            profile,
+            repository_path,
+            model,
+            effort,
+            &encoded,
+            max_runtime,
+        )
+        .map_err(map_profile_process_error)?;
         parse_recommendation(&output, input)
+    }
+}
+
+fn map_profile_process_error(error: ProfileProcessError) -> ProcessBoardSupervisionError {
+    match error {
+        ProfileProcessError::Process(error) => map_process_error(error),
+        ProfileProcessError::InvalidNativeOutput => ProcessBoardSupervisionError::InvalidOutput,
     }
 }
 

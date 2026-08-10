@@ -59,7 +59,7 @@ with no listed purpose is removed rather than retained as decoration.
 | Surface | Persistent controls and primary purpose |
 | --- | --- |
 | `BoardSettings` | **Orient:** Settings, AI, Linear, Project. **Act:** choose a settings view. **Explain:** AI roles and connected tools apply to this project. |
-| `ProjectAgentDefaultsForm` | **Orient:** AI roles, Orchestrator, Ticket workers, Available on this computer. **Act:** choose an AI connection or worker, use installed worker, save AI defaults, open install guidance. **Explain:** separate project defaults, provider availability, model-name fallback, effort choice, and ticket-level reassignment. |
+| `ProjectAgentDefaultsForm` | **Orient:** AI roles, Orchestrator, Ticket workers, Available on this computer. **Act:** choose an AI connection or worker, use an installed provider as orchestrator or worker, save AI defaults, open install guidance. **Explain:** separate project defaults, provider availability, provider-default/custom-model choice, effort choice, and ticket-level reassignment. |
 | `PlannerProfileForm` and `AgentProfileForm` | **Orient:** Orchestrator connections and Agent profiles. **Act:** add and save advanced connections/profiles. **Support:** program and argument fields are hidden behind advanced disclosure because they are only needed for a team-managed bridge. |
 | `LinearBoardModeNotice` and board header | **Orient:** local-only, read-only, or linked-execution state. **Explain:** whether this board exchanges Linear data and what must happen next. |
 | `LinearConnectionPanel` | **Orient:** Connect Linear. **Act:** connect a release-owned app in read-only mode, or deliberately open self-managed setup; enable manually sent comments. **Explain:** availability, authorization state, credential-store boundary, and scope. **Support:** client ID and fixed loopback callback appear only in self-managed Advanced setup. |
@@ -73,8 +73,9 @@ with no listed purpose is removed rather than retained as decoration.
   remains `organiser` for compatibility.
 - “Clone a GitHub repository” describes the actual Git action; “use an existing
   local repository” makes the alternative equally explicit.
-- A named model is optional for each project role. An empty model name means
-  provider default; Kanban never claims to know a provider's available models.
+- Provider default is the recommended model for each project role. A named
+  model is an explicit optional choice; Kanban never claims to know a provider's
+  available models.
 - Error copy does not display raw local-service or provider errors in normal
   workflow. It states what did not complete, confirms saved-work safety where
   true, and gives the next permitted action.

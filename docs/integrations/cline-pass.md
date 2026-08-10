@@ -16,14 +16,17 @@ Sign in and choose an available ClinePass model in Cline's setup flow. Cline doc
 
 ## Add the board profile
 
-Create an agent profile with the **Cline CLI (ClinePass)** adapter. Its default program is `cline`. Optional arguments may tune safe run behavior, for example:
+Select **Cline CLI (ClinePass)** in the normal AI-role settings. Its default
+program is `cline`; the adapter owns `--json`, `--provider cline`, and
+`--auto-approve true` for a ticket worker. The settings surface can pass a
+deliberately named model and a provider-neutral effort choice as Cline's native
+model/thinking options. It never shows provider, credential, approval,
+worktree, or protocol flags.
 
-```text
---thinking
-high
-```
-
-The adapter owns `--json`, `--provider cline`, and `--auto-approve true`. It also rejects profile arguments that can supply a key, select another provider or model, change approvals, detach to the Cline hub, replace the assigned worktree, or alter the native event protocol. Select or change the ClinePass model using Cline's own authenticated configuration instead.
+Advanced profile arguments may tune only non-reserved behaviour. The adapter
+rejects profile arguments that can supply a key, select another provider or
+model, change approvals, detach to the Cline hub, replace the assigned
+worktree, or alter the native event protocol.
 
 The adapter passes the task brief over standard input, sets Cline's current directory to the assigned worktree, and accepts only bounded newline-delimited lifecycle events. It retains fixed lifecycle summaries and token/cost totals, never assistant text, tool content, account credentials, or raw Cline transcripts.
 

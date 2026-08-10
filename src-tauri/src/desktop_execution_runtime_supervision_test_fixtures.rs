@@ -89,6 +89,7 @@ pub(super) fn configured_runtime_with_script(
     service
         .save_planner_profile(PlannerProfile {
             name: "organiser".to_owned(),
+            kind: Default::default(),
             program: "sh".to_owned(),
             arguments: vec!["-c".to_owned(), organiser_script.to_owned()],
         })

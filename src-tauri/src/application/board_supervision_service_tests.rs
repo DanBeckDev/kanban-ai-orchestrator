@@ -159,7 +159,8 @@ fn save_organiser(
     service
         .save_planner_profile(PlannerProfile {
             name: "organiser".to_owned(),
-            program: "organiser-bridge".to_owned(),
+            kind: AgentProfileKind::CodexCli,
+            program: "codex".to_owned(),
             arguments: Vec::new(),
         })
         .expect("organiser profile should save");
@@ -171,8 +172,8 @@ fn save_worker(
     service
         .save_agent_profile(AgentProfile {
             name: "worker".to_owned(),
-            kind: AgentProfileKind::StructuredProcess,
-            program: "worker-bridge".to_owned(),
+            kind: AgentProfileKind::CodexCli,
+            program: "codex".to_owned(),
             arguments: Vec::new(),
         })
         .expect("worker profile should save");

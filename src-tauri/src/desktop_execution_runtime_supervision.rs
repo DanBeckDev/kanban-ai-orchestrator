@@ -211,10 +211,12 @@ impl ExecutionRuntime {
                 &supervision.organiser.planner_profile_name,
             )
             .map_err(ExecutionRuntimeError::Planner)?;
-        let recommendation = ProcessBoardSupervisor::recommend(
+        let recommendation = ProcessBoardSupervisor::recommend_with_preferences(
             &context.profile,
             Path::new(&context.repository_path),
             &input,
+            &supervision.organiser.model,
+            supervision.organiser.effort,
         )
         .map_err(ExecutionRuntimeError::Supervisor)?;
         let Some(mut candidate) = candidates.into_iter().find(|candidate| {

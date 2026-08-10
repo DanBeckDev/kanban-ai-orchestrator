@@ -285,6 +285,39 @@ tasks:
       boundary and review evidence. Do not substitute a UI-only composer for
       the typed daemon contract.
 
+  - id: ORCH-009
+    epic: ORCH
+    title: Make installed-provider role defaults complete and effective
+    status: done
+    priority: P0
+    depends_on: [ORCH-006, ORCH-007, ORCH-008]
+    acceptance_criteria:
+      - Settings lets a person independently choose an installed provider for the orchestrator and ticket-worker roles with one explicit action per role; the normal path never asks for a program, argument, credential, permission flag, or provider-private state.
+      - Each role keeps a provider-default model as the safe default and offers a clearly optional named-model override plus a provider-neutral effort choice. The product must not invent a static catalogue of models where the installed provider cannot report one reliably.
+      - The selected ticket-worker model and effort are translated only at the native-adapter boundary and actually affect supported Codex, Claude Code, and Cline invocations. Unsupported preferences are rejected or explained before an execution starts; they are never silently ignored.
+      - An installed provider selected for the orchestrator runs bounded plan, supervision, and ticket-effect requests through an adapter-owned protocol. Every provider response remains schema-validated, redacted, bounded, and unable to bypass confirmation, policy, review, or Done gates.
+      - Existing advanced bridge profiles remain an optional team-managed route. Tests cover separate role choice, durable reopen, preference-to-invocation mapping, malformed provider output, unsupported preferences, and all 80% quality gates.
+    notes: >-
+      Added and started on 2026-08-10 after a wireframe-to-code audit found
+      that ORCH-006 persisted role preferences but did not make all of them
+      operational: one-click selection only configured ticket workers, the
+      orchestrator still required a raw advanced bridge profile, and native
+      worker invocation ignored the stored model and effort. This is a product
+      correctness fix, not a cosmetic settings refresh. BookCtx — The Site
+      Reliability Workbook, "Configuration Design and Best Practices" (chunk
+      26) supports the project-specific inference to minimize mandatory
+      configuration, use safe defaults, and keep provider mechanics behind a
+      validated UI-to-data boundary. Official native-CLI research confirms
+      Codex supports structured execution schemas, Claude Code supports JSON
+      schemas plus model and effort flags, and Cline supports headless JSON,
+      model, and thinking flags; exact provider mapping belongs in adapters.
+      Completed on 2026-08-10 with independent one-click native defaults for
+      both roles, durable provider-default/custom-model and effort choices,
+      effective native CLI translation, and bounded schema-validated organiser
+      requests for planning, supervision, and ticket assessment. Advanced
+      bridges now reject preferences they cannot honour. ADR-0030 and the
+      ORCH-009 quality receipt record the safety and quality evidence.
+
   - id: APP-001
     epic: APP
     title: Expose durable local projects, boards, and dependencies through the desktop command boundary

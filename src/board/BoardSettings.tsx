@@ -97,6 +97,7 @@ export function BoardSettings({
             providerAvailability={providerAvailability}
             settings={projectAgentSettings}
             onSaveAgentProfile={onSaveAgentProfile}
+            onSavePlannerProfile={onSavePlannerProfile}
             onSaveSettings={onSaveProjectAgentSettings}
           />
           <details className="advanced-disclosure">

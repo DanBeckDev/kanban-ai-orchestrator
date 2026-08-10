@@ -26,7 +26,7 @@ impl AgentProfileKind {
         }
     }
 
-    fn reserves_argument(self, argument: &str) -> bool {
+    pub(crate) fn reserves_argument(self, argument: &str) -> bool {
         match self {
             Self::StructuredProcess => false,
             Self::CodexCli => matches_argument(
@@ -43,6 +43,10 @@ impl AgentProfileKind {
                     "--dangerously-bypass-approvals-and-sandbox",
                     "--output-last-message",
                     "-o",
+                    "--model",
+                    "-m",
+                    "--config",
+                    "-c",
                 ],
             ),
             Self::ClaudeCode => matches_argument(
@@ -67,6 +71,8 @@ impl AgentProfileKind {
                     "--add-dir",
                     "--settings",
                     "--mcp-config",
+                    "--model",
+                    "--effort",
                 ],
             ),
             Self::ClinePassCli => matches_argument(
@@ -93,6 +99,7 @@ impl AgentProfileKind {
                     "--config",
                     "--acp",
                     "--kanban",
+                    "--thinking",
                 ],
             ),
         }
@@ -245,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn reserves_native_protocol_and_permission_arguments() {
+    fn reserves_native_protocol_permission_and_preference_arguments() {
         assert!(matches!(
             AgentProfile {
                 name: "codex".to_owned(),
@@ -276,5 +283,26 @@ mod tests {
             .validate(),
             Err(AgentProfileError::ReservedArgument { .. })
         ));
+        for (kind, argument) in [
+            (AgentProfileKind::CodexCli, "--model=gpt-5"),
+            (
+                AgentProfileKind::CodexCli,
+                "--config=model_reasoning_effort=low",
+            ),
+            (AgentProfileKind::ClaudeCode, "--model=opus"),
+            (AgentProfileKind::ClaudeCode, "--effort=low"),
+            (AgentProfileKind::ClinePassCli, "--thinking=low"),
+        ] {
+            assert!(matches!(
+                AgentProfile {
+                    name: "native".to_owned(),
+                    kind,
+                    program: "provider".to_owned(),
+                    arguments: vec![argument.to_owned()],
+                }
+                .validate(),
+                Err(AgentProfileError::ReservedArgument { .. })
+            ));
+        }
     }
 }

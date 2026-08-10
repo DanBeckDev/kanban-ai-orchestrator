@@ -65,17 +65,21 @@ launch a provider or inspect private provider data. A missing provider is clearl
 unavailable and links to its official installation guide; installing or signing
 in remains a deliberate external user action.
 
-The project configuration then has two explicit defaults:
+The project configuration uses one card for each detected provider. Each card
+shows whether its CLI is installed and lets a person enable it for **Plan work**
+(orchestration) and/or **Work on tickets**. The role's model and effort controls
+stay directly inside that provider card, rather than repeating the same choice
+in a separate generic role form.
 
-1. **Orchestrator** — default enabled provider, model, and effort for planning
-   and supervision.
-2. **Ticket workers** — default enabled provider, model, and effort for new
-   ticket work.
-
-The values are provider-neutral choices backed by safe adapter profiles. Raw
-arguments, permission-bypass flags, worktree paths, credentials, and protocol
-details remain outside the normal UI. Per-ticket worker changes remain possible
-at review or ticket detail; they do not alter the organiser selection.
+**Provider default** is the safe initial model. A person can deliberately
+connect the provider's model API from the same card to load account-available
+models into a dropdown, then refresh it later. The provider API key is stored
+only in the operating-system keychain; it is not placed in project data or
+shown after saving. When no API catalogue is connected, the card explains that
+Provider default will be used and offers the precise connection action. Raw
+arguments, permission-bypass flags, worktree paths, and protocol details remain
+outside the normal UI. Per-ticket worker changes remain possible at review or
+ticket detail; they do not alter the project defaults.
 
 ## Create and coordinate work
 

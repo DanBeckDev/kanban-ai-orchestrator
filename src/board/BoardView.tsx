@@ -32,6 +32,7 @@ import type {
   LinearOAuthConfiguration,
   PlannerProfile,
   ProjectAgentSettings,
+  ProviderModelCatalog,
   ProposePlanRequest,
   QueueLinearCommentRequest,
   SupervisionDecision,
@@ -66,9 +67,16 @@ type BoardViewProps = Readonly<{
   onLoadLinearIssues: () => Promise<void>;
   onProposePlan: (request: ProposePlanRequest) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
+  onLoadProviderCatalog: (
+    provider: AgentProviderAvailability,
+  ) => Promise<ProviderModelCatalog>;
   onSaveProjectAgentSettings: (
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
+  onSaveProviderCatalogCredential: (
+    provider: AgentProviderAvailability,
+    apiKey: string,
+  ) => Promise<ProviderModelCatalog>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   ticketEffects: TicketEffectOperations;
   supervisionDecisions: readonly SupervisionDecision[];
@@ -115,7 +123,9 @@ export function BoardView({
   onLoadLinearIssues,
   onProposePlan,
   onSaveAgentProfile,
+  onLoadProviderCatalog,
   onSaveProjectAgentSettings,
+  onSaveProviderCatalogCredential,
   onSavePlannerProfile,
   ticketEffects,
   onCoordinateBoard,
@@ -267,7 +277,9 @@ export function BoardView({
           onQueueLinearComment={onQueueLinearComment}
           onRefreshLinearSharedFields={onRefreshLinearSharedFields}
           onSaveAgentProfile={onSaveAgentProfile}
+          onLoadProviderCatalog={onLoadProviderCatalog}
           onSavePlannerProfile={onSavePlannerProfile}
+          onSaveProviderCatalogCredential={onSaveProviderCatalogCredential}
           onSaveProjectAgentSettings={onSaveProjectAgentSettings}
         />
       )}

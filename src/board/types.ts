@@ -1,4 +1,8 @@
-import type { AgentEffort, AgentModelPreference } from "./agentSettingsTypes";
+import type {
+  AgentEffort,
+  AgentModelPreference,
+  NativeAgentProviderKind,
+} from "./agentSettingsTypes";
 
 export type WorkItemState =
   | "inbox"
@@ -282,7 +286,7 @@ export type AgentProfile = Readonly<{
 }>;
 
 export type AgentProviderAvailability = Readonly<{
-  kind: Exclude<AgentProfileKind, "structured_process">;
+  kind: NativeAgentProviderKind;
   label: string;
   program: string;
   installed: boolean;

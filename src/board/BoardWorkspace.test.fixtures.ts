@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import { linearGatewayMethods } from "./BoardWorkspace.test.linear.fixtures";
 import { executionGatewayMethods } from "./BoardWorkspace.test.execution.fixtures";
 import { ticketEffectGatewayMethods } from "./BoardWorkspace.test.ticket-effects.fixtures";
+import { providerGatewayMethods } from "./BoardWorkspace.test.provider.fixtures";
 
 import type {
   AgentProfile,
@@ -271,26 +272,7 @@ export function gateway(
         return profile;
       }),
     agentProfiles: vi.fn().mockImplementation(async () => profiles),
-    agentProviderAvailability: vi.fn().mockResolvedValue([
-      {
-        kind: "codex_cli",
-        label: "Codex",
-        program: "codex",
-        installed: true,
-      },
-      {
-        kind: "claude_code",
-        label: "Claude Code",
-        program: "claude",
-        installed: true,
-      },
-      {
-        kind: "cline_pass_cli",
-        label: "Cline",
-        program: "cline",
-        installed: false,
-      },
-    ]),
+    ...providerGatewayMethods(),
     savePlannerProfile: vi
       .fn()
       .mockImplementation(async (profile: PlannerProfile) => {

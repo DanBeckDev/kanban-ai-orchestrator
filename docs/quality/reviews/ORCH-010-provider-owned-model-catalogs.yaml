@@ -1,0 +1,139 @@
+work_item: ORCH-010
+scope:
+  - "Provider-owned role, model, and effort configuration in project Settings."
+  - "Account model discovery for Codex, Claude Code, and Cline without durable credential storage."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 36
+      responsibilities: "Exposes the cohesive native-provider catalogue boundary."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_catalog.rs
+      meaningful_lines: 291
+      responsibilities: "Defines typed catalogue state, credential and transport ports, safe error handling, and service orchestration."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_catalog_credentials.rs
+      meaningful_lines: 59
+      responsibilities: "Maps provider catalogue credentials to isolated operating-system keychain accounts."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_catalog_response.rs
+      meaningful_lines: 168
+      responsibilities: "Normalizes provider model responses, capability-derived effort choices, and paginated duplicates."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_catalog_transport.rs
+      meaningful_lines: 127
+      responsibilities: "Performs bounded documented provider catalogue requests and Anthropic pagination."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 400
+      responsibilities: "Owns local desktop daemon construction while delegating catalogue commands to a focused module."
+      decision: kept cohesive at the maximum permitted size; catalogue commands were extracted
+    - path: src-tauri/src/desktop_provider_catalog.rs
+      meaningful_lines: 38
+      responsibilities: "Wires provider catalogue adapters into narrow Tauri command boundaries."
+      decision: kept cohesive
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 97
+      responsibilities: "Registers focused desktop command modules."
+      decision: kept cohesive
+    - path: src/board/AgentRolePreferences.tsx
+      meaningful_lines: 115
+      responsibilities: "Renders a role's provider-default or catalogue model selector and compatible effort selector."
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 185
+      responsibilities: "Routes AI Settings dependencies to its focused project-defaults form."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 355
+      responsibilities: "Threads typed provider catalogue operations through the active board surface."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 178
+      responsibilities: "Exercises card-owned role setup, account-model selection, persistence, and recoverable failure."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 379
+      responsibilities: "Provides shared deterministic board-workspace gateway fixtures."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.provider.fixtures.ts
+      meaningful_lines: 49
+      responsibilities: "Provides isolated provider discovery and catalogue gateway fixtures."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 361
+      responsibilities: "Coordinates board gateway state and forwards non-persistent catalogue operations."
+      decision: kept cohesive
+    - path: src/board/ProjectAgentDefaultsForm.tsx
+      meaningful_lines: 224
+      responsibilities: "Maps provider-card role choices to safe saved project role defaults."
+      decision: kept cohesive
+    - path: src/board/ProviderConfigurationCard.tsx
+      meaningful_lines: 332
+      responsibilities: "Presents one provider's installed state, role controls, catalogue lifecycle, and per-role preferences."
+      decision: kept cohesive
+    - path: src/board/agentSettingsTypes.ts
+      meaningful_lines: 50
+      responsibilities: "Defines provider-neutral Settings catalogue contracts."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 131
+      responsibilities: "Defines typed frontend operations for provider catalogue loading and credential submission."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 238
+      responsibilities: "Maps typed provider catalogue operations to Tauri invocations."
+      decision: kept cohesive
+    - path: src/board/types.ts
+      meaningful_lines: 385
+      responsibilities: "Shares board and native-provider value contracts with the frontend."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T10:08:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers:
+      - finding: "The live catalogue remains short-lived UI state instead of a durable provider-model cache."
+        resolution: accepted
+        rationale: "Provider accounts can change independently. ADR-0031 keeps this credential-derived adapter data out of boards, SQLite, worktrees, and logs; refresh is explicit."
+        decision_reference: ADR-0031
+      - finding: "An account catalogue is advisory; native execution remains the authority for whether a selected model can actually run."
+        resolution: accepted
+        rationale: "The documented account APIs expose different capability detail, while the existing native adapter retains all execution, policy, confirmation, review, and Done gates."
+        decision_reference: ADR-0031
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The old split form asked people to choose a provider in one place and enter model identifiers in another."
+    change: "Replaced it with one self-contained shadcn card per provider, role toggles, catalogue dropdowns, effort controls, and a single save action."
+  - finding: "An asynchronous catalogue refresh could freeze unrelated Settings controls."
+    change: "Moved loading state into the affected provider card and kept role selection and saving responsive."
+  - finding: "A catalogue request could run indefinitely or return only the first Anthropic page."
+    change: "Added a 15-second request deadline and bounded 100-model Anthropic pagination with safe cursors and duplicate normalization."
+  - finding: "A credential could be persisted before proving that the provider could return a usable catalogue."
+    change: "The service validates and retrieves a ready catalogue before storing the key in the OS keychain; failures retain no new credential."
+  - finding: "A legacy saved model absent from the latest account list could leave the selector without a valid visible value."
+    change: "The selector preserves it visibly with a clear warning and directs the person to refresh or choose another model."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+    - command: npm run rust:coverage
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.58
+        statements: 85.47
+        functions: 83.41
+        branches: 80.73
+      - package_or_crate: src-tauri-rust
+        lines: 84.14
+        statements: 80.37
+        functions: 84.40
+        branches: 80.57
+    threshold_met: true
+exceptions: []

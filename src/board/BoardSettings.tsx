@@ -22,6 +22,7 @@ import type {
   LinearOAuthConfiguration,
   PlannerProfile,
   ProjectAgentSettings,
+  ProviderModelCatalog,
   QueueLinearCommentRequest,
   SaveProjectAgentSettingsRequest,
 } from "./types";
@@ -45,7 +46,14 @@ type BoardSettingsProps = Readonly<{
   onQueueLinearComment: (request: QueueLinearCommentRequest) => Promise<void>;
   onRefreshLinearSharedFields: (externalLinkId: string) => Promise<void>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
+  onLoadProviderCatalog: (
+    provider: AgentProviderAvailability,
+  ) => Promise<ProviderModelCatalog>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
+  onSaveProviderCatalogCredential: (
+    provider: AgentProviderAvailability,
+    apiKey: string,
+  ) => Promise<ProviderModelCatalog>;
   onSaveProjectAgentSettings: (
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
@@ -70,7 +78,9 @@ export function BoardSettings({
   onQueueLinearComment,
   onRefreshLinearSharedFields,
   onSaveAgentProfile,
+  onLoadProviderCatalog,
   onSavePlannerProfile,
+  onSaveProviderCatalogCredential,
   onSaveProjectAgentSettings,
 }: BoardSettingsProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -97,7 +107,9 @@ export function BoardSettings({
             providerAvailability={providerAvailability}
             settings={projectAgentSettings}
             onSaveAgentProfile={onSaveAgentProfile}
+            onLoadProviderCatalog={onLoadProviderCatalog}
             onSavePlannerProfile={onSavePlannerProfile}
+            onSaveProviderCatalogCredential={onSaveProviderCatalogCredential}
             onSaveSettings={onSaveProjectAgentSettings}
           />
           <details className="advanced-disclosure">

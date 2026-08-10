@@ -114,17 +114,22 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   and Cline by resolving trusted program names on `PATH`; discovery must not
   launch a provider, submit credentials, or inspect a provider's private data.
   The settings UI clearly differentiates Installed from Not installed.
-- A person can enable an installed provider for one project with one explicit
-  action. The app creates or reuses its safe, adapter-owned default profile and
-  allows separate enabled-provider, model, and effort defaults for the
-  orchestrator and ticket workers. The normal UI never asks for raw command
-  arguments, credentials, approval bypasses, worktree paths, or protocol flags.
-- **Provider default** is the recommended model setting for each role. A person
-  may deliberately enter a named model only after choosing that option; Kanban
-  does not invent a provider model catalogue. Native adapters translate the
-  saved model and effort at invocation time. A generic bridge that cannot
-  express either preference rejects it before a request starts rather than
-  silently ignoring it.
+- Settings presents each detected provider as one self-contained configuration
+  card. An installed card enables the provider independently for **Plan work**
+  and **Work on tickets**, creates or reuses the corresponding safe native
+  profile, and keeps each role's model and effort control on that card. The
+  normal path never asks for raw command arguments, approval bypasses,
+  worktree paths, or protocol flags.
+- **Provider default** is the recommended model setting for each role. A
+  person can explicitly connect that provider's model API to load the models
+  available to their account into a dropdown; Kanban never guesses or
+  hard-codes a provider catalogue. API credentials are stored only in the OS
+  keychain and are never persisted in board metadata. If a catalogue is not
+  connected or cannot refresh, Provider default remains available with a clear
+  connection or retry action. Native adapters translate the saved model and
+  effort at invocation time. A generic bridge that cannot express either
+  preference rejects it before a request starts rather than silently ignoring
+  it.
 - A native orchestrator performs bounded, read-only plan, supervision, and
   ticket-effect assessments through an adapter-owned protocol. Its output must
   still pass the same strict typed validation and cannot create work, start a

@@ -3,6 +3,7 @@ import type {
   AddDependencyRequest,
   AgentProfile,
   AgentProviderAvailability,
+  NativeAgentProviderKind,
   BoardLibraryEntry,
   BoardGateway,
   BoardPlan,
@@ -25,6 +26,7 @@ import type {
   ObserveLinearSharedFieldRequest,
   ProposePlanRequest,
   PlannerProfile,
+  ProviderModelCatalog,
   ProjectAgentSettings,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
@@ -32,6 +34,7 @@ import type {
   RepositorySetup,
   QueueLinearCommentRequest,
   SaveProjectAgentSettingsRequest,
+  SaveProviderCatalogCredentialRequest,
   StartExecutionRequest,
   SupervisionDecision,
   TransitionWorkItemRequest,
@@ -95,6 +98,16 @@ export const tauriBoardGateway: BoardGateway = {
   },
   agentProviderAvailability(): Promise<readonly AgentProviderAvailability[]> {
     return invoke("agent_provider_availability");
+  },
+  providerModelCatalog(
+    providerKind: NativeAgentProviderKind,
+  ): Promise<ProviderModelCatalog> {
+    return invoke("provider_model_catalog", { providerKind });
+  },
+  saveProviderCatalogCredential(
+    request: SaveProviderCatalogCredentialRequest,
+  ): Promise<ProviderModelCatalog> {
+    return invoke("save_provider_catalog_credential", { request });
   },
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile> {
     return invoke("save_planner_profile", { profile });

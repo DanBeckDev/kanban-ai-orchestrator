@@ -76,6 +76,7 @@ h5 {
   color: var(--foreground);
   font-family: var(--font-heading);
   letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 h1 {
@@ -131,5 +132,16 @@ dd {
 
   .appearance-control {
     justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

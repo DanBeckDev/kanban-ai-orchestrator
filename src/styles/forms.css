@@ -74,27 +74,27 @@
   resize: vertical;
 }
 
-.form-panel input:not([data-slot]):focus,
-.form-panel select:focus,
-.form-panel textarea:not([data-slot]):focus,
-.agent-launch-form input:not([data-slot]):focus,
-.agent-launch-form select:focus,
-.agent-launch-form textarea:not([data-slot]):focus,
-.review-check-form input:not([data-slot]):focus,
-.review-check-form select:focus,
-.review-check-form textarea:not([data-slot]):focus,
-.transition-form input:focus,
-.transition-form select:focus,
-.transition-form textarea:focus,
-.linear-connection-panel input:focus,
-.linear-connection-panel select:focus,
-.linear-connection-panel textarea:focus,
-.linear-import-panel input:focus,
-.linear-import-panel select:focus,
-.linear-import-panel textarea:focus,
-.linear-sync-panel input:focus,
-.linear-sync-panel select:focus,
-.linear-sync-panel textarea:focus {
+.form-panel input:not([data-slot]):focus-visible,
+.form-panel select:focus-visible,
+.form-panel textarea:not([data-slot]):focus-visible,
+.agent-launch-form input:not([data-slot]):focus-visible,
+.agent-launch-form select:focus-visible,
+.agent-launch-form textarea:focus-visible,
+.review-check-form input:not([data-slot]):focus-visible,
+.review-check-form select:focus-visible,
+.review-check-form textarea:focus-visible,
+.transition-form input:focus-visible,
+.transition-form select:focus-visible,
+.transition-form textarea:focus-visible,
+.linear-connection-panel input:focus-visible,
+.linear-connection-panel select:focus-visible,
+.linear-connection-panel textarea:focus-visible,
+.linear-import-panel input:focus-visible,
+.linear-import-panel select:focus-visible,
+.linear-import-panel textarea:focus-visible,
+.linear-sync-panel input:focus-visible,
+.linear-sync-panel select:focus-visible,
+.linear-sync-panel textarea:focus-visible {
   border-color: var(--ring);
   outline: 3px solid color-mix(in oklch, var(--ring), transparent 78%);
 }

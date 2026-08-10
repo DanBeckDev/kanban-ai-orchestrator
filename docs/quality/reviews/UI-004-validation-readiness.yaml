@@ -1,0 +1,69 @@
+work_item: UI-004
+scope:
+  - "Pre-validation accessibility and interaction remediation for the current Dark/Light desktop build."
+  - "Advanced-form metadata and plan-confirmation browser semantics."
+source_structure:
+  reviewed_files:
+    - path: src/board/AgentProfileForm.tsx
+      meaningful_lines: 124
+      responsibilities: "Renders the advanced agent-profile form and its accessible field metadata."
+      decision: kept cohesive
+    - path: src/board/AgentProfileForm.test.tsx
+      meaningful_lines: 36
+      responsibilities: "Verifies stable advanced-form names and autocomplete policies."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 374
+      responsibilities: "Covers the end-to-end board plan workflow, including confirmation-field semantics."
+      decision: kept cohesive
+    - path: src/board/PlanDraftEditor.tsx
+      meaningful_lines: 362
+      responsibilities: "Edits a reviewable plan and gives each task's review checkbox a distinct form name."
+      decision: kept cohesive
+    - path: src/board/PlanPreview.tsx
+      meaningful_lines: 216
+      responsibilities: "Presents a plan for confirmation and exposes the confirmer name as a semantic form field."
+      decision: kept cohesive
+    - path: src/theme/interface-guidelines.test.ts
+      meaningful_lines: 13
+      responsibilities: "Guards keyboard-specific focus, heading wrapping, and reduced-motion styles."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T05:30:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "Mouse clicks showed the custom focus treatment instead of reserving it for keyboard navigation."
+    change: "Changed custom raw-form focus selectors to :focus-visible while retaining the shared visible focus indicator."
+  - finding: "The interface had no explicit reduced-motion treatment and headings could leave awkward single-word lines."
+    change: "Added a reduced-motion override and balanced heading wrapping in the shared application shell."
+  - finding: "Some advanced form and confirmation controls lacked stable name or autocomplete metadata."
+    change: "Added names and intentional autocomplete settings, with focused DOM tests."
+verification:
+  commands:
+    - command: npm test -- --run src/board/AgentProfileForm.test.tsx src/board/BoardWorkspace.plan.test.tsx src/theme/interface-guidelines.test.ts
+      result: passed
+    - command: npm run structure:check
+      result: passed
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 86.82
+        statements: 85.68
+        functions: 83.74
+        branches: 82.29
+      - package_or_crate: src-tauri-rust
+        lines: 84.43
+        statements: 80.62
+        functions: 84.90
+        branches: 81.03
+    threshold_met: true
+exceptions: []

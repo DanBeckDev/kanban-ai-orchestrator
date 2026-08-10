@@ -126,6 +126,8 @@ export function PlanPreview({
             <label>
               Your name
               <input
+                autoComplete="name"
+                name="confirmed-by"
                 required
                 value={confirmedBy}
                 onChange={(event) => onConfirmedByChange(event.target.value)}

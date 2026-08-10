@@ -542,7 +542,7 @@ tasks:
   - id: UI-004
     epic: UI
     title: Validate the visual language in themes and assistive settings
-    status: ready
+    status: in_progress
     priority: P1
     depends_on: [UI-002, UX-008]
     acceptance_criteria:
@@ -554,8 +554,11 @@ tasks:
       retain user data. On 2026-08-10 the opt-in, minimal-data protocol in
       docs/product/ux-validation.md was extended with Dark/Light, keyboard,
       screen-reader, and forced-colours/high-contrast tasks. No participant
-      result has been recorded; the item remains ready until those real
-      walkthroughs and finding dispositions exist.
+      result has been recorded. On 2026-08-10 an automated interface-guidelines
+      readiness review corrected mouse-click focus styling, reduced-motion
+      handling, heading wrapping, and advanced-form metadata before the
+      walkthroughs. It is not participant evidence; the item remains in
+      progress until real walkthroughs and finding dispositions exist.
 
   - id: UX-004
     epic: UX

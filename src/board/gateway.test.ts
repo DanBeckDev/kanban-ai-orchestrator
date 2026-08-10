@@ -62,6 +62,16 @@ describe("tauri board gateway", () => {
       reason: "Ready to plan",
       recordedAt: "2026-08-08T00:00:00.000Z",
     };
+    const ticketEffect = {
+      requestId: "effect-1",
+      workItemId: "task-1",
+      action: "explain_evidence" as const,
+      prompt: "Explain the failing check.",
+    };
+    const ticketEffectResolution = {
+      effectId: "effect-1",
+      resolution: "apply" as const,
+    };
 
     await tauriBoardGateway.createProject(project);
     await tauriBoardGateway.createBoard(board);
@@ -73,6 +83,9 @@ describe("tauri board gateway", () => {
     await tauriBoardGateway.addDependency(dependency);
     await tauriBoardGateway.transitionWorkItem(transition);
     await tauriBoardGateway.coordinateBoard("board-1");
+    await tauriBoardGateway.requestTicketEffect(ticketEffect);
+    await tauriBoardGateway.resolveTicketEffect(ticketEffectResolution);
+    await tauriBoardGateway.ticketEffects("task-1");
     await tauriBoardGateway.executionActivity("execution-1", 2);
     await tauriBoardGateway.boardSnapshot("board-1");
 
@@ -87,6 +100,9 @@ describe("tauri board gateway", () => {
       ["add_dependency", { request: dependency }],
       ["transition_work_item", { request: transition }],
       ["coordinate_board", { boardId: "board-1" }],
+      ["request_ticket_effect", { request: ticketEffect }],
+      ["resolve_ticket_effect", { request: ticketEffectResolution }],
+      ["ticket_effects", { workItemId: "task-1" }],
       ["execution_activity", { executionId: "execution-1", afterSequence: 2 }],
       ["board_snapshot", { boardId: "board-1" }],
     ]);

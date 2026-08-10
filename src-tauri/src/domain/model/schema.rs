@@ -51,6 +51,7 @@ domain_id!(ExecutionId);
 domain_id!(EvidenceId);
 domain_id!(PolicyDecisionId);
 domain_id!(SupervisionDecisionId);
+domain_id!(TicketEffectId);
 domain_id!(PlanId);
 domain_id!(ExternalLinkId);
 domain_id!(ConnectorOutboxItemId);

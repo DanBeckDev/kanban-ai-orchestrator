@@ -4,7 +4,8 @@ use crate::{
     agent::AgentProfileError,
     domain::{
         ConnectorOutboxItemId, ConnectorReconciliationItemId, EvidenceId, ExecutionId,
-        ExternalLinkId, PolicyDecisionId, SupervisionDecisionId, WorkItemEventId, WorkItemId,
+        ExternalLinkId, PolicyDecisionId, SupervisionDecisionId, TicketEffectId, WorkItemEventId,
+        WorkItemId,
     },
     orchestration::PlannerProfileError,
 };
@@ -19,6 +20,11 @@ pub enum EventStoreError {
     },
     WorkItemNotFound {
         work_item_id: WorkItemId,
+    },
+    StaleWorkItem {
+        work_item_id: WorkItemId,
+        expected_sequence: u64,
+        actual_sequence: u64,
     },
     ExecutionAlreadyExists {
         execution_id: ExecutionId,
@@ -79,6 +85,15 @@ pub enum EventStoreError {
     SupervisionDecisionNotFound {
         decision_id: SupervisionDecisionId,
     },
+    TicketEffectConflict {
+        effect_id: TicketEffectId,
+    },
+    TicketEffectNotFound {
+        effect_id: TicketEffectId,
+    },
+    TicketEffectInvalidOutcomeTransition {
+        effect_id: TicketEffectId,
+    },
     ProtectedGitApprovalIdConflict {
         decision_id: PolicyDecisionId,
     },
@@ -117,6 +132,15 @@ impl fmt::Display for EventStoreError {
             Self::WorkItemNotFound { work_item_id } => {
                 write!(formatter, "work item {} was not found", work_item_id.0)
             }
+            Self::StaleWorkItem {
+                work_item_id,
+                expected_sequence,
+                actual_sequence,
+            } => write!(
+                formatter,
+                "work item {} changed from sequence {} to {}",
+                work_item_id.0, expected_sequence, actual_sequence
+            ),
             Self::ExecutionAlreadyExists { execution_id } => {
                 write!(formatter, "execution {} already exists", execution_id.0)
             }
@@ -215,6 +239,21 @@ impl fmt::Display for EventStoreError {
                 formatter,
                 "supervision decision {} was not found",
                 decision_id.0
+            ),
+            Self::TicketEffectConflict { effect_id } => {
+                write!(
+                    formatter,
+                    "ticket effect {} conflicts with a recorded effect",
+                    effect_id.0
+                )
+            }
+            Self::TicketEffectNotFound { effect_id } => {
+                write!(formatter, "ticket effect {} was not found", effect_id.0)
+            }
+            Self::TicketEffectInvalidOutcomeTransition { effect_id } => write!(
+                formatter,
+                "ticket effect {} cannot change outcome again",
+                effect_id.0
             ),
             Self::ProtectedGitApprovalIdConflict { decision_id } => write!(
                 formatter,

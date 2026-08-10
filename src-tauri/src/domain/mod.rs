@@ -9,7 +9,8 @@ pub use dependency_graph::{
 };
 pub use events::{
     CreateWorkItemCommand, EventSequence, MaterializedWorkItem, RecordedWorkItemEvent,
-    RestartReconciliationCommand, TransitionWorkItemCommand, WorkItemEvent, WorkItemEventKind,
+    RefineWorkItemDetailsCommand, RestartReconciliationCommand, TransitionWorkItemCommand,
+    WorkItemEvent, WorkItemEventKind,
 };
 pub use model::{
     AgentEffort, AgentModelPreference, Board, BoardId, BoardSupervision, BoardSupervisionLimits,
@@ -22,8 +23,9 @@ pub use model::{
     OrganiserDefaults, PlanId, PolicyAction, PolicyDecision, PolicyDecisionId, PolicyDecisionKind,
     Project, ProjectAgentSettings, ProjectId, ProtectedGitAction, SchemaMetadata, SchemaVersion,
     SupervisionAction, SupervisionDecision, SupervisionDecisionId, SupervisionDecisionOutcome,
-    SupervisionPolicyResult, TicketWorkerDefaults, ToolScope, VersionedSchema, WorkItem,
-    WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
+    SupervisionPolicyResult, TicketEffect, TicketEffectAction, TicketEffectId, TicketEffectOutcome,
+    TicketEffectProposal, TicketEffectResolution, TicketWorkerDefaults, ToolScope, VersionedSchema,
+    WorkItem, WorkItemBudget, WorkItemEventId, WorkItemId, WorkItemState,
 };
 pub use state_machine::{
     CompletionEvidence, TransitionConfig, TransitionError, transition_work_item,

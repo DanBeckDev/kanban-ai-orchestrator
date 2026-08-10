@@ -399,7 +399,7 @@ fn idempotency_key(supervision: &BoardSupervision, candidate: &SupervisionCandid
     )
 }
 
-fn format_implementation_brief(work_item: &crate::domain::WorkItem) -> String {
+pub(crate) fn format_implementation_brief(work_item: &crate::domain::WorkItem) -> String {
     let criteria = work_item
         .acceptance_criteria
         .iter()

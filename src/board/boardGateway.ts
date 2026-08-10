@@ -33,6 +33,11 @@ import type {
   TransitionWorkItemRequest,
 } from "./types";
 import type {
+  ResolveTicketEffectRequest,
+  TicketEffect,
+  TicketEffectPromptRequest,
+} from "./ticketEffectTypes";
+import type {
   ObserveLinearSharedFieldRequest,
   QueueLinearCommentRequest,
 } from "./linearSyncTypes";
@@ -77,6 +82,13 @@ export interface BoardGateway {
     boardId: string,
   ): Promise<readonly SupervisionDecision[]>;
   coordinateBoard(boardId: string): Promise<BoardSnapshot>;
+  requestTicketEffect(
+    request: TicketEffectPromptRequest,
+  ): Promise<TicketEffect>;
+  resolveTicketEffect(
+    request: ResolveTicketEffectRequest,
+  ): Promise<BoardSnapshot>;
+  ticketEffects(workItemId: string): Promise<readonly TicketEffect[]>;
   stopExecution(executionId: string): Promise<BoardSnapshot>;
   executionActivity(
     executionId: string,

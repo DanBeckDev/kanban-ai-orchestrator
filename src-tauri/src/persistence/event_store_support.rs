@@ -1,6 +1,6 @@
 use crate::domain::{
     CreateWorkItemCommand, EventSequence, MaterializedWorkItem, RecordedWorkItemEvent,
-    TransitionWorkItemCommand, WorkItemEventKind,
+    RefineWorkItemDetailsCommand, TransitionWorkItemCommand, WorkItemEventKind,
 };
 
 use super::EventStoreError;
@@ -37,6 +37,30 @@ pub(super) fn idempotent_transition(
             && *to == command.next_state
             && *config == command.config
             && *evidence == command.evidence
+            && reason == &command.reason =>
+        {
+            Ok(recorded_event)
+        }
+        _ => Err(EventStoreError::EventIdConflict {
+            event_id: command.event_id.clone(),
+        }),
+    }
+}
+
+pub(super) fn idempotent_refinement(
+    recorded_event: RecordedWorkItemEvent,
+    command: &RefineWorkItemDetailsCommand,
+) -> Result<RecordedWorkItemEvent, EventStoreError> {
+    match &recorded_event.event.kind {
+        WorkItemEventKind::DetailsRefined {
+            title,
+            description,
+            acceptance_criteria,
+            reason,
+        } if recorded_event.event.work_item_id == command.work_item_id
+            && title == &command.title
+            && description == &command.description
+            && acceptance_criteria == &command.acceptance_criteria
             && reason == &command.reason =>
         {
             Ok(recorded_event)

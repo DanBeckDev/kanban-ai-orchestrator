@@ -36,6 +36,11 @@ import type {
   SupervisionDecision,
   TransitionWorkItemRequest,
 } from "./types";
+import type {
+  ResolveTicketEffectRequest,
+  TicketEffect,
+  TicketEffectPromptRequest,
+} from "./ticketEffectTypes";
 
 export const tauriBoardGateway: BoardGateway = {
   async createProject(request: CreateProjectRequest): Promise<void> {
@@ -141,6 +146,19 @@ export const tauriBoardGateway: BoardGateway = {
   },
   coordinateBoard(boardId: string): Promise<BoardSnapshot> {
     return invoke("coordinate_board", { boardId });
+  },
+  requestTicketEffect(
+    request: TicketEffectPromptRequest,
+  ): Promise<TicketEffect> {
+    return invoke("request_ticket_effect", { request });
+  },
+  resolveTicketEffect(
+    request: ResolveTicketEffectRequest,
+  ): Promise<BoardSnapshot> {
+    return invoke("resolve_ticket_effect", { request });
+  },
+  ticketEffects(workItemId: string): Promise<readonly TicketEffect[]> {
+    return invoke("ticket_effects", { workItemId });
   },
   stopExecution(executionId: string): Promise<BoardSnapshot> {
     return invoke("stop_execution", { executionId });

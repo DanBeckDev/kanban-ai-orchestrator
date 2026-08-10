@@ -27,6 +27,8 @@ mod project_agent_settings_service;
 mod review_check_request;
 mod review_decision_request;
 mod review_service;
+mod ticket_effect_request;
+mod ticket_effect_service;
 
 pub use agent_profile_service::AgentProfileServiceError;
 pub use board_library::{
@@ -65,6 +67,8 @@ pub use project_agent_settings_service::{
 };
 pub use review_check_request::RecordReviewCheckRequest;
 pub use review_decision_request::RecordReviewDecisionRequest;
+pub use ticket_effect_request::{ResolveTicketEffectRequest, TicketEffectPromptRequest};
+pub use ticket_effect_service::TicketEffectServiceError;
 
 #[cfg(test)]
 mod board_library_tests;
@@ -92,3 +96,6 @@ mod project_agent_settings_service_tests;
 
 #[cfg(test)]
 mod board_supervision_service_tests;
+
+#[cfg(test)]
+mod ticket_effect_service_tests;

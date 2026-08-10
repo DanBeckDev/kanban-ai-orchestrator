@@ -106,6 +106,24 @@ pub(super) fn create_board_supervision_schema(
     )
 }
 
+pub(super) fn create_ticket_effect_schema(
+    transaction: &Transaction<'_>,
+) -> Result<(), rusqlite::Error> {
+    transaction.execute_batch(
+        "CREATE TABLE IF NOT EXISTS ticket_effects (
+            effect_id TEXT PRIMARY KEY,
+            board_id TEXT NOT NULL,
+            work_item_id TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            recorded_at TEXT NOT NULL,
+            effect_json TEXT NOT NULL,
+            UNIQUE(board_id, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS ticket_effects_by_work_item
+            ON ticket_effects (work_item_id, recorded_at DESC, effect_id DESC);",
+    )
+}
+
 pub(super) fn create_external_link_schema(
     transaction: &Transaction<'_>,
 ) -> Result<(), rusqlite::Error> {

@@ -4,6 +4,7 @@ import { BoardWorkspaceScreen } from "./BoardWorkspaceScreen";
 import { useBoardSnapshotRefresh } from "./useBoardSnapshotRefresh";
 import { errorMessage, useBoardOperation } from "./useBoardOperation";
 import { tauriBoardGateway } from "./gateway";
+import { ticketEffectOperations } from "./ticketEffectOperations";
 import { selectCloneDestination, selectRepository } from "./repositoryPicker";
 import type {
   AddDependencyRequest,
@@ -388,6 +389,7 @@ export function BoardWorkspace({
             onSaveAgentProfile: saveAgentProfile,
             onSaveProjectAgentSettings: saveProjectAgentSettings,
             onSavePlannerProfile: savePlannerProfile,
+            ticketEffects: ticketEffectOperations(gateway, run),
             onCoordinateBoard: coordinateBoard,
             supervisionDecisions,
             onConfigureBoardSupervision: configureBoardSupervision,

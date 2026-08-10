@@ -5,6 +5,8 @@ mod planner_process;
 mod scheduler;
 mod supervisor;
 mod supervisor_process;
+mod ticket_effect;
+mod ticket_effect_process;
 
 pub use plan::{
     PlanBudgetSummary, PlanConfirmation, PlanConfirmationError, PlanPreview, PlanProposal,
@@ -24,9 +26,14 @@ pub use supervisor::{
     BoardSupervisionInput, BoardSupervisionInputError, MAX_SUPERVISION_ACTIVITY,
     MAX_SUPERVISION_EVIDENCE, SupervisionActivity, SupervisionCandidate, SupervisionDependency,
     SupervisionEvidence, SupervisionWorkItem, SupervisorRecommendation,
-    SupervisorRecommendationError, bounded_summary,
+    SupervisorRecommendationError, bounded_summary, redacted_summary,
 };
 pub use supervisor_process::{ProcessBoardSupervisionError, ProcessBoardSupervisor};
+pub use ticket_effect::{
+    TicketEffectEvidence, TicketEffectInput, TicketEffectInputError, TicketEffectRecommendation,
+    TicketEffectRecommendationError, TicketEffectTask, bounded_redacted,
+};
+pub use ticket_effect_process::{ProcessTicketEffectAdvisor, ProcessTicketEffectError};
 
 #[cfg(test)]
 mod tests;
@@ -36,3 +43,6 @@ mod planner_process_tests;
 
 #[cfg(all(test, unix))]
 mod supervisor_process_tests;
+
+#[cfg(all(test, unix))]
+mod ticket_effect_process_tests;

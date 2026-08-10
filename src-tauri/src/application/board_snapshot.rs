@@ -43,6 +43,9 @@ pub fn board_activity(recorded_event: RecordedWorkItemEvent) -> BoardActivity {
             format!("State changed from {from} to {to}: {reason}"),
             evidence,
         ),
+        WorkItemEventKind::DetailsRefined { reason, .. } => {
+            (format!("Task details refined: {reason}"), None)
+        }
     };
 
     BoardActivity {

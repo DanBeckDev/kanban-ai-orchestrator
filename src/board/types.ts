@@ -408,6 +408,15 @@ export type ImportLinearBlockerRequest = Readonly<{
 }>;
 
 export type { BoardGateway } from "./boardGateway";
+export type {
+  ResolveTicketEffectRequest,
+  TicketEffect,
+  TicketEffectAction,
+  TicketEffectOutcome,
+  TicketEffectPromptRequest,
+  TicketEffectProposal,
+  TicketEffectResolution,
+} from "./ticketEffectTypes";
 import type {
   ConnectorOutboxItem,
   ConnectorReconciliationItem,

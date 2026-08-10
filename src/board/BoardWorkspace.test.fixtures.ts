@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 import { linearGatewayMethods } from "./BoardWorkspace.test.linear.fixtures";
 import { executionGatewayMethods } from "./BoardWorkspace.test.execution.fixtures";
+import { ticketEffectGatewayMethods } from "./BoardWorkspace.test.ticket-effects.fixtures";
 
 import type {
   AgentProfile,
@@ -390,6 +391,7 @@ export function gateway(
         current = snapshot;
       },
     }),
+    ...ticketEffectGatewayMethods({ current: () => current }),
     ...linearGatewayMethods({
       current: () => current,
       replace: (snapshot) => {

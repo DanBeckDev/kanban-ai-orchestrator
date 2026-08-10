@@ -35,6 +35,9 @@ type LocalLinearIssueReader = LinearIssueReader<ReqwestLinearGraphQlTransport>;
 #[path = "desktop_coordination.rs"]
 pub(crate) mod coordination;
 
+#[path = "desktop_ticket_effects.rs"]
+pub(crate) mod ticket_effects;
+
 pub(crate) struct BoardDaemonState {
     _daemon_lock: DaemonLock,
     linear_comment_publisher: LocalLinearCommentPublisher,

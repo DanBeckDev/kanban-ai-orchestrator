@@ -516,7 +516,13 @@ tasks:
       - Keyboard-only and screen-reader walkthroughs verify the appearance control, focus treatment, visible state labels, and all top-level entry screens in Dark and Light appearance.
       - A forced-colours/high-contrast walkthrough confirms that controls, boundaries, focus, and status meaning remain visible when the authored palette is overridden.
       - At least three representative developers assess comprehension of the product name, first-screen purpose, theme control, and first next action; findings have a recorded disposition and no raw private project data.
-    notes: Treat visual validation as evidence, not permission to add telemetry or retain user data.
+    notes: >-
+      Treat visual validation as evidence, not permission to add telemetry or
+      retain user data. On 2026-08-10 the opt-in, minimal-data protocol in
+      docs/product/ux-validation.md was extended with Dark/Light, keyboard,
+      screen-reader, and forced-colours/high-contrast tasks. No participant
+      result has been recorded; the item remains ready until those real
+      walkthroughs and finding dispositions exist.
 
   - id: UX-004
     epic: UX
@@ -592,7 +598,14 @@ tasks:
       - At least five representative developers complete the documented first-board, returning-board, first-plan, blocker, and recovery scenarios on a current desktop build.
       - Findings distinguish critical failures from usability refinements, contain no credentials, repository paths, private diffs, or raw agent transcripts, and are recorded as linked backlog items with an owner and disposition.
       - No critical scenario failure remains open at the Phase 6 exit gate. The final accessibility pass covers keyboard-only traversal, visible focus, non-colour state communication, and graph/list equivalence.
-    notes: This is validation work, not permission to collect product telemetry. Use an opt-in local study protocol and retain only minimal anonymized notes.
+    notes: >-
+      This is validation work, not permission to collect product telemetry. Use
+      an opt-in local study protocol and retain only minimal anonymized notes.
+      On 2026-08-10 the study kit in docs/product/ux-validation.md was extended
+      to five representative developers and the required first-board,
+      returning-board, first-plan, blocker, recovery, and assistive scenarios.
+      It records no participant results; this item remains ready until real
+      walkthroughs produce anonymized findings and dispositions.
 
   - id: UX-008
     epic: UX

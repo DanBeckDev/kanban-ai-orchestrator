@@ -126,6 +126,12 @@ export const tauriBoardGateway: BoardGateway = {
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan> {
     return invoke("generate_plan", { request });
   },
+  planningActivity(
+    boardId: string,
+    afterSequence?: number,
+  ): Promise<ExecutionActivityPage> {
+    return invoke("planning_activity", { boardId, afterSequence });
+  },
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot> {
     return invoke("start_execution", { request });
   },

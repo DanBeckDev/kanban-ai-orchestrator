@@ -88,7 +88,7 @@ describe("board workspace", () => {
     expect(boardGateway.addDependency).toHaveBeenCalledWith(
       expect.objectContaining({ downstreamWorkItemId: createdWorkItemId }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
     expect(await screen.findByText("Waiting on Task api")).toBeVisible();
     openTask("UI");
     fireEvent.click(screen.getByRole("button", { name: "Dependencies" }));

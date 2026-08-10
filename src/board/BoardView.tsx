@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
-import { ListPlusIcon, SparklesIcon } from "lucide-react";
+import { ListPlusIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 import { BoardCanvas } from "./BoardCanvas";
-import { BoardAutomation } from "./BoardAutomation";
+import { BoardHome } from "./BoardHome";
 import { BoardManagement, SurfaceHeader } from "./BoardManagement";
 import { BoardSettings } from "./BoardSettings";
 import { BoardViewMenu, type MainBoardView } from "./BoardViewMenu";
 import { DependencyView } from "./DependencyView";
-import { boardLinearMode } from "./linearConnectionPresentation";
 import { PlanProposalPanel } from "./PlanProposalPanel";
 import { TaskDetailView } from "./TaskDetailView";
 import type { TicketEffectOperations } from "./ticketEffectOperations";
-import { boardSummary } from "./presentation";
 import type {
   AddDependencyRequest,
   AgentProfile,
@@ -24,6 +22,7 @@ import type {
   BoardSupervisionMode,
   ConfirmPlanRequest,
   CreateWorkItemRequest,
+  ExecutionActivityPage,
   GeneratePlanRequest,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
@@ -35,12 +34,16 @@ import type {
   ProviderModelCatalog,
   ProposePlanRequest,
   QueueLinearCommentRequest,
-  SupervisionDecision,
+  RecordCleanCodeReviewRequest,
+  RecordReviewCheckRequest,
+  RecordReviewDecisionRequest,
   SaveProjectAgentSettingsRequest,
+  StartExecutionRequest,
+  SupervisionDecision,
   TransitionWorkItemRequest,
 } from "./types";
 
-type BoardSurface = MainBoardView | "plan" | "new-task" | "task-detail";
+type BoardSurface = MainBoardView | "plan-review" | "new-task" | "task-detail";
 
 type BoardViewProps = Readonly<{
   busy: boolean;
@@ -82,6 +85,10 @@ type BoardViewProps = Readonly<{
   onStopExecution: (executionId: string) => Promise<void>;
   onLoadExecutionActivity: (
     executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
+  onLoadPlanningActivity: (
+    boardId: string,
     afterSequence?: number,
   ) => Promise<ExecutionActivityPage>;
   onRecordReviewCheck: (request: RecordReviewCheckRequest) => Promise<void>;
@@ -129,107 +136,114 @@ export function BoardView({
   onStartExecution,
   onStopExecution,
   onLoadExecutionActivity,
+  onLoadPlanningActivity,
   onRecordReviewCheck,
   onRecordReviewDecision,
   onRecordCleanCodeReview,
   onTransition,
 }: BoardViewProps) {
-  const [surface, setSurface] = useState<BoardSurface>("workflow");
+  const [surface, setSurface] = useState<BoardSurface>("home");
   const [selectedWorkItemId, setSelectedWorkItemId] = useState<string>();
-  const [restoreBoardFocus, setRestoreBoardFocus] = useState(false);
+  const [restoreMenuFocus, setRestoreMenuFocus] = useState(false);
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
   const selectedWorkItem = workItems.find(
     ({ id }) => id === selectedWorkItemId,
   );
-  const returnToWorkflow = () => {
-    setRestoreBoardFocus(true);
-    setSurface("workflow");
-  };
-  const activeView: MainBoardView =
-    surface === "dependencies" || surface === "settings" ? surface : "workflow";
-  const generatePlanFromWorkflow = async (request: GeneratePlanRequest) => {
+  const activeView = activeViewFor(surface);
+  const returnToHome = () => returnTo("home");
+  const returnToTickets = () => returnTo("tickets");
+
+  function returnTo(nextSurface: MainBoardView) {
+    setRestoreMenuFocus(true);
+    setSurface(nextSurface);
+  }
+
+  async function generatePlanFromHome(request: GeneratePlanRequest) {
     await onGeneratePlan(request);
-    setSurface("plan");
-  };
-  const openTask = (workItemId: string) => {
+    setSurface("plan-review");
+  }
+
+  async function confirmPlanAndOpenTickets(request: ConfirmPlanRequest) {
+    await onConfirmPlan(request);
+    setSurface("tickets");
+  }
+
+  function openTask(workItemId: string) {
     setSelectedWorkItemId(workItemId);
     setSurface("task-detail");
-  };
-  const openDependencies = (workItemId?: string) => {
+  }
+
+  function openDependencies(workItemId?: string) {
     if (workItemId !== undefined) setSelectedWorkItemId(workItemId);
     setSurface("dependencies");
-  };
+  }
 
   useEffect(() => {
-    if (!restoreBoardFocus || surface !== "workflow") return;
+    if (!restoreMenuFocus || surface === "task-detail") return;
     document.getElementById("board-view-menu")?.focus();
-    setRestoreBoardFocus(false);
-  }, [restoreBoardFocus, surface]);
+    setRestoreMenuFocus(false);
+  }, [restoreMenuFocus, surface]);
 
   return (
     <section aria-labelledby="board-title" className="board-workspace">
       <BoardHeader
-        boardName={snapshot.board.name}
         activeView={activeView}
-        linearConnectionStatus={linearConnectionStatus}
-        snapshot={snapshot}
-        showQuickActions={surface === "workflow"}
+        boardName={snapshot.board.name}
         onCreateTask={() => setSurface("new-task")}
-        onPlanWork={() => setSurface("plan")}
-        onViewChange={(view) => setSurface(view)}
+        onViewChange={setSurface}
+        showCreateTask={surface === "tickets"}
       />
-      {surface === "workflow" && (
-        <>
-          <BoardAutomation
-            snapshot={snapshot}
-            supervision={boardSupervision}
-            decisions={supervisionDecisions}
-            hasConfiguredRoles={
-              projectAgentSettings?.organiser !== undefined &&
-              projectAgentSettings.ticketWorker !== undefined &&
-              agentProfiles.some(
-                ({ name }) =>
-                  name === projectAgentSettings.ticketWorker?.agentProfileName,
-              )
-            }
-            onConfigure={onConfigureBoardSupervision}
-            onCoordinate={onCoordinateBoard}
-          />
-          <BoardCanvas
-            busy={busy}
-            defaultPlannerProfileName={
-              projectAgentSettings?.organiser?.plannerProfileName
-            }
-            plannerProfiles={plannerProfiles}
-            snapshot={snapshot}
-            onGeneratePlan={generatePlanFromWorkflow}
-            onExplainDependencies={openDependencies}
-            onOpenTask={openTask}
-          />
-        </>
+      {surface === "home" && (
+        <BoardHome
+          busy={busy}
+          defaultPlannerProfileName={
+            projectAgentSettings?.organiser?.plannerProfileName
+          }
+          plannerProfiles={plannerProfiles}
+          snapshot={snapshot}
+          supervision={boardSupervision}
+          onGeneratePlan={generatePlanFromHome}
+          onLoadExecutionActivity={onLoadExecutionActivity}
+          onLoadPlanningActivity={onLoadPlanningActivity}
+          onOpenTask={openTask}
+          onOpenPlanReview={() => setSurface("plan-review")}
+          onOpenTickets={() => setSurface("tickets")}
+        />
       )}
-      {surface === "plan" && (
-        <section aria-label="Plan work with AI" className="workspace-surface">
+      {surface === "tickets" && (
+        <BoardCanvas
+          snapshot={snapshot}
+          onExplainDependencies={openDependencies}
+          onGoHome={() => setSurface("home")}
+          onOpenTask={openTask}
+        />
+      )}
+      {surface === "plan-review" && (
+        <section
+          aria-label="Review proposed tickets"
+          className="workspace-surface"
+        >
           <SurfaceHeader
-            description="Describe the outcome, review the proposed tasks, then decide what to create."
-            onBack={returnToWorkflow}
-            title="Plan work with AI"
+            backLabel="Back to Home"
+            description="Review the proposed tickets and their order before creating anything."
+            onBack={returnToHome}
+            title="Review proposed tickets"
           />
           <PlanProposalPanel
+            agentProfiles={agentProfiles}
             boardId={snapshot.board.id}
             busy={busy}
-            plan={boardPlan}
-            onConfirm={onConfirmPlan}
-            onGenerate={onGeneratePlan}
-            onPropose={onProposePlan}
-            plannerProfiles={plannerProfiles}
-            agentProfiles={agentProfiles}
             defaultPlannerProfileName={
               projectAgentSettings?.organiser?.plannerProfileName
             }
             defaultTicketWorkerProfileName={
               projectAgentSettings?.ticketWorker?.agentProfileName
             }
+            onConfirm={confirmPlanAndOpenTickets}
+            onGenerate={onGeneratePlan}
+            onPropose={onProposePlan}
+            plan={boardPlan}
+            plannerProfiles={plannerProfiles}
           />
         </section>
       )}
@@ -237,7 +251,7 @@ export function BoardView({
         <BoardManagement
           boardId={snapshot.board.id}
           busy={busy}
-          onBack={returnToWorkflow}
+          onBack={returnToTickets}
           onCreateWorkItem={onCreateWorkItem}
         />
       )}
@@ -248,13 +262,14 @@ export function BoardView({
           selectedWorkItemId={selectedWorkItemId}
           snapshot={snapshot}
           onAddDependency={onAddDependency}
-          onBack={returnToWorkflow}
+          onBack={returnToTickets}
           onOpenTask={openTask}
         />
       )}
       {surface === "settings" && (
         <BoardSettings
           agentProfiles={agentProfiles}
+          boardSupervision={boardSupervision}
           busy={busy}
           projectAgentSettings={projectAgentSettings}
           linearConnectionStatus={linearConnectionStatus}
@@ -262,8 +277,11 @@ export function BoardView({
           plannerProfiles={plannerProfiles}
           providerAvailability={providerAvailability}
           snapshot={snapshot}
-          onBack={returnToWorkflow}
+          supervisionDecisions={supervisionDecisions}
+          onBack={returnToTickets}
+          onConfigureBoardSupervision={onConfigureBoardSupervision}
           onConnectLinear={onConnectLinear}
+          onCoordinateBoard={onCoordinateBoard}
           onDeliverLinearComment={onDeliverLinearComment}
           onEnableLinearCommentAccess={onEnableLinearCommentAccess}
           onImportLinearBlocker={onImportLinearBlocker}
@@ -289,7 +307,7 @@ export function BoardView({
           snapshot={snapshot}
           ticketEffects={ticketEffects}
           workItem={selectedWorkItem}
-          onBack={returnToWorkflow}
+          onBack={returnToTickets}
           onLoadExecutionActivity={onLoadExecutionActivity}
           onRecordCleanCodeReview={onRecordCleanCodeReview}
           onRecordReviewCheck={onRecordReviewCheck}
@@ -306,52 +324,39 @@ export function BoardView({
 function BoardHeader({
   activeView,
   boardName,
-  linearConnectionStatus,
-  showQuickActions,
-  snapshot,
+  showCreateTask,
   onCreateTask,
-  onPlanWork,
   onViewChange,
 }: Readonly<{
   activeView: MainBoardView;
   boardName: string;
-  linearConnectionStatus: LinearConnectionStatus;
-  showQuickActions: boolean;
-  snapshot: BoardSnapshot;
+  showCreateTask: boolean;
   onCreateTask: () => void;
-  onPlanWork: () => void;
   onViewChange: (view: MainBoardView) => void;
 }>) {
-  const summary = boardSummary(snapshot);
-  const linearMode = boardLinearMode(snapshot);
   return (
     <header className="board-header">
       <div className="board-heading">
         <BoardViewMenu activeView={activeView} onViewChange={onViewChange} />
         <div>
-          <p className="eyebrow">Your board</p>
+          <p className="eyebrow">Project</p>
           <h2 id="board-title">{boardName}</h2>
-          <p>{summary}</p>
-          <p>
-            {linearMode.description}
-            {linearConnectionStatus.kind === "connected" &&
-              linearMode.mode === "local_only" &&
-              " Linear is connected, but no task is linked yet."}
-          </p>
         </div>
       </div>
-      {showQuickActions && (
+      {showCreateTask && (
         <div className="board-toolbar">
-          <Button onClick={onPlanWork} type="button">
-            <SparklesIcon data-icon="inline-start" />
-            Plan work with AI
-          </Button>
           <Button onClick={onCreateTask} type="button" variant="outline">
             <ListPlusIcon data-icon="inline-start" />
-            Create task
+            Create ticket
           </Button>
         </div>
       )}
     </header>
   );
+}
+
+function activeViewFor(surface: BoardSurface): MainBoardView {
+  if (surface === "plan-review") return "home";
+  if (surface === "new-task" || surface === "task-detail") return "tickets";
+  return surface;
 }

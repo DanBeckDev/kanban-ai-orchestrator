@@ -29,11 +29,13 @@ export function BoardManagement({
 }
 
 export function SurfaceHeader({
+  backLabel = "Back to Tickets",
   description,
   headingId,
   onBack,
   title,
 }: Readonly<{
+  backLabel?: string;
   description: string;
   headingId?: string;
   onBack: () => void;
@@ -47,7 +49,7 @@ export function SurfaceHeader({
         <p>{description}</p>
       </div>
       <Button onClick={onBack} type="button" variant="outline">
-        Back to board
+        {backLabel}
       </Button>
     </header>
   );

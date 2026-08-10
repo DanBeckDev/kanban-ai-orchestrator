@@ -22,9 +22,9 @@ contradict the assumptions rather than inherit them as facts.
 | --- | --- | --- | --- | --- |
 | Find work | Enter an existing board ID in `Open an existing board` | “Which ID is mine, and where do I find it?” | Store or obtain an opaque ID outside the app | `src/board/BoardSetup.tsx` |
 | Set up safely | Choose a project folder, accept a feature branch as the suggested starting point, then scan technical setup details | “Why is that branch recommended, and what does the policy setting mean?” | Override a value without context, or scroll around a form that should be simple | `src/board/BoardSetup.tsx` |
-| Describe an outcome | Open a board, then find the proposal panel among many side-panel forms | “Do I need to configure an agent, Linear, a task, and a dependency before I can plan?” | Interpret a dense configuration surface as the onboarding path | `src/board/BoardView.tsx` |
-| Decide the order | Read cards and dependency form in the board workspace | “What is blocked, why, and what can safely run together?” | Infer from task data and dependency notation | `src/board/BoardView.tsx` |
-| Supervise work | Use cards and execution controls after profiles are configured | “What needs my attention right now?” | Scan board columns and configuration panels | `src/board/BoardView.tsx` |
+| Describe an outcome | Open Home and use the outcome prompt | “Will this start work before I can review it?” | Assume that drafting automatically starts a worker | `src/board/BoardHome.tsx` |
+| Decide the order | Open Tickets or Dependencies after a reviewed proposal | “What is blocked, why, and what can safely run together?” | Infer order from compact ticket data alone | `src/board/BoardCanvas.tsx` |
+| Supervise work | Read Home's active-agent feedback | “What is an agent doing, and is it waiting for me?” | Switch between ticket cards and settings to infer progress | `src/board/BoardHome.tsx` |
 | Review or recover | Use task-card controls and review/evidence interfaces | “Is this done, waiting, failed, or safe to retry?” | Inspect implementation-level state and evidence controls | `src/board/WorkItemCard.tsx` |
 
 ### Assumptions to test, not conclusions
@@ -164,7 +164,7 @@ before explaining the interface:
 2. “How would you change the appearance, and what do you expect to change?”
 3. “What would you do first to start or continue work?”
 
-Then have each participant visit the board library, workspace setup, Workflow,
+Then have each participant visit the board library, workspace setup, Home, Tickets,
 Dependencies, Settings, and task detail in both Dark and Light appearance.
 Record whether keyboard focus is visible, each control has a usable name, and
 task/status meaning remains understandable without colour.

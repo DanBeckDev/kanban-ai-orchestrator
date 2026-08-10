@@ -9,6 +9,7 @@ mod supervisor_process;
 mod ticket_effect;
 mod ticket_effect_process;
 
+pub(crate) use native_profile_process::PlannerActivitySink;
 pub use plan::{
     PlanBudgetSummary, PlanConfirmation, PlanConfirmationError, PlanPreview, PlanProposal,
     PlanProposalError, PlanWorkItemPreview,

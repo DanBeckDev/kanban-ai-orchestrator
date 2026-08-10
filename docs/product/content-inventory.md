@@ -25,15 +25,16 @@ with no listed purpose is removed rather than retained as decoration.
 | `BoardWorkspaceScreen` | **Orient:** Loading your local boards, Kanban could not load your boards. **Act:** Reload boards. **Explain:** saved boards have not changed and when to restart. |
 | `WorkspaceErrorBoundary` | **Orient:** Kanban couldn't show this workspace. **Act:** Reload workspace. **Explain:** saved boards and work have not changed. |
 
-## Workflow, planning, and supervision
+## Home, Tickets, planning, and supervision
 
 | Surface | Persistent controls and primary purpose |
 | --- | --- |
-| `BoardView` and `BoardViewMenu` | **Orient:** board name, Your board, Workflow, Dependencies, Settings. **Act:** change view, Plan work with AI, Create task. **Explain:** board summary. |
+| `BoardView` and `BoardViewMenu` | **Orient:** board name, Home, Tickets, Dependencies, Settings. **Act:** change view and Create task. **Explain:** current project context. |
 | `WorkflowComposer` and `GoalPlanForm` | **Orient:** Prompt AI to orchestrate, Orchestrator, What do you want to achieve?. **Act:** Create plan preview and Create revised preview. **Explain:** a proposal is reviewed before it creates or starts work; no orchestrator state; preparation failure with the next step. |
 | `PlanProposalPanel`, `PlanDraftEditor`, and `PlanPreview` | **Orient:** Plan work with AI, Review the proposed plan, proposed tasks, dependencies, assumptions, budget, and work order. **Act:** Edit proposed tasks, Save revised preview, Preview pasted plan, Confirm and create tasks, Cancel. **Explain:** confirmation is the only action that creates tasks; plan-update failure tells the person to check changes. **Support:** Paste an existing plan and JSON are deliberately advanced import tools. |
-| `BoardHome` and `BoardCanvas` | **Orient:** What needs your attention, Needs your attention, Work in motion, Delivery picture, state columns. **Act:** Inspect, Review, Recover, Unblock, View work. **Explain:** state-specific reason, agent activity, task counts, and empty states. |
-| `BoardAutomation` | **Orient:** How Kanban moves work. **Act:** You approve actions, Kanban coordinates, Pause automation, Ask Kanban what to do next. **Explain:** the current coordination authority, prerequisites, safeguards, and latest decision. |
+| `BoardHome` | **Orient:** Home, Prompt AI to orchestrate, Live AI feedback, Tickets. **Act:** create a plan preview, open a ticket, and open Tickets. **Explain:** the current user-facing mode, safe observable activity, and the confirmation boundary. |
+| `BoardCanvas` | **Orient:** Tickets and state lanes. **Act:** open a ticket. **Explain:** a concise ticket state and empty route back to Home. |
+| `BoardAutomation` | **Orient:** How Kanban moves work. **Act:** You approve actions, Kanban coordinates, Pause automation, Ask Kanban what to do next. **Explain:** the current coordination authority, prerequisites, safeguards, and latest decision. This control lives in Settings. |
 
 ## Tasks, review, and recovery
 
@@ -58,7 +59,7 @@ with no listed purpose is removed rather than retained as decoration.
 
 | Surface | Persistent controls and primary purpose |
 | --- | --- |
-| `BoardSettings` | **Orient:** Settings, AI, Linear, Project. **Act:** choose a settings view. **Explain:** AI roles and connected tools apply to this project. |
+| `BoardSettings` | **Orient:** Settings, AI, Automation, Linear, Project. **Act:** choose a settings view. **Explain:** AI roles, coordination mode, and connected tools apply to this project. |
 | `ProjectAgentDefaultsForm` and `ProviderConfigurationCard` | **Orient:** AI for this project, installed provider, Plan work, Work on tickets. **Act:** enable a provider role, refresh locally supplied model options, choose a model and effort, save project defaults, or open install guidance. **Explain:** roles, model and effort belong to the selected provider; Provider default is safe when its installed runtime cannot supply selectable capabilities; Kanban never asks for an API key. |
 | `PlannerProfileForm` and `AgentProfileForm` | **Orient:** Orchestrator connections and Agent profiles. **Act:** add and save advanced connections/profiles. **Support:** program and argument fields are hidden behind advanced disclosure because they are only needed for a team-managed bridge. |
 | `LinearBoardModeNotice` and board header | **Orient:** local-only, read-only, or linked-execution state. **Explain:** whether this board exchanges Linear data and what must happen next. |

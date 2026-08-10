@@ -60,14 +60,14 @@ The next phase makes the desktop app feel like a trustworthy work space:
 | --- | --- | --- |
 | **Your boards** | “What was I working on, and what needs attention?” | Open a board or set up a workspace |
 | **Set up workspace** | “Which repository and outcome am I coordinating?” | Clone a GitHub repository or use a local repository |
-| **Board home** | “What is the safest next move?” | Describe an outcome, resolve attention, or review |
-| **Workflow** | “What work exists and what is its state?” | Prompt the organiser, create, or open work |
+| **Home** | “What outcome should we plan, and what are the agents doing?” | Describe an outcome, review a proposed plan, or inspect live activity |
+| **Tickets** | “What work exists and what is its state?” | Create or open a ticket |
 | **Dependencies** | “What is blocked, what can run in parallel, and why?” | Trace an impact or resolve a blocker |
 | **Work detail** | “What evidence and decision are needed for this task?” | Act on the one current decision |
 | **Settings and connections** | “How is this board configured?” | Adjust an advanced setting or connect Linear |
 
-Workflow is the default workspace view. A top-left view menu switches between
-Workflow, Dependencies, Settings, and focused task detail using the same
+Home is the default workspace view. A top-left view menu switches between Home,
+Tickets, Dependencies, Settings, and focused task detail using the same
 authoritative local data; these are not separate sources of truth.
 
 ## Journey backbone and release slices
@@ -146,37 +146,27 @@ access has been granted; each public update still requires an explicit Send.
 
 ## Board workspace model
 
-### Board home
+### Home
 
-The top of a board is an action-oriented summary, not a dashboard of internals.
-It contains:
+Home is a focused starting surface, not a delivery dashboard. It contains one
+outcome prompt, the explicit plan-review boundary, current execution activity,
+and a short route to the ticket workspace. While an agent is running, it shows
+bounded normalised messages, tool or action updates, questions, errors, and
+outcomes. It never presents credentials, hidden reasoning, raw provider protocol
+frames, or an unbounded transcript. Automation authority belongs in Settings,
+where the person can understand and pause it deliberately.
 
-- **Needs your attention**: review decisions, blocked work needing an owner or
-  next action, failed/interrupted executions, conflicts, and policy questions.
-  Items are sorted by execution impact, then urgency, and link to the specific
-  decision.
-- **Plan with AI**: an outcome prompt and a concise explanation that Kanban will
-  draft the work for review; no worker starts until the displayed tickets are
-  approved.
-- **Work in motion**: currently running workers, latest safe activity summary,
-  budget/limit signal, and stop/recovery controls appropriate to policy. When
-  automation is enabled, this includes a plain-language explanation of what the
-  organiser may do and an always-visible **Pause automation** action.
-- **Delivery picture**: ready work, hard-blocked work, review work, completed
-  work, critical path, and safe parallel capacity. Counts always link to a view.
+### Tickets and dependency views
 
-### Workflow and dependency views
-
-Workflow uses visible state labels and colour as redundant reinforcement. It is
-a focused delivery surface: vertically stacked, collapsible Backlog, In
-progress, Review, and Done lanes; compact cards; a concise delivery summary; and
-actions to prompt the organiser, add a task, open a task, or change Settings.
-It never persistently displays provider, planner, raw command, dependency-editor,
-or Linear configuration forms. Cards lead with task title, state, assigned agent
-when one exists, and the one most important next fact; opaque task IDs move to
-copyable details. Dense evidence, raw configuration, and long history are
-contained in a deliberately opened work-detail view rather than repeated on every
-card.
+Tickets uses visible state labels and colour as redundant reinforcement. It is a
+focused delivery surface: vertically stacked, collapsible Backlog, In progress,
+Review, and Done lanes; compact cards; and actions to create or open a ticket.
+It never persistently displays provider, planner, automation, raw command,
+dependency-editor, or Linear configuration forms. Cards lead with task title,
+state, assigned agent when one exists, and the one most important next fact;
+opaque task IDs move to copyable details. Dense evidence, raw configuration, and
+long history are contained in a deliberately opened work-detail view rather than
+repeated on every card.
 
 ### Plan with AI
 

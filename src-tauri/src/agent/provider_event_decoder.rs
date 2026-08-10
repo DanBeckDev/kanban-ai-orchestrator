@@ -3,26 +3,26 @@ use serde_json::Value;
 use super::{NormalizedAgentEvent, NormalizedAgentEventKind};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum NativeEventProtocol {
+pub(crate) enum NativeEventProtocol {
     Codex,
     ClaudeCode,
     ClinePass,
 }
 
-pub(super) struct NativeEventDecoder {
+pub(crate) struct NativeEventDecoder {
     protocol: NativeEventProtocol,
     next_sequence: u64,
 }
 
 impl NativeEventDecoder {
-    pub(super) fn new(protocol: NativeEventProtocol) -> Self {
+    pub(crate) fn new(protocol: NativeEventProtocol) -> Self {
         Self {
             protocol,
             next_sequence: 1,
         }
     }
 
-    pub(super) fn decode_line(&mut self, line: &[u8]) -> Result<Vec<NormalizedAgentEvent>, String> {
+    pub(crate) fn decode_line(&mut self, line: &[u8]) -> Result<Vec<NormalizedAgentEvent>, String> {
         let event: Value = serde_json::from_slice(line)
             .map_err(|error| format!("invalid provider JSON event: {error}"))?;
         let event_type = required_string(&event, "type", "provider event type")?;

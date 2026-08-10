@@ -42,7 +42,7 @@ describe("board task agents", () => {
       arguments: ["--jsonl"],
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
     openTask("Task ready-task");
 
     const launchForm = screen.getByRole("form", {
@@ -85,7 +85,7 @@ describe("board task agents", () => {
       within(profileForm).getByRole("button", { name: "Save profile" }),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
     openTask("Task ready-task");
 
     const launchForm = await screen.findByRole("form", {

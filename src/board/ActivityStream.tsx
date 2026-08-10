@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import type { Execution, ExecutionActivityPage } from "./types";
+import type { ExecutionActivityPage } from "./types";
 
 const POLL_INTERVAL_MILLISECONDS = 750;
 const ROW_HEIGHT_PIXELS = 48;
@@ -9,14 +9,19 @@ const OVERSCAN_ROWS = 3;
 const MAX_RETAINED_RENDERED_CHUNKS = 128;
 
 type ActivityStreamProps = Readonly<{
-  execution: Execution;
+  activityId: string;
+  title?: string;
   onLoad: (
-    executionId: string,
+    activityId: string,
     afterSequence?: number,
   ) => Promise<ExecutionActivityPage>;
 }>;
 
-export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
+export function ActivityStream({
+  activityId,
+  onLoad,
+  title = "Live agent activity",
+}: ActivityStreamProps) {
   const [chunks, setChunks] = useState<ExecutionActivityPage["chunks"]>([]);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -31,7 +36,7 @@ export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
       let hasMore = false;
       const requestedAfterSequence = afterSequence;
       try {
-        const page = await onLoad(execution.id, afterSequence);
+        const page = await onLoad(activityId, afterSequence);
         if (!active) return;
         if (page.chunks.length > 0) {
           afterSequence = page.chunks.at(-1)?.sequence;
@@ -58,14 +63,11 @@ export function ActivityStream({ execution, onLoad }: ActivityStreamProps) {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [execution.id, onLoad]);
+  }, [activityId, onLoad]);
 
   return (
-    <section
-      aria-label={`Live activity for ${execution.id}`}
-      className="activity-stream"
-    >
-      <h5>Live agent activity</h5>
+    <section aria-label={title} className="activity-stream">
+      <h5>{title}</h5>
       {unavailable ? (
         <p className="activity-error" role="status">
           Activity is temporarily unavailable. Keep this task open and Kanban
@@ -119,12 +121,22 @@ function VirtualizedActivityList({
           >
             <span>{chunk.kind.replaceAll("_", " ")}</span>
             <p>{chunk.summary}</p>
-            <time dateTime={chunk.recordedAt}>{chunk.recordedAt}</time>
+            <time dateTime={chunk.recordedAt}>
+              {formatActivityTime(chunk.recordedAt)}
+            </time>
           </li>
         ))}
       </ol>
     </div>
   );
+}
+
+function formatActivityTime(recordedAt: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(recordedAt));
 }
 
 function appendChunks(

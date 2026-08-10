@@ -31,18 +31,25 @@ export async function createBoard(boardGateway: BoardGateway) {
 }
 
 export function openPlan() {
-  fireEvent.click(screen.getByRole("button", { name: "Plan work with AI" }));
+  selectBoardView("Home");
+  fireEvent.click(screen.getByText("Use an existing plan"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Review an existing plan" }),
+  );
 }
 
 export function openNewTask() {
-  fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+  selectBoardView("Tickets");
+  fireEvent.click(screen.getByRole("button", { name: "Create ticket" }));
 }
 
 export function openDependencies() {
   selectBoardView("Dependencies");
 }
 
-export function openSettings(section?: "AI" | "Linear" | "Project") {
+export function openSettings(
+  section?: "AI" | "Automation" | "Linear" | "Project",
+) {
   selectBoardView("Settings");
   if (section !== undefined) {
     selectTab(section);
@@ -50,7 +57,14 @@ export function openSettings(section?: "AI" | "Linear" | "Project") {
 }
 
 export function openTask(title: string) {
-  const action = ["Open task", "Inspect", "Review", "Recover", "Unblock"]
+  const action = [
+    "Open ticket",
+    "Open task",
+    "Inspect",
+    "Review",
+    "Recover",
+    "Unblock",
+  ]
     .map((label) => screen.queryByRole("button", { name: `${label} ${title}` }))
     .find((button) => button !== null);
   if (action === undefined) {
@@ -77,7 +91,8 @@ export async function configurePlanner() {
       throw new Error("The orchestrator connection has not been saved yet.");
     }
   });
-  fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
+  selectBoardView("Home");
 }
 
 export async function selectOption(label: string, name: string | RegExp) {
@@ -89,11 +104,18 @@ export async function selectOption(label: string, name: string | RegExp) {
   fireEvent.click(await screen.findByRole("option", { name }));
 }
 
-function selectBoardView(name: "Dependencies" | "Settings") {
-  fireEvent.pointerDown(screen.getByRole("button", { name: "Workflow" }), {
-    button: 0,
-    ctrlKey: false,
-  });
+function selectBoardView(
+  name: "Home" | "Tickets" | "Dependencies" | "Settings",
+) {
+  fireEvent.pointerDown(
+    screen.getByRole("button", {
+      name: /^(Home|Tickets|Dependencies|Settings)$/,
+    }),
+    {
+      button: 0,
+      ctrlKey: false,
+    },
+  );
   fireEvent.click(screen.getByRole("menuitemradio", { name }));
 }
 

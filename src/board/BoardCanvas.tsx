@@ -9,53 +9,45 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
 
-import { BoardHome } from "./BoardHome";
 import { CompactWorkItemCard } from "./CompactWorkItemCard";
-import { WorkflowComposer } from "./WorkflowComposer";
 import { boardColumns, workItemsForColumn } from "./presentation";
-import type {
-  BoardSnapshot,
-  GeneratePlanRequest,
-  PlannerProfile,
-} from "./types";
+import type { BoardSnapshot } from "./types";
 
 type BoardCanvasProps = Readonly<{
   snapshot: BoardSnapshot;
-  busy: boolean;
-  defaultPlannerProfileName?: string;
-  plannerProfiles: readonly PlannerProfile[];
-  onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
   onExplainDependencies: (workItemId: string) => void;
+  onGoHome: () => void;
   onOpenTask: (workItemId: string) => void;
 }>;
 
 export function BoardCanvas({
   snapshot,
-  busy,
-  defaultPlannerProfileName,
-  plannerProfiles,
-  onGeneratePlan,
   onExplainDependencies,
+  onGoHome,
   onOpenTask,
 }: BoardCanvasProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
 
   return (
-    <>
-      <WorkflowComposer
-        boardId={snapshot.board.id}
-        busy={busy}
-        defaultPlannerProfileName={defaultPlannerProfileName}
-        onGeneratePlan={onGeneratePlan}
-        plannerProfiles={plannerProfiles}
-      />
-      <BoardHome snapshot={snapshot} onOpenTask={onOpenTask} />
+    <section aria-labelledby="tickets-title" className="tickets-view">
+      <header className="tickets-view-header">
+        <div>
+          <p className="eyebrow">Tickets</p>
+          <h3 id="tickets-title">Keep work moving</h3>
+          <p>
+            Open a ticket for detail, or use Home to ask the orchestrator for a
+            plan.
+          </p>
+        </div>
+      </header>
       {workItems.length === 0 ? (
         <Empty className="board-empty-state">
           <EmptyHeader>
@@ -67,19 +59,24 @@ export function BoardCanvas({
               Describe the outcome above, or create a task yourself.
             </EmptyDescription>
           </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={onGoHome} type="button" variant="outline">
+              Go to Home
+            </Button>
+          </EmptyContent>
         </Empty>
       ) : (
-        <WorkflowLanes
+        <TicketLanes
           snapshot={snapshot}
           onExplainDependencies={onExplainDependencies}
           onOpenTask={onOpenTask}
         />
       )}
-    </>
+    </section>
   );
 }
 
-function WorkflowLanes({
+function TicketLanes({
   snapshot,
   onExplainDependencies,
   onOpenTask,
@@ -94,7 +91,7 @@ function WorkflowLanes({
   );
 
   return (
-    <section aria-label="Workflow lanes" className="workflow-lanes">
+    <section aria-label="Ticket lanes" className="ticket-lanes">
       <Accordion
         defaultValue={boardColumns.map(({ id }) => id)}
         type="multiple"
@@ -103,17 +100,17 @@ function WorkflowLanes({
           const cards = workItemsForColumn(snapshot, column);
           return (
             <AccordionItem
-              className="workflow-lane"
+              className="ticket-lane"
               key={column.id}
               value={column.id}
             >
-              <AccordionTrigger className="workflow-lane-trigger">
+              <AccordionTrigger className="ticket-lane-trigger">
                 <span>{column.label}</span>
                 <Badge variant="outline">
                   {cards.length} {cards.length === 1 ? "task" : "tasks"}
                 </Badge>
               </AccordionTrigger>
-              <AccordionContent className="workflow-lane-content">
+              <AccordionContent className="ticket-lane-content">
                 <div className="card-stack">
                   {cards.map((workItem) => (
                     <CompactWorkItemCard

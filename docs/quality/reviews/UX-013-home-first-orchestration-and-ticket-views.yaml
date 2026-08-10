@@ -1,0 +1,190 @@
+work_item: UX-013
+scope:
+  - "Make Home the focused outcome-and-observation workspace for every board."
+  - "Move ticket execution into a distinct four-lane Tickets view and automation into Settings."
+  - "Expose bounded, normalised planner and ticket-worker activity without storing private reasoning, credentials, or provider frames."
+source_structure:
+  reviewed_files:
+    - path: src-tauri/src/agent/mod.rs
+      meaningful_lines: 33
+      responsibilities: "Exports the agent boundary and the crate-visible native event decoder."
+      decision: kept cohesive
+    - path: src-tauri/src/agent/provider_event_decoder.rs
+      meaningful_lines: 180
+      responsibilities: "Normalises supported provider events without retaining provider message text."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop.rs
+      meaningful_lines: 394
+      responsibilities: "Owns the local daemon state and its narrow Tauri commands."
+      decision: kept cohesive
+    - path: src-tauri/src/desktop_bootstrap.rs
+      meaningful_lines: 8
+      responsibilities: "Opens the local daemon from the desktop application-data directory."
+      decision: split
+    - path: src-tauri/src/desktop_planning.rs
+      meaningful_lines: 91
+      responsibilities: "Coordinates planner commands, serialises planning, and preserves the plan-proposal boundary."
+      decision: split
+    - path: src-tauri/src/desktop_planning_activity.rs
+      meaningful_lines: 107
+      responsibilities: "Owns bounded in-memory planner activity streams and their Tauri query boundary."
+      decision: split
+    - path: src-tauri/src/lib.rs
+      meaningful_lines: 99
+      responsibilities: "Registers the desktop command modules and application bootstrap."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/bounded_process.rs
+      meaningful_lines: 242
+      responsibilities: "Runs bounded planner processes and observes complete output lines without changing captured output."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/mod.rs
+      meaningful_lines: 41
+      responsibilities: "Exports focused orchestration contracts."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/native_profile_process.rs
+      meaningful_lines: 361
+      responsibilities: "Builds safe native planner invocations and decodes only normalised observable events."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process.rs
+      meaningful_lines: 275
+      responsibilities: "Maps bounded planner execution into validated plan drafts and safe activity lifecycle events."
+      decision: kept cohesive
+    - path: src-tauri/src/orchestration/planner_process_tests.rs
+      meaningful_lines: 158
+      responsibilities: "Tests direct planner output, failure, timeout, and safe activity lifecycle behaviour."
+      decision: kept cohesive
+    - path: src/board/ActivityStream.test.tsx
+      meaningful_lines: 43
+      responsibilities: "Exercises the reusable bounded activity feed."
+      decision: kept cohesive
+    - path: src/board/ActivityStream.tsx
+      meaningful_lines: 139
+      responsibilities: "Polls, virtualises, and locally formats a bounded, named activity stream."
+      decision: kept cohesive
+    - path: src/board/BoardCanvas.tsx
+      meaningful_lines: 129
+      responsibilities: "Renders the focused ticket lanes and their empty state."
+      decision: kept cohesive
+    - path: src/board/BoardHome.test.tsx
+      meaningful_lines: 163
+      responsibilities: "Covers default Home, visible planner and worker feedback, navigation, and retained failure feedback."
+      decision: kept cohesive
+    - path: src/board/BoardHome.tsx
+      meaningful_lines: 222
+      responsibilities: "Composes outcome planning, bounded live feedback, and a concise recent-ticket route."
+      decision: kept cohesive
+    - path: src/board/BoardManagement.tsx
+      meaningful_lines: 53
+      responsibilities: "Renders the explicit manual ticket creation surface."
+      decision: kept cohesive
+    - path: src/board/BoardSettings.tsx
+      meaningful_lines: 210
+      responsibilities: "Groups board-specific configuration and owns the automation settings tab."
+      decision: kept cohesive
+    - path: src/board/BoardView.tsx
+      meaningful_lines: 348
+      responsibilities: "Routes coherent board surfaces while leaving durable state and commands to the gateway."
+      decision: kept cohesive
+    - path: src/board/BoardViewMenu.tsx
+      meaningful_lines: 70
+      responsibilities: "Provides the small, labelled board-view menu."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.agent.test.tsx
+      meaningful_lines: 91
+      responsibilities: "Exercises agent-related board workspace interactions."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.coordination.test.tsx
+      meaningful_lines: 43
+      responsibilities: "Protects Settings-owned coordination navigation."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.dependencies.test.tsx
+      meaningful_lines: 69
+      responsibilities: "Covers ticket-to-dependencies navigation within the separated views."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.plan.test.tsx
+      meaningful_lines: 371
+      responsibilities: "Exercises plan review, confirmation, and unchanged policy boundaries."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.settings.test.tsx
+      meaningful_lines: 289
+      responsibilities: "Exercises board settings and provider configuration journeys."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.task-detail.test.tsx
+      meaningful_lines: 66
+      responsibilities: "Covers ticket-detail return navigation and activity access."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.fixtures.ts
+      meaningful_lines: 380
+      responsibilities: "Provides bounded, deterministic board workspace fixtures."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.helpers.tsx
+      meaningful_lines: 113
+      responsibilities: "Provides focused render and interaction helpers for board workspace tests."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.test.tsx
+      meaningful_lines: 349
+      responsibilities: "Covers default board opening and top-level board workflow behaviour."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.tsx
+      meaningful_lines: 351
+      responsibilities: "Connects the authoritative board gateway to view props without owning board state."
+      decision: kept cohesive
+    - path: src/board/BoardWorkspace.workflow.test.tsx
+      meaningful_lines: 34
+      responsibilities: "Protects the distinct Home and Tickets navigation contract."
+      decision: kept cohesive
+    - path: src/board/TaskDetailSections.tsx
+      meaningful_lines: 259
+      responsibilities: "Renders focused ticket detail sections and their named live activity feed."
+      decision: kept cohesive
+    - path: src/board/boardGateway.ts
+      meaningful_lines: 131
+      responsibilities: "Defines the typed desktop gateway boundary for board data and activity."
+      decision: kept cohesive
+    - path: src/board/gateway.ts
+      meaningful_lines: 238
+      responsibilities: "Maps typed board gateway calls to desktop commands."
+      decision: kept cohesive
+review:
+  skill: clean-code-review
+  reviewer: codex-gpt-5.6
+  reviewed_at: 2026-08-10T15:12:00+01:00
+  findings:
+    must_fix: []
+    should_fix: []
+    outside_clean_code_rubric: []
+    considers: []
+  unresolved_actionable_findings: 0
+remediation:
+  - finding: "The combined board screen mixed outcome planning, delivery state, automation, and ticket lanes, making the primary user journey unclear."
+    change: "Separated Home, Tickets, Dependencies, and Settings surfaces; Home is now the default outcome-and-observation workspace and Tickets retains only delivery work."
+  - finding: "Planner progress was not available through the same bounded observable activity boundary used by ticket workers."
+    change: "Added a separate planner activity stream that records only normalised lifecycle events, keeps terminal outcomes available, and is displayed on Home."
+  - finding: "A failed planner request could finish before Home rendered its useful terminal activity, leaving no explanation in the activity panel."
+    change: "Retained the current planner activity feed after the request completes and added a component regression test for the failure path."
+  - finding: "Process output could not be observed incrementally without either duplicating the runner or retaining raw provider output."
+    change: "Extended the bounded process runner with complete-line observation and passed only decoded, safe event kinds to the activity stream."
+  - finding: "The fail-safe activity sink branch for a poisoned in-memory lock was untested and lowered Rust branch coverage below the required threshold."
+    change: "Added a fault-tolerance regression test that confirms the sink safely ignores a poisoned stream; the global branch gate is again above 80%."
+  - finding: "The activity feed displayed raw ISO timestamps rather than a person’s local time."
+    change: "Formatted visible activity times with Intl.DateTimeFormat while preserving the machine-readable dateTime value."
+  - finding: "The native planner’s non-structured path lacked a no-process invalid-input regression test."
+    change: "Added a non-UTF-8 input test that exercises the native route and fails before any provider process can start."
+verification:
+  commands:
+    - command: npm run quality:verify
+      result: passed
+  coverage:
+    packages:
+      - package_or_crate: frontend-vite-vitest
+        lines: 85.31
+        statements: 84.20
+        functions: 81.89
+        branches: 80.20
+      - package_or_crate: src-tauri-rust
+        lines: 84.43
+        statements: 80.82
+        functions: 84.49
+        branches: 80.02
+    threshold_met: true
+exceptions: []

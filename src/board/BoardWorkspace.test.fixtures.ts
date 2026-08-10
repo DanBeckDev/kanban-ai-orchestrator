@@ -292,6 +292,7 @@ export function gateway(
       return agentSettings;
     }),
     projectAgentSettings: vi.fn().mockImplementation(async () => agentSettings),
+    planningActivity: vi.fn().mockResolvedValue({ chunks: [], hasMore: false }),
     configureBoardSupervision: vi.fn().mockImplementation(async (_, mode) => {
       if (!agentSettings?.organiser || !agentSettings.ticketWorker) {
         throw new Error("choose roles first");

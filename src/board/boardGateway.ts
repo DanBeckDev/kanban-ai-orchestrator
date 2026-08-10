@@ -77,6 +77,10 @@ export interface BoardGateway {
     boardId: string,
   ): Promise<ProjectAgentSettings | undefined>;
   generatePlan(request: GeneratePlanRequest): Promise<BoardPlan>;
+  planningActivity(
+    boardId: string,
+    afterSequence?: number,
+  ): Promise<ExecutionActivityPage>;
   startExecution(request: StartExecutionRequest): Promise<BoardSnapshot>;
   configureBoardSupervision(
     boardId: string,

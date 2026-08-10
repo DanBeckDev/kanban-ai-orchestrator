@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { gateway, snapshot, workItem } from "./BoardWorkspace.test.fixtures";
-import { createBoard } from "./BoardWorkspace.test.helpers";
+import { createBoard, openSettings } from "./BoardWorkspace.test.helpers";
 
 describe("board coordination", () => {
   it("starts bounded coordination only after the user enables it", async () => {
@@ -33,6 +33,7 @@ describe("board coordination", () => {
     });
 
     await createBoard(boardGateway);
+    openSettings("Automation");
     fireEvent.click(screen.getByText("Kanban coordinates"));
 
     await waitFor(() =>

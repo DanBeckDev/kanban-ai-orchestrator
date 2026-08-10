@@ -1,11 +1,11 @@
 use std::{
     error::Error,
     fmt, fs,
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, Mutex, MutexGuard},
 };
 
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 
 use crate::{
     agent::AgentProfile,
@@ -17,6 +17,7 @@ use crate::{
         StartExecutionRequest, TransitionWorkItemRequest,
     },
     desktop_daemon_lock::DaemonLock,
+    desktop_execution_activity::ExecutionActivityStreams,
     desktop_execution_runtime::ExecutionRuntime,
     domain::{BoardId, Project, WorkItemState},
     linear::{
@@ -44,12 +45,14 @@ pub(crate) struct BoardDaemonState {
     linear_issue_reader: LocalLinearIssueReader,
     linear_oauth: Arc<Mutex<LocalLinearOAuthService>>,
     linear_token_client: Arc<ReqwestLinearTokenClient>,
+    pub(crate) planning_activity: Arc<Mutex<ExecutionActivityStreams>>,
+    pub(crate) planning_gate: Arc<Mutex<()>>,
     service: Arc<Mutex<LocalBoardService>>,
     runtime: ExecutionRuntime,
 }
 
 impl BoardDaemonState {
-    fn open(data_directory: &Path) -> Result<Self, DesktopBootstrapError> {
+    pub(crate) fn open(data_directory: &Path) -> Result<Self, DesktopBootstrapError> {
         fs::create_dir_all(data_directory)?;
         let daemon_lock = DaemonLock::acquire(data_directory)?;
         let database_path = data_directory.join("kanban-ai-orchestrator.sqlite");
@@ -62,6 +65,8 @@ impl BoardDaemonState {
             linear_issue_reader: LocalLinearIssueReader::new(ReqwestLinearGraphQlTransport::new()),
             linear_oauth: Arc::new(Mutex::new(LinearOAuthService::new(KeyringCredentialStore))),
             linear_token_client: Arc::new(ReqwestLinearTokenClient::new()),
+            planning_activity: Arc::new(Mutex::new(ExecutionActivityStreams::default())),
+            planning_gate: Arc::new(Mutex::new(())),
             runtime: ExecutionRuntime::new(service.clone(), data_directory.join("workspaces")),
             service,
         })
@@ -70,16 +75,6 @@ impl BoardDaemonState {
 
 #[path = "desktop_linear_sync.rs"]
 pub(crate) mod linear_sync;
-
-pub(crate) fn open_daemon(
-    app_handle: &AppHandle,
-) -> Result<BoardDaemonState, DesktopBootstrapError> {
-    BoardDaemonState::open(&local_data_directory(app_handle)?)
-}
-
-fn local_data_directory(app_handle: &AppHandle) -> Result<PathBuf, DesktopBootstrapError> {
-    Ok(app_handle.path().app_data_dir()?.join("local-board"))
-}
 
 #[tauri::command]
 pub(crate) fn create_project(

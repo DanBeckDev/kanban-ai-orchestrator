@@ -339,6 +339,7 @@ export function BoardWorkspace({
             onStartExecution: startExecution,
             onStopExecution: stopExecution,
             onLoadExecutionActivity: gateway.executionActivity,
+            onLoadPlanningActivity: gateway.planningActivity,
             onRecordReviewCheck: recordReviewCheck,
             onRecordReviewDecision: recordReviewDecision,
             onRecordCleanCodeReview: recordCleanCodeReview,

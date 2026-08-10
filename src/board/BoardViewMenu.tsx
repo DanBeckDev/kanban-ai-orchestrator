@@ -1,4 +1,5 @@
 import {
+  HouseIcon,
   KanbanSquareDashedIcon,
   NetworkIcon,
   Settings2Icon,
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export type MainBoardView = "workflow" | "dependencies" | "settings";
+export type MainBoardView = "home" | "tickets" | "dependencies" | "settings";
 
 type BoardViewMenuProps = Readonly<{
   activeView: MainBoardView;
@@ -27,7 +28,8 @@ const boardViews: readonly Readonly<{
   value: MainBoardView;
   icon: typeof KanbanSquareDashedIcon;
 }>[] = [
-  { label: "Workflow", value: "workflow", icon: KanbanSquareDashedIcon },
+  { label: "Home", value: "home", icon: HouseIcon },
+  { label: "Tickets", value: "tickets", icon: KanbanSquareDashedIcon },
   { label: "Dependencies", value: "dependencies", icon: NetworkIcon },
   { label: "Settings", value: "settings", icon: Settings2Icon },
 ];
@@ -44,7 +46,7 @@ export function BoardViewMenu({
       <DropdownMenuTrigger asChild>
         <Button id="board-view-menu" type="button" variant="outline">
           <ActiveIcon data-icon="inline-start" />
-          {active?.label ?? "Workflow"}
+          {active?.label ?? "Home"}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

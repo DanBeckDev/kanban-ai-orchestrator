@@ -81,9 +81,9 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
   desktop command adapter must normalise optional JSON values to the explicit
   frontend absence state, and any unexpected workspace rendering failure must
   show a clear retry state rather than a blank screen.
-- The board home derives a concise, actionable attention list from authoritative
-  task, execution, review, policy, and connector state. It must not invent status
-  or scheduling decisions in the UI.
+- Home derives its visible planning state, bounded live activity, and ticket
+  route from authoritative task, execution, review, policy, and connector state.
+  It must not invent status or scheduling decisions in the UI.
 
 ## Interaction and dependency requirements
 
@@ -102,14 +102,18 @@ The graph must be acyclic for hard dependencies. An attempted cycle is rejected 
 
 ## Agent choice and focused-workspace requirements
 
-- The default Workflow surface is a work surface, not a configuration form. A
-  top-left view menu reaches Workflow, Dependencies, Settings, and focused task
-  detail. Workflow shows vertically stacked, collapsible Backlog, In progress,
-  Review, and Done lanes; concise task cards; dependency/attention signals; and
-  clear paths to prompt the organiser, create a task, open a task, or open
-  Settings.
+- The default board surface is Home: an outcome prompt, current orchestrator
+  state, bounded normalised live AI feedback, and a clear route to Tickets.
+  A top-left view menu reaches Home, Tickets, Dependencies, Settings, and focused
+  task detail. Tickets shows vertically stacked, collapsible Backlog, In
+  progress, Review, and Done lanes; concise task cards; dependency/attention
+  signals; and clear paths to create a task manually or open a task.
   Provider, planner, dependency-editor, and Linear configuration controls must
-  not be permanently rendered beside the board.
+  not be permanently rendered beside Home or Tickets.
+- Live feedback shows only bounded, normalised agent activity that the provider
+  deliberately reports as user-visible: messages, tool/action updates, questions,
+  failures, and outcomes. It excludes credentials, hidden reasoning, raw provider
+  protocol data, and unbounded transcripts.
 - The desktop detects the known local CLI executables for Codex, Claude Code,
   and Cline by resolving trusted program names on `PATH`; discovery must not
   launch a provider, submit credentials, or inspect a provider's private data.

@@ -1,254 +1,235 @@
-import { BotIcon, CircleAlertIcon, CircleDotDashedIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ActivityIcon, ArrowRightIcon, BotIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-import { executionsFor } from "./presentation";
-import type { BoardSnapshot, WorkItem, WorkItemState } from "./types";
+import { ActivityStream } from "./ActivityStream";
+import { WorkflowComposer } from "./WorkflowComposer";
+import type {
+  BoardSnapshot,
+  BoardSupervision,
+  Execution,
+  ExecutionActivityPage,
+  GeneratePlanRequest,
+  PlannerProfile,
+} from "./types";
 
 type BoardHomeProps = Readonly<{
+  busy: boolean;
+  defaultPlannerProfileName?: string;
+  plannerProfiles: readonly PlannerProfile[];
   snapshot: BoardSnapshot;
+  supervision?: BoardSupervision;
+  onGeneratePlan: (request: GeneratePlanRequest) => Promise<void>;
+  onLoadExecutionActivity: (
+    executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
+  onLoadPlanningActivity: (
+    boardId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
   onOpenTask: (workItemId: string) => void;
+  onOpenPlanReview: () => void;
+  onOpenTickets: () => void;
 }>;
 
-type BoardHomeTask = Readonly<{
-  workItem: WorkItem;
-  action: string;
-  detail: string;
-}>;
+export function BoardHome({
+  busy,
+  defaultPlannerProfileName,
+  plannerProfiles,
+  snapshot,
+  supervision,
+  onGeneratePlan,
+  onLoadExecutionActivity,
+  onLoadPlanningActivity,
+  onOpenTask,
+  onOpenPlanReview,
+  onOpenTickets,
+}: BoardHomeProps) {
+  const liveRuns = liveRunsFor(snapshot);
+  const recentTickets = snapshot.workItems.slice(0, 4);
+  const [plannerActivityVisible, setPlannerActivityVisible] = useState(busy);
 
-type AttentionState = Extract<
-  WorkItemState,
-  "awaiting_input" | "review" | "failed" | "interrupted" | "blocked"
->;
-
-const attentionStates: readonly AttentionState[] = [
-  "awaiting_input",
-  "review",
-  "failed",
-  "interrupted",
-  "blocked",
-];
-
-export function BoardHome({ snapshot, onOpenTask }: BoardHomeProps) {
-  const workItems = workItemsFor(snapshot);
-  const attention = attentionFor(workItems);
-  const activeWork = activeWorkFor(snapshot);
-  const delivery = deliveryPicture(workItems);
+  useEffect(() => {
+    if (busy) setPlannerActivityVisible(true);
+  }, [busy]);
 
   return (
     <section aria-labelledby="board-home-title" className="board-home">
       <header className="board-home-header">
         <div>
-          <p className="eyebrow">Board home</p>
-          <h3 id="board-home-title">Your next decisions</h3>
-          <p>{boardHomeSummary(attention, activeWork, delivery.ready)}</p>
+          <p className="eyebrow">Home</p>
+          <h3 id="board-home-title">Start with the outcome</h3>
+          <p>
+            Tell the orchestrator what you want to achieve. You will review its
+            tickets before any worker starts.
+          </p>
         </div>
-        <Badge variant={attention.length > 0 ? "destructive" : "secondary"}>
-          {attention.length > 0 ? "Decision needed" : "On track"}
-        </Badge>
+        <Badge variant="secondary">{modeCopy(supervision)}</Badge>
       </header>
-      <div className="board-home-focus">
-        <FocusList
-          emptyCopy="No task needs a decision right now."
-          headingId="needs-attention-title"
-          icon={CircleAlertIcon}
-          items={attention}
-          onOpenTask={onOpenTask}
-          title="Needs your attention"
-        />
-        <FocusList
-          emptyCopy="No agents are working right now."
-          headingId="work-in-motion-title"
-          icon={BotIcon}
-          items={activeWork}
-          onOpenTask={onOpenTask}
-          title="Work in motion"
-        />
-      </div>
-      <section
-        aria-labelledby="delivery-picture-title"
-        className="delivery-picture"
-      >
-        <div className="delivery-picture-heading">
-          <CircleDotDashedIcon aria-hidden="true" />
-          <h4 id="delivery-picture-title">Delivery picture</h4>
+
+      <WorkflowComposer
+        boardId={snapshot.board.id}
+        busy={busy}
+        defaultPlannerProfileName={defaultPlannerProfileName}
+        onGeneratePlan={onGeneratePlan}
+        plannerProfiles={plannerProfiles}
+      />
+      <details className="advanced-disclosure">
+        <summary>Use an existing plan</summary>
+        <p className="field-hint">
+          Paste or revise a plan that was created outside Kanban.
+        </p>
+        <Button onClick={onOpenPlanReview} type="button" variant="outline">
+          Review an existing plan
+        </Button>
+      </details>
+
+      <LiveFeedback
+        busy={busy}
+        isPlanning={busy || plannerActivityVisible}
+        boardId={snapshot.board.id}
+        runs={liveRuns}
+        onLoadExecutionActivity={onLoadExecutionActivity}
+        onLoadPlanningActivity={onLoadPlanningActivity}
+      />
+
+      <section aria-labelledby="home-tickets-title" className="home-tickets">
+        <div className="home-section-header">
+          <div>
+            <p className="eyebrow">Tickets</p>
+            <h4 id="home-tickets-title">
+              {ticketHeading(recentTickets.length)}
+            </h4>
+          </div>
+          <Button onClick={onOpenTickets} type="button" variant="outline">
+            Open Tickets
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
         </div>
-        <dl>
-          {delivery.entries.map(({ count, label }) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{count}</dd>
-            </div>
-          ))}
-        </dl>
+        {recentTickets.length === 0 ? (
+          <p className="home-empty-copy">
+            Your confirmed tickets will appear here. Start by describing the
+            outcome above.
+          </p>
+        ) : (
+          <ul className="home-ticket-list">
+            {recentTickets.map(({ workItem }) => (
+              <li key={workItem.id}>
+                <div>
+                  <strong>{workItem.title}</strong>
+                  <span>{workItem.state.replaceAll("_", " ")}</span>
+                </div>
+                <Button
+                  aria-label={`Open ticket ${workItem.title}`}
+                  onClick={() => onOpenTask(workItem.id)}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Open
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </section>
   );
 }
 
-function FocusList({
-  emptyCopy,
-  headingId,
-  icon: Icon,
-  items,
-  onOpenTask,
-  title,
+function LiveFeedback({
+  busy,
+  isPlanning,
+  boardId,
+  runs,
+  onLoadExecutionActivity,
+  onLoadPlanningActivity,
 }: Readonly<{
-  emptyCopy: string;
-  headingId: string;
-  icon: typeof CircleAlertIcon;
-  items: readonly BoardHomeTask[];
-  onOpenTask: (workItemId: string) => void;
-  title: string;
+  busy: boolean;
+  isPlanning: boolean;
+  boardId: string;
+  runs: readonly LiveRun[];
+  onLoadExecutionActivity: (
+    executionId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
+  onLoadPlanningActivity: (
+    boardId: string,
+    afterSequence?: number,
+  ) => Promise<ExecutionActivityPage>;
 }>) {
   return (
-    <section aria-labelledby={headingId}>
-      <div className="board-home-section-heading">
-        <Icon aria-hidden="true" />
-        <h4 id={headingId}>{title}</h4>
-        <Badge variant="outline">{items.length}</Badge>
+    <section aria-labelledby="live-feedback-title" className="home-feedback">
+      <div className="home-section-header">
+        <div>
+          <p className="eyebrow">Activity</p>
+          <h4 id="live-feedback-title">Live AI feedback</h4>
+        </div>
+        <ActivityIcon aria-hidden="true" />
       </div>
-      {items.length === 0 ? (
-        <p className="board-home-empty">{emptyCopy}</p>
-      ) : (
-        <ul className="board-home-task-list">
-          {items.map(({ action, detail, workItem }) => (
-            <li key={workItem.id}>
-              <div>
-                <strong>{workItem.title}</strong>
-                <p>{detail}</p>
-              </div>
-              <Button
-                aria-label={`${action} ${workItem.title}`}
-                onClick={() => onOpenTask(workItem.id)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {action}
-              </Button>
-            </li>
-          ))}
-        </ul>
+      {busy && (
+        <p aria-live="polite" className="home-planning-status" role="status">
+          The orchestrator is preparing a reviewable plan.
+        </p>
       )}
+      {!isPlanning && runs.length === 0 ? (
+        <p className="home-empty-copy">
+          No AI is working right now. When a plan or ticket worker runs, its
+          progress, questions, and outcome will appear here.
+        </p>
+      ) : (
+        <div className="home-agent-feeds">
+          {isPlanning && (
+            <ActivityStream
+              activityId={boardId}
+              onLoad={onLoadPlanningActivity}
+              title="Orchestrator"
+            />
+          )}
+          {runs.map(({ execution, title }) => (
+            <ActivityStream
+              activityId={execution.id}
+              key={execution.id}
+              onLoad={onLoadExecutionActivity}
+              title={`${execution.adapterName} · ${title}`}
+            />
+          ))}
+        </div>
+      )}
+      <p className="home-feedback-boundary">
+        <BotIcon aria-hidden="true" /> Updates are bounded and readable. Kanban
+        does not collect private reasoning or credentials.
+      </p>
     </section>
   );
 }
 
-function workItemsFor(snapshot: BoardSnapshot): readonly WorkItem[] {
-  return snapshot.workItems.map(({ workItem }) => workItem);
-}
+type LiveRun = Readonly<{
+  execution: Execution;
+  title: string;
+}>;
 
-function attentionFor(
-  workItems: readonly WorkItem[],
-): readonly BoardHomeTask[] {
-  return workItems
-    .filter((workItem) => isAttentionState(workItem.state))
-    .sort(
-      (left, right) =>
-        attentionStates.indexOf(left.state) -
-        attentionStates.indexOf(right.state),
-    )
-    .map((workItem) => ({
-      workItem,
-      ...attentionCopy(workItem.state),
+function liveRunsFor(snapshot: BoardSnapshot): readonly LiveRun[] {
+  const titles = new Map(
+    snapshot.workItems.map(({ workItem }) => [workItem.id, workItem.title]),
+  );
+  return snapshot.executions
+    .filter(({ status }) => status === "running" || status === "awaiting_input")
+    .map((execution) => ({
+      execution,
+      title: titles.get(execution.workItemId) ?? "Untitled ticket",
     }));
 }
 
-function isAttentionState(state: WorkItemState): state is AttentionState {
-  return attentionStates.includes(state as AttentionState);
+function modeCopy(supervision?: BoardSupervision): string {
+  return supervision?.mode === "autonomous"
+    ? "Kanban coordinates"
+    : "You approve actions";
 }
 
-function activeWorkFor(snapshot: BoardSnapshot): readonly BoardHomeTask[] {
-  return snapshot.workItems
-    .map(({ workItem }) => workItem)
-    .filter((workItem) => workItem.state === "running")
-    .map((workItem) => {
-      const worker = executionsFor(snapshot, workItem.id).find(
-        (execution) => execution.status === "running",
-      );
-      return {
-        workItem,
-        action: "View work",
-        detail:
-          worker === undefined
-            ? "An agent is working on this task."
-            : `${worker.adapterName} is working on this task.`,
-      };
-    });
-}
-
-function deliveryPicture(workItems: readonly WorkItem[]) {
-  return {
-    ready: countWorkItems(workItems, ["ready"]),
-    entries: [
-      {
-        label: "Planned",
-        count: countWorkItems(workItems, ["inbox", "planned"]),
-      },
-      { label: "Ready", count: countWorkItems(workItems, ["ready"]) },
-      { label: "In review", count: countWorkItems(workItems, ["review"]) },
-      { label: "Completed", count: countWorkItems(workItems, ["done"]) },
-      {
-        label: "Recovery",
-        count: countWorkItems(workItems, ["blocked", "failed", "interrupted"]),
-      },
-    ],
-  };
-}
-
-function countWorkItems(
-  workItems: readonly WorkItem[],
-  states: readonly WorkItemState[],
-): number {
-  return workItems.filter((workItem) => states.includes(workItem.state)).length;
-}
-
-function attentionCopy(state: AttentionState): Omit<BoardHomeTask, "workItem"> {
-  switch (state) {
-    case "awaiting_input":
-      return {
-        action: "Inspect",
-        detail: "This agent needs a decision to continue.",
-      };
-    case "review":
-      return { action: "Review", detail: "This work is ready for review." };
-    case "failed":
-      return {
-        action: "Recover",
-        detail: "The last attempt failed and needs a recovery choice.",
-      };
-    case "interrupted":
-      return {
-        action: "Recover",
-        detail: "The last attempt was interrupted and needs a recovery choice.",
-      };
-    case "blocked":
-      return {
-        action: "Unblock",
-        detail: "This task is blocked and needs an owner or next step.",
-      };
-  }
-}
-
-function boardHomeSummary(
-  attention: readonly BoardHomeTask[],
-  activeWork: readonly BoardHomeTask[],
-  readyCount: number,
-): string {
-  if (attention.length > 0) {
-    return `${taskCount(attention.length)} needs your decision before work can move forward.`;
-  }
-  if (activeWork.length > 0) {
-    return `${taskCount(activeWork.length)} is in progress; you can monitor it here.`;
-  }
-  if (readyCount > 0) {
-    return `${taskCount(readyCount)} is ready for the next approved action.`;
-  }
-  return "No work needs action right now. Plan the next outcome when you are ready.";
-}
-
-function taskCount(count: number): string {
-  return count === 1 ? "1 task" : `${count} tasks`;
+function ticketHeading(ticketCount: number): string {
+  if (ticketCount === 0) return "Your tickets";
+  return ticketCount === 1 ? "1 ticket" : `${ticketCount} tickets`;
 }

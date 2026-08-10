@@ -77,7 +77,7 @@ describe("focused board and provider-owned AI settings", () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
     openTask("Task ready-task");
     const launchForm = await screen.findByRole("form", {
       name: "Prompt AI for Task ready-task",

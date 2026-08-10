@@ -7,7 +7,7 @@ mod profile;
 mod provider_adapter;
 mod provider_catalog;
 mod provider_discovery;
-mod provider_event_decoder;
+pub(crate) mod provider_event_decoder;
 mod provider_runtime;
 
 pub use contract::{

@@ -1,12 +1,18 @@
 #![cfg(unix)]
 
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use tempfile::TempDir;
 
-use crate::orchestration::{
-    MAX_PLANNER_GOAL_BYTES, PlanDraftError, PlannerProfile, ProcessPlanGenerationError,
-    ProcessPlanGenerator,
+use crate::{
+    agent::NormalizedAgentEventKind,
+    orchestration::{
+        MAX_PLANNER_GOAL_BYTES, PlanDraftError, PlannerActivitySink, PlannerProfile,
+        ProcessPlanGenerationError, ProcessPlanGenerator,
+    },
 };
 
 fn profile(script: &str) -> PlannerProfile {
@@ -34,6 +40,49 @@ fn reads_one_bounded_plan_payload_from_a_direct_planner_process() {
 
     assert_eq!(draft.work_items[0].key, "foundation");
     assert!(draft.work_items[0].requires_human_review);
+}
+
+#[test]
+fn reports_safe_bounded_planning_lifecycle_events() {
+    let temporary_directory = TempDir::new().expect("temporary repository should exist");
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let event_sink = planner_activity_sink(events.clone());
+
+    ProcessPlanGenerator::generate_with_preferences_and_activity(
+        &profile(
+            "cat >/dev/null; printf '%s' '{\"workItems\":[{\"key\":\"foundation\",\"title\":\"Foundation\",\"description\":\"Create the contract.\",\"acceptanceCriteria\":[\"Contract tests pass.\"]}],\"dependencies\":[],\"unresolvedAssumptions\":[]}'",
+        ),
+        temporary_directory.path(),
+        "Create a dependable foundation.",
+        &Default::default(),
+        Default::default(),
+        event_sink,
+    )
+    .expect("planner draft should parse");
+
+    let events = events
+        .lock()
+        .expect("activity events should remain available");
+    let summaries = events
+        .iter()
+        .filter_map(|event| match event {
+            NormalizedAgentEventKind::Activity { summary } => Some(summary.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert!(summaries.contains(&"Kanban is preparing the planning request."));
+    assert!(summaries.contains(&"The planner process started."));
+    assert!(summaries.contains(&"Kanban is checking the proposed tickets."));
+    assert!(summaries.contains(&"The planner prepared a ticket proposal for Kanban to check."));
+}
+
+fn planner_activity_sink(events: Arc<Mutex<Vec<NormalizedAgentEventKind>>>) -> PlannerActivitySink {
+    Arc::new(move |event| {
+        events
+            .lock()
+            .expect("activity events should remain available")
+            .push(event);
+    })
 }
 
 #[test]

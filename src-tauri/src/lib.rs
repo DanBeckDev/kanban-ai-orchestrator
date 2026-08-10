@@ -13,6 +13,7 @@ pub mod workspace;
 
 mod desktop;
 mod desktop_board_setup;
+mod desktop_bootstrap;
 mod desktop_daemon_lock;
 mod desktop_execution_activity;
 mod desktop_execution_policy;
@@ -22,6 +23,7 @@ mod desktop_execution_runtime_events;
 mod desktop_execution_runtime_review;
 mod desktop_execution_runtime_support;
 mod desktop_planning;
+mod desktop_planning_activity;
 mod desktop_provider_catalog;
 mod foundation;
 
@@ -38,7 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let daemon = desktop::open_daemon(app.handle())
+            let daemon = desktop_bootstrap::open_daemon(app.handle())
                 .map_err(|error| -> Box<dyn std::error::Error> { Box::new(error) })?;
             app.manage(daemon);
             Ok(())
@@ -67,6 +69,7 @@ pub fn run() {
             desktop_planning::save_project_agent_settings,
             desktop_planning::project_agent_settings,
             desktop_planning::generate_plan,
+            desktop_planning_activity::planning_activity,
             desktop::start_execution,
             desktop::coordination::configure_board_supervision,
             desktop::coordination::board_supervision,

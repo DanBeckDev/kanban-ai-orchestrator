@@ -29,15 +29,19 @@ The initial named views are:
 
 | View | User question | Primary action |
 | --- | --- | --- |
-| **Workflow** | What needs to happen next? | Prompt the organiser, create a task, open a ticket, or act on a card. |
+| **Home** | What outcome do I want and what are the AIs doing? | Prompt the orchestrator and observe its safe live feedback. |
+| **Tickets** | What work is ready, active, waiting for review, or complete? | Open a ticket or create one manually. |
 | **Dependencies** | What is blocked, what is the impact, and what can run together? | Trace an upstream/downstream relationship. |
 | **Task detail** | What should happen to this ticket now? | Prompt its AI or take the clearly permitted action. |
 | **Settings** | Which approved local agents will coordinate and work on this project? | Enable a provider and set role defaults. |
 
-Workflow is the default board view. Dependencies is a separate view, not a
-diagram squeezed below the workflow lanes. The menu must make the current view
-clear, work with keyboard navigation, and preserve the board context when a
-person switches views.
+Home is the default board view. It is a focused orchestration conversation, not
+a delivery dashboard: it contains the outcome prompt, the current planning
+state, bounded normalised agent updates, and a short route to created tickets.
+Tickets is the separate delivery surface. Dependencies is a separate view, not a
+diagram squeezed below ticket lanes. The menu must make the current view clear,
+work with keyboard navigation, and preserve board context when a person switches
+views.
 
 ## Setup workspace
 
@@ -82,7 +86,7 @@ ticket detail; they do not alter the project defaults.
 
 ## Create and coordinate work
 
-The Workflow view gives the orchestrator a prominent natural-language composer:
+Home gives the orchestrator a prominent natural-language composer:
 **Prompt AI to orchestrate**. It is the primary way to ask for an outcome,
 decompose it into tickets, identify dependencies, revise a plan, or ask about
 coordination. Settings owns the separate model and effort defaults without
@@ -101,9 +105,15 @@ board-level opt-in in which the daemon may authorize only the stated, bounded
 coordination actions. The UI must always expose the scope and **Pause
 automation** control.
 
-## Workflow view
+## Home and Tickets views
 
-Workflow is a scannable delivery surface, not a dense dashboard. It uses four
+Home shows the live, readable progress of planning and any active ticket work:
+provider messages, visible tool/action updates, questions, errors, and outcomes.
+It keeps that activity bounded and normalised; hidden reasoning, credentials,
+raw protocol frames, and unbounded transcripts are never shown or stored. A
+reviewable plan remains separate from tickets until the person confirms it.
+
+Tickets is a scannable delivery surface, not a dense dashboard. It uses four
 full-width, vertically stacked, collapsible lanes in this order:
 
 1. **Backlog** — unstarted work and the clear **Create task** secondary action.
@@ -149,8 +159,9 @@ without its existing authorization.
   path. This is APP-004. ORCH-006 implements the durable project-scoped agent
   role defaults after its typed organiser/worker contracts exist; setup points
   people to that next configuration rather than persisting inert UI choices.
-- UX-004 implements the Workflow view, organiser composer, manual task route,
-  and view-menu structure. It supersedes the earlier card-column assumption.
+- UX-013 supersedes the combined Workflow presentation with a Home orchestration
+  view and a separate Tickets execution view. It preserves UX-004's plan-review
+  and manual-task semantics rather than creating a parallel state model.
 - UX-005 implements the standalone Dependencies view and accessible graph/list
   equivalence. UX-006 implements the focused ticket entry and progressive
   disclosure; ORCH-008 supplies the typed daemon contract for the complete

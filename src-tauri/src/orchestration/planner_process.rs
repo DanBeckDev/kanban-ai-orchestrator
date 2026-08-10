@@ -2,12 +2,17 @@ use std::{error::Error, fmt, path::Path, time::Duration};
 
 use serde::Serialize;
 
-use crate::domain::{AgentEffort, AgentModelPreference};
+use crate::{
+    agent::NormalizedAgentEventKind,
+    domain::{AgentEffort, AgentModelPreference},
+};
 
 use super::{
     MAX_PLANNER_GOAL_BYTES, PlanDraft, PlanDraftError, PlannerProfile, PlannerProfileError,
     bounded_process::{BoundedProcessError, MAX_DIRECT_PROCESS_OUTPUT_BYTES},
-    native_profile_process::{ProfileProcessError, run_json_profile},
+    native_profile_process::{
+        PlannerActivitySink, ProfileProcessError, run_json_profile_with_activity,
+    },
 };
 
 const MAX_PLANNER_RUNTIME: Duration = Duration::from_secs(45);
@@ -36,13 +41,61 @@ impl ProcessPlanGenerator {
         model: &AgentModelPreference,
         effort: AgentEffort,
     ) -> Result<PlanDraft, ProcessPlanGenerationError> {
-        Self::generate_with_preferences_and_runtime(
+        Self::generate_with_preferences_and_activity(
             profile,
             repository_path,
             goal,
             model,
             effort,
+            std::sync::Arc::new(|_| {}),
+        )
+    }
+
+    pub(crate) fn generate_with_preferences_and_activity(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        goal: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+        activity_sink: PlannerActivitySink,
+    ) -> Result<PlanDraft, ProcessPlanGenerationError> {
+        let result = Self::generate_with_preferences_and_runtime_and_activity(
+            profile,
+            repository_path,
+            goal,
+            model,
+            effort,
+            activity_sink.clone(),
             MAX_PLANNER_RUNTIME,
+        );
+        activity_sink(match &result {
+            Ok(_) => NormalizedAgentEventKind::Activity {
+                summary: "The planner prepared a ticket proposal for Kanban to check.".to_owned(),
+            },
+            Err(_) => NormalizedAgentEventKind::Failed {
+                reason: "The planner did not produce a reviewable proposal.".to_owned(),
+            },
+        });
+        result
+    }
+
+    #[cfg(test)]
+    fn generate_with_preferences_and_runtime(
+        profile: &PlannerProfile,
+        repository_path: &Path,
+        goal: &str,
+        model: &AgentModelPreference,
+        effort: AgentEffort,
+        max_runtime: Duration,
+    ) -> Result<PlanDraft, ProcessPlanGenerationError> {
+        Self::generate_with_preferences_and_runtime_and_activity(
+            profile,
+            repository_path,
+            goal,
+            model,
+            effort,
+            std::sync::Arc::new(|_| {}),
+            max_runtime,
         )
     }
 
@@ -63,22 +116,37 @@ impl ProcessPlanGenerator {
         )
     }
 
-    fn generate_with_preferences_and_runtime(
+    fn generate_with_preferences_and_runtime_and_activity(
         profile: &PlannerProfile,
         repository_path: &Path,
         goal: &str,
         model: &AgentModelPreference,
         effort: AgentEffort,
+        activity_sink: PlannerActivitySink,
         max_runtime: Duration,
     ) -> Result<PlanDraft, ProcessPlanGenerationError> {
         profile
             .validate()
             .map_err(ProcessPlanGenerationError::Profile)?;
         validate_goal(goal)?;
+        activity_sink(NormalizedAgentEventKind::Activity {
+            summary: "Kanban is preparing the planning request.".to_owned(),
+        });
         let input = serde_json::to_vec(&PlannerInput::new(goal))
             .map_err(ProcessPlanGenerationError::InputEncoding)?;
-        let output = run_json_profile(profile, repository_path, model, effort, &input, max_runtime)
-            .map_err(map_profile_process_error)?;
+        let output = run_json_profile_with_activity(
+            profile,
+            repository_path,
+            model,
+            effort,
+            &input,
+            activity_sink.clone(),
+            max_runtime,
+        )
+        .map_err(map_profile_process_error)?;
+        activity_sink(NormalizedAgentEventKind::Activity {
+            summary: "Kanban is checking the proposed tickets.".to_owned(),
+        });
         parse_plan_draft(&output)
     }
 }

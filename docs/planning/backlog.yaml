@@ -867,6 +867,33 @@ tasks:
       responsive layout, and component coverage. It intentionally leaves UX-004,
       UX-005, ORCH-006, and ORCH-007 as separate future work.
 
+  - id: UX-013
+    epic: UX
+    title: Separate Home orchestration from the Tickets execution view
+    status: completed
+    priority: P0
+    depends_on: [UX-004, UX-006, ORCH-006, ORCH-007]
+    acceptance_criteria:
+      - Opening any board lands on Home, where the primary action is a natural-language outcome prompt and plan review remains explicitly confirmed before tickets or workers start.
+      - Home exposes truthful, bounded, normalised live AI feedback for current planning and running ticket work, including user-visible messages, tool/action updates, questions, errors, and outcomes; it excludes credentials, hidden reasoning, raw provider protocol frames, and unbounded transcripts.
+      - Tickets is a separate, simplified delivery view containing only the four state lanes, concise cards, the manual create-ticket path, and routes to ticket detail or Dependencies; it does not render the outcome composer, a delivery dashboard, or automation settings.
+      - The top-left menu clearly switches Home, Tickets, Dependencies, and Settings while keeping the current board context; Settings owns coordination-mode controls.
+      - Focused component tests cover Home as the default, plan review, safe activity feedback, Tickets navigation, manual-task entry, and the unchanged plan/confirmation/policy boundaries.
+    notes: >-
+      Added from accepted wireframe correction on 2026-08-10. The prior combined
+      workflow page was a crowded dashboard and did not express the intended
+      journey: outcome prompt → observable AI progress and plan review → ticket
+      execution. BookCtx — AI Agents: The Definitive Guide, Nicole Koenigstein,
+      “Foundational Evaluation and Operational Observation of Agentic Systems”
+      (chunk 16) supports observable, reviewable agent traces. Project inference:
+      expose bounded normalised user-visible feedback rather than raw transcripts
+      or hidden reasoning. ADR 0035 records the enduring information architecture.
+      Completed on 2026-08-10: Home is the default outcome-first workspace,
+      with bounded normalised planner and worker activity; Tickets is the
+      separate four-lane execution view; Settings owns automation controls;
+      and the review/confirmation boundary remains intact. The Clean Code
+      receipt is docs/quality/reviews/UX-013-home-first-orchestration-and-ticket-views.yaml.
+
   - id: LIN-004
     epic: LIN
     title: Productize the Linear connection entry experience

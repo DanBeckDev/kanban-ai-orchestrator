@@ -67,10 +67,10 @@ describe("focused task detail", () => {
     ).toBeVisible();
     expect(screen.queryByText("Completion is recorded")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
-    await screen.findByRole("heading", { name: "Prompt AI to orchestrate" });
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
+    await screen.findByRole("heading", { name: "Keep work moving" });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Workflow" })).toHaveFocus(),
+      expect(screen.getByRole("button", { name: "Tickets" })).toHaveFocus(),
     );
   });
 });

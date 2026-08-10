@@ -50,6 +50,29 @@ pub(crate) fn run_process(
     input: &[u8],
     max_runtime: Duration,
 ) -> Result<Vec<u8>, BoundedProcessError> {
+    run_process_observed(
+        profile_name,
+        program,
+        arguments,
+        repository_path,
+        input,
+        max_runtime,
+        |_| {},
+    )
+}
+
+pub(crate) fn run_process_observed<F>(
+    profile_name: &str,
+    program: &str,
+    arguments: &[String],
+    repository_path: &Path,
+    input: &[u8],
+    max_runtime: Duration,
+    on_output_line: F,
+) -> Result<Vec<u8>, BoundedProcessError>
+where
+    F: Fn(&[u8]) + Send + 'static,
+{
     let mut command = Command::new(program);
     command
         .args(arguments)
@@ -62,7 +85,7 @@ pub(crate) fn run_process(
     })?;
     write_input(&mut child, input)?;
     let stdout = take_stdout(&mut child)?;
-    read_process_output(&mut child, stdout, max_runtime)
+    read_process_output(&mut child, stdout, max_runtime, on_output_line)
 }
 
 fn write_input(child: &mut Child, input: &[u8]) -> Result<(), BoundedProcessError> {
@@ -88,16 +111,20 @@ fn take_stdout(child: &mut Child) -> Result<ChildStdout, BoundedProcessError> {
     })
 }
 
-fn read_process_output(
+fn read_process_output<F>(
     child: &mut Child,
     stdout: ChildStdout,
     max_runtime: Duration,
-) -> Result<Vec<u8>, BoundedProcessError> {
+    on_output_line: F,
+) -> Result<Vec<u8>, BoundedProcessError>
+where
+    F: Fn(&[u8]) + Send + 'static,
+{
     let (sender, receiver) = mpsc::channel();
     if thread::Builder::new()
         .name("bounded-process-output".to_owned())
         .spawn(move || {
-            let _ = sender.send(read_bounded_output(stdout));
+            let _ = sender.send(read_bounded_output(stdout, on_output_line));
         })
         .is_err()
     {
@@ -165,15 +192,75 @@ fn terminate(child: &mut Child) {
     let _ = child.wait();
 }
 
-fn read_bounded_output(stdout: impl Read) -> Result<Vec<u8>, BoundedProcessError> {
+fn read_bounded_output(
+    mut stdout: impl Read,
+    on_output_line: impl Fn(&[u8]),
+) -> Result<Vec<u8>, BoundedProcessError> {
     let mut output = Vec::new();
-    stdout
-        .take(MAX_DIRECT_PROCESS_OUTPUT_BYTES + 1)
-        .read_to_end(&mut output)
-        .map_err(|_| BoundedProcessError::Output)?;
-    if output.len() as u64 > MAX_DIRECT_PROCESS_OUTPUT_BYTES {
-        Err(BoundedProcessError::OutputTooLarge)
-    } else {
-        Ok(output)
+    let mut pending = Vec::new();
+    let mut buffer = [0; 4096];
+    let buffer_length = buffer.len() as u64;
+
+    loop {
+        let remaining = MAX_DIRECT_PROCESS_OUTPUT_BYTES
+            .saturating_add(1)
+            .saturating_sub(output.len() as u64);
+        if remaining == 0 {
+            return Err(BoundedProcessError::OutputTooLarge);
+        }
+        let read = stdout
+            .read(&mut buffer[..remaining.min(buffer_length) as usize])
+            .map_err(|_| BoundedProcessError::Output)?;
+        if read == 0 {
+            break;
+        }
+        output.extend_from_slice(&buffer[..read]);
+        pending.extend_from_slice(&buffer[..read]);
+        while let Some(newline) = pending.iter().position(|byte| *byte == b'\n') {
+            let line: Vec<_> = pending.drain(..=newline).collect();
+            on_output_line(trim_line(&line));
+        }
+    }
+
+    if !pending.is_empty() {
+        on_output_line(trim_line(&pending));
+    }
+    Ok(output)
+}
+
+fn trim_line(line: &[u8]) -> &[u8] {
+    let line = line.strip_suffix(b"\n").unwrap_or(line);
+    line.strip_suffix(b"\r").unwrap_or(line)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        io::Cursor,
+        sync::{Arc, Mutex},
+    };
+
+    use super::read_bounded_output;
+
+    #[test]
+    fn observes_complete_output_lines_without_changing_the_captured_output() {
+        let observed = Arc::new(Mutex::new(Vec::new()));
+        let observer = observed.clone();
+
+        let output = read_bounded_output(Cursor::new(b"first\r\nsecond\nfinal"), move |line| {
+            observer
+                .lock()
+                .expect("observed lines should remain available")
+                .push(String::from_utf8(line.to_vec()).expect("line should be UTF-8"));
+        })
+        .expect("output should be read");
+
+        assert_eq!(output, b"first\r\nsecond\nfinal");
+        assert_eq!(
+            *observed
+                .lock()
+                .expect("observed lines should remain available"),
+            ["first", "second", "final"]
+        );
     }
 }

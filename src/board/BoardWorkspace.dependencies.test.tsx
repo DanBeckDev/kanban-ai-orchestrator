@@ -32,10 +32,10 @@ describe("dependency view", () => {
     expect(screen.getByText("platform")).toBeVisible();
     expect(screen.getByText("Complete API first.")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
-    await screen.findByRole("heading", { name: "Prompt AI to orchestrate" });
+    fireEvent.click(screen.getByRole("button", { name: "Back to Tickets" }));
+    await screen.findByRole("heading", { name: "Keep work moving" });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Workflow" })).toHaveFocus(),
+      expect(screen.getByRole("button", { name: "Tickets" })).toHaveFocus(),
     );
   });
 

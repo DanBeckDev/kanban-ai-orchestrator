@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AgentProfileForm } from "./AgentProfileForm";
+import { BoardAutomation } from "./BoardAutomation";
 import { BoardSupportDetails } from "./BoardSupportDetails";
 import { LinearBoardModeNotice } from "./LinearBoardModeNotice";
 import { LinearConnectionPanel } from "./LinearConnectionPanel";
@@ -15,6 +16,8 @@ import type {
   AgentProfile,
   AgentProviderAvailability,
   BoardSnapshot,
+  BoardSupervision,
+  BoardSupervisionMode,
   ImportLinearBlockerRequest,
   ImportLinearIssueRequest,
   LinearConnectionStatus,
@@ -25,10 +28,12 @@ import type {
   ProviderModelCatalog,
   QueueLinearCommentRequest,
   SaveProjectAgentSettingsRequest,
+  SupervisionDecision,
 } from "./types";
 
 type BoardSettingsProps = Readonly<{
   agentProfiles: readonly AgentProfile[];
+  boardSupervision?: BoardSupervision;
   busy: boolean;
   linearConnectionStatus: LinearConnectionStatus;
   linearIssues: readonly LinearIssueSummary[];
@@ -36,8 +41,11 @@ type BoardSettingsProps = Readonly<{
   projectAgentSettings?: ProjectAgentSettings;
   providerAvailability: readonly AgentProviderAvailability[];
   snapshot: BoardSnapshot;
+  supervisionDecisions: readonly SupervisionDecision[];
   onBack: () => void;
+  onConfigureBoardSupervision: (mode: BoardSupervisionMode) => Promise<void>;
   onConnectLinear: (configuration: LinearOAuthConfiguration) => Promise<void>;
+  onCoordinateBoard: (boardId: string) => Promise<void>;
   onDeliverLinearComment: (outboxItemId: string) => Promise<void>;
   onEnableLinearCommentAccess: () => Promise<void>;
   onImportLinearBlocker: (request: ImportLinearBlockerRequest) => Promise<void>;
@@ -57,6 +65,7 @@ type BoardSettingsProps = Readonly<{
 
 export function BoardSettings({
   agentProfiles,
+  boardSupervision,
   busy,
   linearConnectionStatus,
   linearIssues,
@@ -64,8 +73,11 @@ export function BoardSettings({
   projectAgentSettings,
   providerAvailability,
   snapshot,
+  supervisionDecisions,
   onBack,
+  onConfigureBoardSupervision,
   onConnectLinear,
+  onCoordinateBoard,
   onDeliverLinearComment,
   onEnableLinearCommentAccess,
   onImportLinearBlocker,
@@ -79,10 +91,18 @@ export function BoardSettings({
   onSaveProjectAgentSettings,
 }: BoardSettingsProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
+  const hasConfiguredRoles =
+    projectAgentSettings?.organiser !== undefined &&
+    projectAgentSettings.ticketWorker !== undefined &&
+    agentProfiles.some(
+      ({ name }) =>
+        name === projectAgentSettings.ticketWorker?.agentProfileName,
+    );
 
   return (
     <section aria-label="Settings" className="workspace-surface">
       <SurfaceHeader
+        backLabel="Back to Tickets"
         description="Choose the AI roles and connected tools for this project."
         onBack={onBack}
         title="Settings"
@@ -90,6 +110,7 @@ export function BoardSettings({
       <Tabs defaultValue="ai" orientation="vertical">
         <TabsList aria-label="Settings sections" variant="line">
           <TabsTrigger value="ai">AI</TabsTrigger>
+          <TabsTrigger value="automation">Automation</TabsTrigger>
           <TabsTrigger value="linear">Linear</TabsTrigger>
           <TabsTrigger value="project">Project</TabsTrigger>
         </TabsList>
@@ -128,6 +149,16 @@ export function BoardSettings({
               profiles={agentProfiles}
             />
           </details>
+        </TabsContent>
+        <TabsContent value="automation">
+          <BoardAutomation
+            decisions={supervisionDecisions}
+            hasConfiguredRoles={hasConfiguredRoles}
+            snapshot={snapshot}
+            supervision={boardSupervision}
+            onConfigure={onConfigureBoardSupervision}
+            onCoordinate={onCoordinateBoard}
+          />
         </TabsContent>
         <TabsContent value="linear">
           <section className="settings-section">

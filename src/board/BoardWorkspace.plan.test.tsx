@@ -116,7 +116,6 @@ describe("board plan workflow", () => {
     await waitFor(() =>
       expect(boardGateway.confirmPlan).toHaveBeenCalledOnce(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     expect(await screen.findByText("Generated foundation")).toBeVisible();
   });
 
@@ -229,8 +228,6 @@ describe("board plan workflow", () => {
     expect(boardGateway.confirmPlan).toHaveBeenCalledWith(
       expect.objectContaining({ boardId: "board-1", confirmedBy: "Daniel" }),
     );
-    expect(screen.getByText(/Confirmed by Daniel at/)).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Back to board" }));
     expect(await screen.findByText("Foundation")).toBeVisible();
     expect(screen.getByText("Interface")).toBeVisible();
   });

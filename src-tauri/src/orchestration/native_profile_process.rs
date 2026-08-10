@@ -1,16 +1,26 @@
-use std::{path::Path, time::Duration};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use serde_json::Value;
 
 use crate::{
-    agent::{AgentProfileKind, append_native_preferences, validate_native_preferences},
+    agent::{
+        AgentProfileKind, NormalizedAgentEventKind, append_native_preferences,
+        provider_event_decoder::{NativeEventDecoder, NativeEventProtocol},
+        validate_native_preferences,
+    },
     domain::{AgentEffort, AgentModelPreference},
 };
 
 use super::{
     PlannerProfile,
-    bounded_process::{BoundedProcessError, run_direct_json_process, run_process},
+    bounded_process::{BoundedProcessError, run_direct_json_process, run_process_observed},
 };
+
+pub(crate) type PlannerActivitySink = Arc<dyn Fn(NormalizedAgentEventKind) + Send + Sync>;
 
 #[derive(Debug)]
 pub(crate) enum ProfileProcessError {
@@ -27,21 +37,73 @@ pub(crate) fn run_json_profile(
     input: &[u8],
     max_runtime: Duration,
 ) -> Result<Vec<u8>, ProfileProcessError> {
+    run_json_profile_with_activity(
+        profile,
+        repository_path,
+        model,
+        effort,
+        input,
+        Arc::new(|_| {}),
+        max_runtime,
+    )
+}
+
+pub(crate) fn run_json_profile_with_activity(
+    profile: &PlannerProfile,
+    repository_path: &Path,
+    model: &AgentModelPreference,
+    effort: AgentEffort,
+    input: &[u8],
+    activity_sink: PlannerActivitySink,
+    max_runtime: Duration,
+) -> Result<Vec<u8>, ProfileProcessError> {
     if profile.kind == AgentProfileKind::StructuredProcess {
+        activity_sink(NormalizedAgentEventKind::Activity {
+            summary: "The planner process started.".to_owned(),
+        });
         return run_direct_json_process(profile, repository_path, input, max_runtime)
             .map_err(ProfileProcessError::Process);
     }
     let invocation = NativePlannerInvocation::new(profile, model, effort, input)?;
-    let output = run_process(
+    activity_sink(NormalizedAgentEventKind::Activity {
+        summary: format!("{} started planning.", profile.name),
+    });
+    let decoder = Arc::new(Mutex::new(NativeEventDecoder::new(native_protocol(
+        profile.kind,
+    ))));
+    let observer_sink = activity_sink.clone();
+    let output = run_process_observed(
         &profile.name,
         &profile.program,
         &invocation.arguments,
         repository_path,
         &invocation.standard_input,
         max_runtime,
+        move |line| {
+            let Ok(mut decoder) = decoder.lock() else {
+                return;
+            };
+            let Ok(events) = decoder.decode_line(line) else {
+                return;
+            };
+            for event in events {
+                observer_sink(event.kind);
+            }
+        },
     )
     .map_err(ProfileProcessError::Process)?;
     extract_native_json(profile.kind, &output).ok_or(ProfileProcessError::InvalidNativeOutput)
+}
+
+fn native_protocol(kind: AgentProfileKind) -> NativeEventProtocol {
+    match kind {
+        AgentProfileKind::CodexCli => NativeEventProtocol::Codex,
+        AgentProfileKind::ClaudeCode => NativeEventProtocol::ClaudeCode,
+        AgentProfileKind::ClinePassCli => NativeEventProtocol::ClinePass,
+        AgentProfileKind::StructuredProcess => {
+            unreachable!("structured processes do not stream native events")
+        }
+    }
 }
 
 struct NativePlannerInvocation {
@@ -165,10 +227,13 @@ fn json_only(value: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
+    use std::{path::Path, sync::Arc, time::Duration};
+
     use crate::domain::{AgentEffort, AgentModelPreference};
 
     use super::{
         NativePlannerInvocation, ProfileProcessError, extract_native_json, native_arguments,
+        run_json_profile_with_activity,
     };
     use crate::agent::AgentProfileKind;
     use crate::orchestration::PlannerProfile;
@@ -214,6 +279,24 @@ mod tests {
             extract_native_json(AgentProfileKind::ClaudeCode, b"{\"result\":\"not json\"}")
                 .is_none()
         );
+    }
+
+    #[test]
+    fn rejects_non_utf8_native_input_before_starting_a_process() {
+        let result = run_json_profile_with_activity(
+            &profile(AgentProfileKind::CodexCli),
+            Path::new("."),
+            &AgentModelPreference::ProviderDefault,
+            AgentEffort::ProviderDefault,
+            &[0xff],
+            Arc::new(|_| {}),
+            Duration::from_secs(1),
+        );
+
+        assert!(matches!(
+            result,
+            Err(ProfileProcessError::InvalidNativeOutput)
+        ));
     }
 
     #[test]

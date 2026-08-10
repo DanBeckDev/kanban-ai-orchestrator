@@ -92,7 +92,7 @@ export function TaskDetailSections({
                 <p>No worker is currently reporting activity.</p>
               ) : (
                 <ActivityStream
-                  execution={liveExecution}
+                  activityId={liveExecution.id}
                   onLoad={onLoadExecutionActivity}
                 />
               )}

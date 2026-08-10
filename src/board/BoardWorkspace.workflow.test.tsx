@@ -5,11 +5,11 @@ import { gateway, snapshot, workItem } from "./BoardWorkspace.test.fixtures";
 import { createBoard } from "./BoardWorkspace.test.helpers";
 
 describe("board workflow view", () => {
-  it("uses the top-left menu to move between board views", async () => {
+  it("uses the top-left menu to keep Home and Tickets separate", async () => {
     const boardGateway = gateway(snapshot([workItem("foundation", "planned")]));
     await createBoard(boardGateway);
 
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Workflow" }), {
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Home" }), {
       button: 0,
       ctrlKey: false,
     });
@@ -22,11 +22,17 @@ describe("board workflow view", () => {
 
     fireEvent.pointerDown(
       screen.getByRole("button", { name: "Dependencies" }),
-      { button: 0, ctrlKey: false },
+      {
+        button: 0,
+        ctrlKey: false,
+      },
     );
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "Workflow" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Tickets" }));
     expect(
-      await screen.findByRole("heading", { name: "Prompt AI to orchestrate" }),
+      await screen.findByRole("heading", { name: "Keep work moving" }),
     ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Prompt AI to orchestrate" }),
+    ).not.toBeInTheDocument();
   });
 });

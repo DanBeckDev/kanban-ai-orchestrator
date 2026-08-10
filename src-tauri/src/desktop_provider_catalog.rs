@@ -1,22 +1,14 @@
-use tauri::State;
-
 use crate::agent::{
-    AgentProfileKind, AgentProviderAvailability, KeyringProviderCatalogCredentialStore,
-    ProviderModelCatalog, ProviderModelCatalogService, ReqwestProviderModelCatalogClient,
-    SaveProviderCatalogCredentialRequest, discover_native_agent_providers,
+    AgentProfileKind, AgentProviderAvailability, InstalledProviderRuntimeClient,
+    ProviderModelCatalog, ProviderModelCatalogService, discover_native_agent_providers,
 };
-use crate::desktop::{BoardDaemonState, error_message};
+use crate::desktop::error_message;
 
-pub(crate) type LocalProviderModelCatalog = ProviderModelCatalogService<
-    KeyringProviderCatalogCredentialStore,
-    ReqwestProviderModelCatalogClient,
->;
+pub(crate) type LocalProviderModelCatalog =
+    ProviderModelCatalogService<InstalledProviderRuntimeClient>;
 
 pub(crate) fn provider_model_catalog_service() -> LocalProviderModelCatalog {
-    ProviderModelCatalogService::new(
-        KeyringProviderCatalogCredentialStore,
-        ReqwestProviderModelCatalogClient::new(),
-    )
+    ProviderModelCatalogService::new(InstalledProviderRuntimeClient)
 }
 
 #[tauri::command]
@@ -26,22 +18,9 @@ pub(crate) fn agent_provider_availability() -> Vec<AgentProviderAvailability> {
 
 #[tauri::command]
 pub(crate) fn provider_model_catalog(
-    state: State<'_, BoardDaemonState>,
     provider_kind: AgentProfileKind,
 ) -> Result<ProviderModelCatalog, String> {
-    state
-        .provider_model_catalog
+    provider_model_catalog_service()
         .catalog(provider_kind)
-        .map_err(error_message)
-}
-
-#[tauri::command]
-pub(crate) fn save_provider_catalog_credential(
-    state: State<'_, BoardDaemonState>,
-    request: SaveProviderCatalogCredentialRequest,
-) -> Result<ProviderModelCatalog, String> {
-    state
-        .provider_model_catalog
-        .save_credential_and_catalog(request)
         .map_err(error_message)
 }

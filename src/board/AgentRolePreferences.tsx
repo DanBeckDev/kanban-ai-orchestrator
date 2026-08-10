@@ -82,10 +82,10 @@ export function AgentRolePreferences({
         </Select>
         <FieldDescription>
           {previouslySelectedModel !== undefined
-            ? "This saved model is not in the current account list. Refresh or choose another model before starting work."
+            ? "This saved model is not in the current list from your installed AI. Refresh or choose another model before starting work."
             : models.length === 0
-              ? "Connect this provider to load the models available to your account."
-              : "Only models returned by this provider are available here."}
+              ? "This AI will use its configured default model."
+              : "Only models returned by your installed AI are available here."}
         </FieldDescription>
       </Field>
       <Field>

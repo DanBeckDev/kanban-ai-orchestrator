@@ -26,7 +26,6 @@ import type {
   ProposePlanRequest,
   PlannerProfile,
   ProjectAgentSettings,
-  ProviderModelCatalog,
   RecordCleanCodeReviewRequest,
   RecordReviewCheckRequest,
   RecordReviewDecisionRequest,
@@ -207,16 +206,6 @@ export function BoardWorkspace({
     return gateway.providerModelCatalog(provider.kind);
   }
 
-  async function saveProviderCatalogCredential(
-    provider: AgentProviderAvailability,
-    apiKey: string,
-  ): Promise<ProviderModelCatalog> {
-    return gateway.saveProviderCatalogCredential({
-      providerKind: provider.kind,
-      apiKey,
-    });
-  }
-
   async function startExecution(request: StartExecutionRequest) {
     await run(() => gateway.startExecution(request));
   }
@@ -342,7 +331,6 @@ export function BoardWorkspace({
             onSaveAgentProfile: saveAgentProfile,
             onLoadProviderCatalog: loadProviderCatalog,
             onSaveProjectAgentSettings: saveProjectAgentSettings,
-            onSaveProviderCatalogCredential: saveProviderCatalogCredential,
             onSavePlannerProfile: savePlannerProfile,
             ticketEffects: ticketEffectOperations(gateway, run),
             onCoordinateBoard: coordinateBoard,

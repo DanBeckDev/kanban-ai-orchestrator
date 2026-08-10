@@ -50,10 +50,6 @@ type BoardSettingsProps = Readonly<{
     provider: AgentProviderAvailability,
   ) => Promise<ProviderModelCatalog>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
-  onSaveProviderCatalogCredential: (
-    provider: AgentProviderAvailability,
-    apiKey: string,
-  ) => Promise<ProviderModelCatalog>;
   onSaveProjectAgentSettings: (
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
@@ -80,7 +76,6 @@ export function BoardSettings({
   onSaveAgentProfile,
   onLoadProviderCatalog,
   onSavePlannerProfile,
-  onSaveProviderCatalogCredential,
   onSaveProjectAgentSettings,
 }: BoardSettingsProps) {
   const workItems = snapshot.workItems.map(({ workItem }) => workItem);
@@ -109,7 +104,6 @@ export function BoardSettings({
             onSaveAgentProfile={onSaveAgentProfile}
             onLoadProviderCatalog={onLoadProviderCatalog}
             onSavePlannerProfile={onSavePlannerProfile}
-            onSaveProviderCatalogCredential={onSaveProviderCatalogCredential}
             onSaveSettings={onSaveProjectAgentSettings}
           />
           <details className="advanced-disclosure">

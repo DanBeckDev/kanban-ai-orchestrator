@@ -62,7 +62,6 @@ pub fn run() {
             desktop::agent_profiles,
             desktop_provider_catalog::agent_provider_availability,
             desktop_provider_catalog::provider_model_catalog,
-            desktop_provider_catalog::save_provider_catalog_credential,
             desktop_planning::save_planner_profile,
             desktop_planning::planner_profiles,
             desktop_planning::save_project_agent_settings,

@@ -15,12 +15,10 @@ import {
   Field,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
   FieldLegend,
   FieldSet,
   FieldTitle,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import { AgentRolePreferences } from "./AgentRolePreferences";
@@ -47,10 +45,6 @@ type ProviderConfigurationCardProps = Readonly<{
   onCatalogLoad: (
     provider: AgentProviderAvailability,
   ) => Promise<ProviderModelCatalog>;
-  onCatalogConnect: (
-    provider: AgentProviderAvailability,
-    apiKey: string,
-  ) => Promise<ProviderModelCatalog>;
   onEffortChange: (role: ProviderRole, effort: AgentEffort) => void;
   onModelChange: (role: ProviderRole, model: AgentModelPreference) => void;
   onRoleChange: (role: ProviderRole, enabled: boolean) => Promise<void>;
@@ -62,13 +56,11 @@ export function ProviderConfigurationCard({
   provider,
   worker,
   onCatalogLoad,
-  onCatalogConnect,
   onEffortChange,
   onModelChange,
   onRoleChange,
 }: ProviderConfigurationCardProps) {
   const [catalog, setCatalog] = useState<ProviderModelCatalog>();
-  const [apiKey, setApiKey] = useState("");
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [catalogError, setCatalogError] = useState<string>();
   const [catalogLoadAttempted, setCatalogLoadAttempted] = useState(false);
@@ -91,19 +83,6 @@ export function ProviderConfigurationCard({
       setCatalogBusy(false);
     }
   }, [onCatalogLoad, provider]);
-
-  async function connectCatalog() {
-    setCatalogBusy(true);
-    try {
-      setCatalogError(undefined);
-      setCatalog(await onCatalogConnect(provider, apiKey));
-      setApiKey("");
-    } catch {
-      setCatalogError("Could not connect. Check the API key and try again.");
-    } finally {
-      setCatalogBusy(false);
-    }
-  }
 
   function changeRoles(nextRoles: string[]) {
     (["organiser", "worker"] as const).forEach((role) => {
@@ -157,13 +136,10 @@ export function ProviderConfigurationCard({
               </Field>
               {roles.length > 0 && (
                 <CatalogControls
-                  apiKey={apiKey}
                   busy={busy || catalogBusy}
                   catalog={catalog}
                   error={catalogError}
                   provider={provider}
-                  onApiKeyChange={setApiKey}
-                  onConnect={() => void connectCatalog()}
                   onLoad={() => void loadCatalog()}
                 />
               )}
@@ -195,8 +171,8 @@ export function ProviderConfigurationCard({
           </CardContent>
           <CardFooter>
             <p className="field-hint">
-              When you connect, the API key is stored in this device's keychain,
-              never with this board.
+              Kanban uses this AI's existing local session. It never asks for or
+              stores an API key.
             </p>
           </CardFooter>
         </>
@@ -218,31 +194,52 @@ export function ProviderConfigurationCard({
 }
 
 function CatalogControls({
-  apiKey,
   busy,
   catalog,
   error,
   provider,
-  onApiKeyChange,
-  onConnect,
   onLoad,
 }: Readonly<{
-  apiKey: string;
   busy: boolean;
   catalog?: ProviderModelCatalog;
   error?: string;
   provider: AgentProviderAvailability;
-  onApiKeyChange: (value: string) => void;
-  onConnect: () => void;
   onLoad: () => void;
 }>) {
+  if (error !== undefined) {
+    return (
+      <FieldSet>
+        <FieldLegend variant="label">Model list</FieldLegend>
+        <FieldDescription>{error}</FieldDescription>
+        <Button
+          disabled={busy}
+          onClick={onLoad}
+          type="button"
+          variant="outline"
+        >
+          Refresh models
+        </Button>
+      </FieldSet>
+    );
+  }
+
+  if (catalog === undefined) {
+    return (
+      <Field>
+        <FieldDescription>
+          Checking models available in your installed {provider.label} session…
+        </FieldDescription>
+      </Field>
+    );
+  }
+
   if (catalog?.status === "ready") {
     return (
       <Field orientation="horizontal">
         <FieldDescription>
           {catalog.models.length === 0
-            ? "This account did not return any selectable models."
-            : "Model list loaded from this provider account."}
+            ? "This installed AI did not return any selectable models."
+            : "Model list loaded from your installed AI session."}
         </FieldDescription>
         <Button
           disabled={busy}
@@ -260,11 +257,11 @@ function CatalogControls({
     <FieldSet>
       <FieldLegend variant="label">Model list</FieldLegend>
       <FieldDescription>
-        {catalog?.status === "unavailable"
-          ? "Kanban could not refresh this model list. Check the key and connection."
-          : "Connect this provider API to choose from models available to your account."}
+        {catalog.status === "unavailable"
+          ? `Kanban could not read models from ${provider.label}. Sign in or update it, then try again.`
+          : `${provider.label} manages its models in its own app. Kanban will use that provider's default.`}
       </FieldDescription>
-      {catalog?.status === "unavailable" && (
+      {catalog.status === "unavailable" && (
         <Button
           disabled={busy}
           onClick={onLoad}
@@ -274,41 +271,6 @@ function CatalogControls({
           Refresh models
         </Button>
       )}
-      {catalog?.status === "disconnected" && (
-        <Button
-          disabled={busy}
-          onClick={onLoad}
-          type="button"
-          variant="outline"
-        >
-          Load saved model list
-        </Button>
-      )}
-      <details>
-        <summary>Connect provider API</summary>
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor={`${provider.kind}-api-key`}>
-              {provider.label} API key
-            </FieldLabel>
-            <Input
-              autoComplete="off"
-              id={`${provider.kind}-api-key`}
-              onChange={(event) => onApiKeyChange(event.target.value)}
-              type="password"
-              value={apiKey}
-            />
-          </Field>
-          {error !== undefined && <FieldDescription>{error}</FieldDescription>}
-          <Button
-            disabled={busy || apiKey.trim().length === 0}
-            onClick={onConnect}
-            type="button"
-          >
-            Connect and load models
-          </Button>
-        </FieldGroup>
-      </details>
     </FieldSet>
   );
 }

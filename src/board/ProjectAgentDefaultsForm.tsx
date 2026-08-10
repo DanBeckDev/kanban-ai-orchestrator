@@ -32,10 +32,6 @@ type ProjectAgentDefaultsFormProps = Readonly<{
   ) => Promise<ProviderModelCatalog>;
   onSaveAgentProfile: (profile: AgentProfile) => Promise<boolean>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
-  onSaveProviderCatalogCredential: (
-    provider: AgentProviderAvailability,
-    apiKey: string,
-  ) => Promise<ProviderModelCatalog>;
   onSaveSettings: (request: SaveProjectAgentSettingsRequest) => Promise<void>;
 }>;
 
@@ -51,7 +47,6 @@ export function ProjectAgentDefaultsForm({
   onLoadProviderCatalog,
   onSaveAgentProfile,
   onSavePlannerProfile,
-  onSaveProviderCatalogCredential,
   onSaveSettings,
 }: ProjectAgentDefaultsFormProps) {
   const [organiserName, setOrganiserName] = useState(noSelection);
@@ -193,9 +188,6 @@ export function ProjectAgentDefaultsForm({
                 hasWorkerKind(workerName, provider.kind)
                   ? { effort: workerEffort, model: workerModel }
                   : undefined
-              }
-              onCatalogConnect={(selectedProvider, apiKey) =>
-                onSaveProviderCatalogCredential(selectedProvider, apiKey)
               }
               onCatalogLoad={onLoadProviderCatalog}
               onEffortChange={(role, effort) => {

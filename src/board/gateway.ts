@@ -34,7 +34,6 @@ import type {
   RepositorySetup,
   QueueLinearCommentRequest,
   SaveProjectAgentSettingsRequest,
-  SaveProviderCatalogCredentialRequest,
   StartExecutionRequest,
   SupervisionDecision,
   TransitionWorkItemRequest,
@@ -103,11 +102,6 @@ export const tauriBoardGateway: BoardGateway = {
     providerKind: NativeAgentProviderKind,
   ): Promise<ProviderModelCatalog> {
     return invoke("provider_model_catalog", { providerKind });
-  },
-  saveProviderCatalogCredential(
-    request: SaveProviderCatalogCredentialRequest,
-  ): Promise<ProviderModelCatalog> {
-    return invoke("save_provider_catalog_credential", { request });
   },
   savePlannerProfile(profile: PlannerProfile): Promise<PlannerProfile> {
     return invoke("save_planner_profile", { profile });

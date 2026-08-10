@@ -33,8 +33,8 @@ export type SaveProjectAgentSettingsRequest = Readonly<{
 }>;
 
 export type ProviderModelCatalogStatus =
-  | "disconnected"
   | "ready"
+  | "uses_provider_default"
   | "unavailable";
 
 export type NativeAgentProviderKind =
@@ -52,9 +52,4 @@ export type ProviderModelCatalog = Readonly<{
   providerKind: NativeAgentProviderKind;
   status: ProviderModelCatalogStatus;
   models: readonly ProviderModel[];
-}>;
-
-export type SaveProviderCatalogCredentialRequest = Readonly<{
-  providerKind: NativeAgentProviderKind;
-  apiKey: string;
 }>;

@@ -73,10 +73,6 @@ type BoardViewProps = Readonly<{
   onSaveProjectAgentSettings: (
     request: SaveProjectAgentSettingsRequest,
   ) => Promise<void>;
-  onSaveProviderCatalogCredential: (
-    provider: AgentProviderAvailability,
-    apiKey: string,
-  ) => Promise<ProviderModelCatalog>;
   onSavePlannerProfile: (profile: PlannerProfile) => Promise<void>;
   ticketEffects: TicketEffectOperations;
   supervisionDecisions: readonly SupervisionDecision[];
@@ -125,7 +121,6 @@ export function BoardView({
   onSaveAgentProfile,
   onLoadProviderCatalog,
   onSaveProjectAgentSettings,
-  onSaveProviderCatalogCredential,
   onSavePlannerProfile,
   ticketEffects,
   onCoordinateBoard,
@@ -279,7 +274,6 @@ export function BoardView({
           onSaveAgentProfile={onSaveAgentProfile}
           onLoadProviderCatalog={onLoadProviderCatalog}
           onSavePlannerProfile={onSavePlannerProfile}
-          onSaveProviderCatalogCredential={onSaveProviderCatalogCredential}
           onSaveProjectAgentSettings={onSaveProjectAgentSettings}
         />
       )}

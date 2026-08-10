@@ -327,20 +327,39 @@ tasks:
     acceptance_criteria:
       - Settings shows one self-contained card for every detected provider. An installed provider can be selected independently for Plan work and Work on tickets without a duplicate generic provider form.
       - Model and effort controls remain on the provider card for each selected role. The normal path has no free-text model field and always offers Provider default.
-      - An explicit connect or refresh action obtains model identifiers and available labels from the provider's documented API for OpenAI/Codex, Anthropic/Claude Code, and Cline. The UI renders returned values in a dropdown and never substitutes a hard-coded catalogue.
-      - Provider API credentials are stored only in the OS keychain, never in board metadata, durable front-end state, logs, worktrees, requests to agents, or normal error text. A failed or unavailable catalogue produces a recoverable explanation and retains Provider default.
+      - Superseded by ORCH-011 after product feedback: a second API-key connection is not an acceptable normal path. The installed client's authenticated SDK/runtime must be the only source of account and model configuration.
       - Provider adapters expose only effort preferences they can express. Model-level capability information narrows the choices when the provider API returns it; native execution, policy, confirmation, review, and Done authority remain unchanged.
       - Rust and frontend tests cover disconnected, connected, malformed, failed, role-selection, role-save, dynamic-model, effort, and credential-redaction behavior; source structure and all per-package coverage metrics remain at least 80%.
     notes: >-
       Added 2026-08-10 from product feedback on the split provider configuration
       surface. This supersedes ORCH-009's normal-path free-text model control,
       while retaining provider-neutral durable settings and adapter-owned
-      invocation translation. Completed on 2026-08-10 with self-contained
-      provider cards, per-role model and effort dropdowns, explicit account
-      catalogue connection and refresh, OS-keychain credential isolation,
-      bounded Anthropic pagination, and stale-selection recovery copy.
-      ADR-0031 and the ORCH-010 quality receipt record the ownership,
-      credential, clean-code, and coverage evidence.
+      invocation translation. The direct API-key model-catalogue approach was
+      superseded on 2026-08-10 before release by ORCH-011; its original
+      implementation record remains in git history and ADR-0031.
+
+  - id: ORCH-011
+    epic: ORCH
+    title: Use installed agent runtimes for provider model settings
+    status: done
+    priority: P0
+    depends_on: [ORCH-010]
+    acceptance_criteria:
+      - The normal Settings path never asks for, stores, transmits, or logs an API key for Codex, Claude Code, or Cline.
+      - Each provider card uses the already-installed, already-authenticated local agent runtime as its only account and configuration source.
+      - A provider-native SDK/app-server catalogue populates model and supported effort dropdowns when it is safely available. The first adapter uses Codex's local app-server model/list protocol; its result is account-specific and contains no credential material.
+      - If an installed runtime has no supported catalogue endpoint, Settings clearly says that the provider's configured default will be used and offers only a retry or provider-owned configuration action. It never invents model names or creates a duplicate account setup flow.
+      - Provider runtime calls are behind a typed, tested adapter boundary. They are bounded, do not start work, do not alter client authentication, and cannot weaken execution, policy, review, or Done gates.
+      - Rust and frontend tests cover dynamic local catalogue loading, unavailable runtimes, provider-default fallback, role selection, no API-key controls, and all 80% quality gates.
+    notes: >-
+      Created after feedback on ORCH-010. Cline Kanban's local installed-agent
+      flow is the parity target, while its reported duplicated-provider-config
+      failures are explicitly avoided through one installed-runtime source of
+      truth. ADR-0032 records the replacement boundary. Completed 2026-08-10:
+      Codex now obtains account-specific models and supported effort levels from
+      its signed-in local app server; Claude Code and Cline accurately fall
+      back to their provider-owned defaults until they expose an equivalent
+      supported local catalogue endpoint.
 
   - id: APP-001
     epic: APP

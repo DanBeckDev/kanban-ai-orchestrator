@@ -71,14 +71,13 @@ shows whether its CLI is installed and lets a person enable it for **Plan work**
 stay directly inside that provider card, rather than repeating the same choice
 in a separate generic role form.
 
-**Provider default** is the safe initial model. A person can deliberately
-connect the provider's model API from the same card to load account-available
-models into a dropdown, then refresh it later. The provider API key is stored
-only in the operating-system keychain; it is not placed in project data or
-shown after saving. When no API catalogue is connected, the card explains that
-Provider default will be used and offers the precise connection action. Raw
-arguments, permission-bypass flags, worktree paths, and protocol details remain
-outside the normal UI. Per-ticket worker changes remain possible at review or
+**Provider default** is the safe initial model. The same card queries the
+already-installed, already-authenticated agent runtime for account-available
+models and refreshes that list on request; it never asks for an API key. When
+the runtime does not offer a supported model catalogue, the card explains that
+Provider default will be used and offers the precise provider-owned next
+action. Raw arguments, permission-bypass flags, worktree paths, and protocol
+details remain outside the normal UI. Per-ticket worker changes remain possible at review or
 ticket detail; they do not alter the project defaults.
 
 ## Create and coordinate work
